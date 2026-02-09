@@ -1,13 +1,11 @@
 from flask import Flask, request
 import telebot
 
-# Botingizning tokeni
-TOKEN = '8562563007:AAGmU2nPXKKQ3HhnymKzPve53WJGYXAp3y4' 
+TOKEN = '8562563007:AAGmU2nPXKKQ3HhnymKzPve53WJGYXAp3y4'
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
-# To'g'ri ilova manzili
-WEB_APP_URL = 'https://davomad.vercel.app/' 
+WEB_APP_URL = 'https://davomad.vercel.app/'
 
 @app.route('/api/index', methods=['POST'])
 def webhook():
@@ -16,8 +14,7 @@ def webhook():
         update = telebot.types.Update.de_json(json_string)
         bot.process_new_updates([update])
         return ''
-    else:
-        return 'Method Not Allowed', 405
+    return 'OK', 200
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -29,19 +26,11 @@ def start(message):
     
     bot.send_message(
         message.chat.id, 
-        f"Assalomu alaykum, hurmatli {name}! 😊\n\n"
-        "**Testlar Rasmiy** botiga xush kelibsiz! \n\n"
-        "Bilimingizni sinab ko'rish va yangi natijalarga erishish uchun tayyormisiz? "
-        "Unda pastdagi tugmani bosing va ilovaga kiring! 👇",
+        f"Assalomu alaykum, hurmatli {name}! 😊\n\n**Testlar Rasmiy** botiga xush kelibsiz!",
         reply_markup=markup,
         parse_mode="Markdown"
     )
 
-# Har qanday boshqa xabar yozilsa ham faqat start haqida eslatadi
-@bot.message_handler(func=lambda message: True)
-def echo_all(message):
-    bot.reply_to(message, "Iltimos, testni boshlash uchun /start buyrug'ini yuboring yoki pastdagi tugmani bosing! 😊")
-
 @app.route('/')
 def index():
-    return "Bot serveri faqat start uchun sozlandi!"
+    return "Bot server is running!"

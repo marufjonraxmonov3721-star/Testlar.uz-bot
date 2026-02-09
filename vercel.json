@@ -14,8 +14,12 @@
   ],
   "routes": [
     {
+      "src": "/api/ping",
+      "dest": "api/ping.py"
+    },
+    {
       "src": "/(.*)",
-      "destination": "api/index.py"
+      "dest": "api/index.py"
     }
   ]
 }

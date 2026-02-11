@@ -6,9 +6,9 @@ TOKEN = '8562563007:AAGmU2nPXKKQ3HhnymKzPve53WJGYXAp3y4'
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
-# Ilovalar manzillari (Siz bergan oxirgi manzillar)
-TEST_APP_URL = 'https://davomad.vercel.app/' 
-TURNIR_APP_URL = 'https://telegram-bot-eight-rose.vercel.app/' 
+# Ilovalar manzillari
+TEST_URL = 'https://davomad.vercel.app/'
+TURNIR_URL = 'https://telegram-bot-eight-rose.vercel.app/'
 
 @app.route('/api/index', methods=['POST'])
 def webhook():
@@ -17,33 +17,26 @@ def webhook():
         update = telebot.types.Update.de_json(json_string)
         bot.process_new_updates([update])
         return ''
-    else:
-        return 'Method Not Allowed', 405
+    return 'OK', 200
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    name = message.from_user.first_name
+    # ESKI TUGMALARNI TOZALASH
+    bot.send_message(message.chat.id, "Menyu yuklanmoqda...", reply_markup=telebot.types.ReplyKeyboardRemove())
     
-    # 1. ESKI MENYUNI MAJBURIY O'CHIRISH (Bu muhim!)
-    bot.send_message(message.chat.id, "Tizim yangilanmoqda...", reply_markup=telebot.types.ReplyKeyboardRemove())
-    
-    # 2. YANGI 2 TA TUGMALI MENYUNI YARATISH
+    # YANGI 2 TA TUGMALI KLAVIATURA
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    btn1 = telebot.types.KeyboardButton("📚 Testlar", web_app=telebot.types.WebAppInfo(url=TEST_URL))
+    btn2 = telebot.types.KeyboardButton("🏆 Turnirlar", web_app=telebot.types.WebAppInfo(url=TURNIR_URL))
+    markup.add(btn1, btn2)
     
-    btn_test = telebot.types.KeyboardButton("📚 Testlar", web_app=telebot.types.WebAppInfo(url=TEST_APP_URL))
-    btn_turnir = telebot.types.KeyboardButton("🏆 Turnirlar", web_app=telebot.types.WebAppInfo(url=TURNIR_APP_URL))
-    
-    markup.add(btn_test, btn_turnir)
-    
-    # 3. YANGI MENYU BILAN XABAR YUBORISH
     bot.send_message(
         message.chat.id, 
-        f"Assalomu alaykum, hurmatli {name}! 😊\n\n"
-        "Yangi menyuga xush kelibsiz! Marhamat, bo'limni tanlang:",
+        f"Assalomu alaykum, hurmatli {message.from_user.first_name}! 😊\n\n**Testlar Rasmiy** botiga xush kelibsiz! Marhamat, bo'limni tanlang:",
         reply_markup=markup,
         parse_mode="Markdown"
     )
 
 @app.route('/')
 def index():
-    return "Bot ishlamoqda..."
+    return "Bot serveri ishlamoqda!"

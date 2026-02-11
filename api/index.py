@@ -1,12 +1,11 @@
 from flask import Flask, request
 import telebot
 
-# Botingiz tokeni
 TOKEN = '8562563007:AAGmU2nPXKKQ3HhnymKzPve53WJGYXAp3y4' 
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
-# Ilovalar manzillari
+# To'g'ri linklar
 TEST_URL = 'https://davomad.vercel.app/'
 TURNIR_URL = 'https://telegram-bot-eight-rose.vercel.app/'
 
@@ -21,10 +20,7 @@ def webhook():
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    # ESKI TUGMALARNI TOZALASH
-    bot.send_message(message.chat.id, "Menyu yuklanmoqda...", reply_markup=telebot.types.ReplyKeyboardRemove())
-    
-    # YANGI 2 TA TUGMALI KLAVIATURA
+    # MENYUNI YANGILASH
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     btn1 = telebot.types.KeyboardButton("📚 Testlar", web_app=telebot.types.WebAppInfo(url=TEST_URL))
     btn2 = telebot.types.KeyboardButton("🏆 Turnirlar", web_app=telebot.types.WebAppInfo(url=TURNIR_URL))
@@ -32,11 +28,11 @@ def start(message):
     
     bot.send_message(
         message.chat.id, 
-        f"Assalomu alaykum, hurmatli {message.from_user.first_name}! 😊\n\n**Testlar Rasmiy** botiga xush kelibsiz! Marhamat, bo'limni tanlang:",
+        f"Assalomu alaykum, hurmatli {message.from_user.first_name}! 😊\n\nMenyuni tanlang:",
         reply_markup=markup,
         parse_mode="Markdown"
     )
 
 @app.route('/')
 def index():
-    return "Bot serveri ishlamoqda!"
+    return "Bot ishlamoqda!"

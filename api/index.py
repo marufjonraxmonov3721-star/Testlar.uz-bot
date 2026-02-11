@@ -6,9 +6,9 @@ TOKEN = '8562563007:AAGmU2nPXKKQ3HhnymKzPve53WJGYXAp3y4'
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
-# Ilovalar manzillari
+# Ilovalar manzillari (Siz bergan oxirgi manzillar)
 TEST_APP_URL = 'https://davomad.vercel.app/' 
-TURNIR_APP_URL = 'https://testlar-uz-bot.vercel.app/' 
+TURNIR_APP_URL = 'https://telegram-bot-eight-rose.vercel.app/' 
 
 @app.route('/api/index', methods=['POST'])
 def webhook():
@@ -24,7 +24,7 @@ def webhook():
 def start(message):
     name = message.from_user.first_name
     
-    # 1. ESKI MENYUNI MAJBURIY O'CHIRISH
+    # 1. ESKI MENYUNI MAJBURIY O'CHIRISH (Bu muhim!)
     bot.send_message(message.chat.id, "Tizim yangilanmoqda...", reply_markup=telebot.types.ReplyKeyboardRemove())
     
     # 2. YANGI 2 TA TUGMALI MENYUNI YARATISH
@@ -46,4 +46,4 @@ def start(message):
 
 @app.route('/')
 def index():
-    return "Bot ishlamoqda!"
+    return "Bot ishlamoqda..."

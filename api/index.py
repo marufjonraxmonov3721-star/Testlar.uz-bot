@@ -24,10 +24,10 @@ def webhook():
 def start(message):
     name = message.from_user.first_name
     
-    # Keshni tozalash uchun avval eski menyuni o'chirib yuboramiz
-    bot.send_message(message.chat.id, "Menyu yangilanmoqda...", reply_markup=telebot.types.ReplyKeyboardRemove())
+    # 1. ESKI MENYUNI MAJBURIY O'CHIRISH
+    bot.send_message(message.chat.id, "Tizim yangilanmoqda...", reply_markup=telebot.types.ReplyKeyboardRemove())
     
-    # Yangi 2 ta tugmali menyu yaratish
+    # 2. YANGI 2 TA TUGMALI MENYUNI YARATISH
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     
     btn_test = telebot.types.KeyboardButton("📚 Testlar", web_app=telebot.types.WebAppInfo(url=TEST_APP_URL))
@@ -35,18 +35,15 @@ def start(message):
     
     markup.add(btn_test, btn_turnir)
     
-    # Yangi menyu bilan xabar yuborish
+    # 3. YANGI MENYU BILAN XABAR YUBORISH
     bot.send_message(
         message.chat.id, 
         f"Assalomu alaykum, hurmatli {name}! 😊\n\n"
-        "**Testlar Rasmiy** botining yangilangan menyusiga xush kelibsiz! \n\n"
-        "Quyidagi bo'limlardan birini tanlang: \n\n"
-        "📖 **Testlar** — bilimingizni oshirish uchun.\n"
-        "🏆 **Turnirlar** — sovrinli musobaqalarda qatnashish uchun.",
+        "Yangi menyuga xush kelibsiz! Marhamat, bo'limni tanlang:",
         reply_markup=markup,
         parse_mode="Markdown"
     )
 
 @app.route('/')
 def index():
-    return "Bot serveri ishlamoqda!"
+    return "Bot ishlamoqda!"

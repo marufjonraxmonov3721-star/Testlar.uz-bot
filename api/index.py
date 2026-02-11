@@ -7,8 +7,8 @@ bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
 # Ilovalarning manzillari
-TEST_APP_URL = 'https://davomad.vercel.app/'  # 1-ilova (Asosiy testlar)
-TURNIR_APP_URL = 'https://telegram-bot-eight-rose.vercel.app/' # 2-ilova (Turnirlar)
+TEST_APP_URL = 'https://davomad.vercel.app/' 
+TURNIR_APP_URL = 'https://telegram-bot-eight-rose.vercel.app/' 
 
 @app.route('/api/index', methods=['POST'])
 def webhook():
@@ -24,39 +24,33 @@ def webhook():
 def start(message):
     name = message.from_user.first_name
     
-    # 1. Klaviatura yaratish (row_width=2 yonma-yon chiqaradi)
+    # Klaviatura yaratish
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     
-    # 2. Testlar ilovasi tugmasi
+    # 1. Testlar tugmasi
     web_app_test = telebot.types.WebAppInfo(url=TEST_APP_URL)
-    item1 = telebot.types.KeyboardButton("📚 Testlar", web_app=web_app_test)
+    btn_test = telebot.types.KeyboardButton("📚 Testlar", web_app=web_app_test)
     
-    # 3. Turnirlar ilovasi tugmasi
+    # 2. Turnirlar tugmasi
     web_app_turnir = telebot.types.WebAppInfo(url=TURNIR_APP_URL)
-    item2 = telebot.types.KeyboardButton("🏆 Turnirlar", web_app=web_app_turnir)
+    btn_turnir = telebot.types.KeyboardButton("🏆 Turnirlar", web_app=web_app_turnir)
     
-    # 4. Tugmalarni qo'shish
-    markup.add(item1, item2)
+    # Tugmalarni qo'shish
+    markup.add(btn_test, btn_turnir)
     
     bot.send_message(
         message.chat.id, 
         f"Assalomu alaykum, hurmatli {name}! 😊\n\n"
         "**Testlar Rasmiy** botiga xush kelibsiz! \n\n"
-        "Kerakli bo'limni tanlang: \n"
-        "📖 **Testlar** — bilimingizni tekshirish uchun.\n"
-        "🏆 **Turnirlar** — sovrinli musobaqalarda qatnashish uchun.",
+        "Bilimingizni sinab ko'rish uchun **Testlar** bo'limiga, sovrinli o'yinlar uchun **Turnirlar** bo'limiga kiring! 👇",
         reply_markup=markup,
         parse_mode="Markdown"
     )
 
-# Startdan tashqari xabarlar uchun
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
-    bot.reply_to(message, "Iltimos, menyudagi tugmalardan foydalaning yoki /start buyrug'ini yuboring! 😊")
+    bot.reply_to(message, "Iltimos, test yoki turnirni boshlash uchun menyudagi tugmalardan foydalaning! 😊")
 
 @app.route('/')
 def index():
-    return "Bot Testlar va Turnirlar uchun tayyor!"
-
-if __name__ == "__main__":
-    app.run()
+    return "Bot ishlamoqda..."

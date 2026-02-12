@@ -1,73 +1,74 @@
-const { Telegraf, Markup } = require("telegraf");
-const axios = require("axios");
+// /api/index.js
 
-// ====== KONFIG ======
-const BOT_TOKEN = "7116176622:AAGodJadxD5bmEegTB4TsjDOEng8r6s3uY4";
+const { Telegraf, Markup } = require('telegraf');
+const axios = require('axios');
+
+// ================== KONFIGURATSIYA ==================
+const BOT_TOKEN = '7116176622:AAGodJadxD5bmEegTB4TsjDOEng8r6s3uY4';
 const ADMIN_ID = 7385372033;
 const FIREBASE_URL = "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com/promos";
-// ====================
 
 const bot = new Telegraf(BOT_TOKEN);
 
+// ================== BODY PARSER VERCEL ==================
+export const config = {
+  api: {
+    bodyParser: true, // JSON parse qilinadi
+  },
+};
 
+// ================== START ==================
+bot.start((ctx) => ctx.reply(
+  "Assalomu alaykum! To'lov chekini rasm ko'rinishida yuboring. 🚀"
+));
 
-// ================= START =================
-bot.start((ctx) => {
-  ctx.reply("Assalomu alaykum aka 🚀\nChek rasmini yuboring.");
-});
-
-
-
-// ================= PHOTO =================
-bot.on("photo", async (ctx) => {
+// ================== FOYDALANUVCHI RASM YUBORGANDA ==================
+bot.on('photo', async (ctx) => {
   try {
-    const photoId = ctx.message.photo.at(-1).file_id;
+    const photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
 
     await ctx.reply(
-      "Qaysi fan uchun to'lov?",
+      "Ushbu to'lov qaysi fan uchun? Iltimos tanlang:",
       Markup.inlineKeyboard([
-        [Markup.button.callback("Dinshunoslik", `sub_dinshunoslik_${photoId}`)],
-        [Markup.button.callback("Fizika", `sub_fizika_${photoId}`)],
-        [Markup.button.callback("Matematika", `sub_matematika_${photoId}`)],
-        [Markup.button.callback("AKT", `sub_akt_${photoId}`)],
-        [Markup.button.callback("Yo'nalish", `sub_yonalish_${photoId}`)],
+        [Markup.button.callback("Dinshunoslik", `select_${photoId}_dinshunoslik`)],
+        [Markup.button.callback("Fizika", `select_${photoId}_fizika`)],
+        [Markup.button.callback("Matematika", `select_${photoId}_oliy_matematika`)],
+        [Markup.button.callback("AKT", `select_${photoId}_texnik_tizimlarda_akt`)],
+        [Markup.button.callback("Yo'nalish", `select_${photoId}_yonalishga_kirish`)]
       ])
     );
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.error("Rasm qabul qilishda xato:", err);
   }
 });
 
-
-
-// ================= FAN TANLASH =================
-bot.action(/sub_(.+)_(.+)/, async (ctx) => {
-  const subject = ctx.match[1];
-  const photoId = ctx.match[2];
+// ================== FOYDALANUVCHI FANNI TANLAGANDA ==================
+bot.action(/^select_(.+)_(.+)$/, async (ctx) => {
+  const photoId = ctx.match[1];
+  const subject = ctx.match[2];
   const userId = ctx.from.id;
 
-  await ctx.editMessageText("Admin tasdiqlashini kuting ⏳");
+  try {
+    await ctx.editMessageText(
+      `Siz "${subject.replace(/_/g, ' ').toUpperCase()}" fanini tanladingiz. Admin tasdiqlashini kuting... ⏳`
+    );
 
-  await ctx.telegram.sendPhoto(ADMIN_ID, photoId, {
-    caption:
-      `🆕 YANGI TO'LOV\n` +
-      `👤 ${ctx.from.first_name}\n` +
-      `📚 ${subject}\n` +
-      `🆔 ${userId}`,
-    ...Markup.inlineKeyboard([
-      [
-        Markup.button.callback("Tasdiqlash ✅", `ok_${userId}_${subject}`),
-        Markup.button.callback("Rad ❌", `no_${userId}`),
-      ],
-    ]),
-  });
+    await ctx.telegram.sendPhoto(ADMIN_ID, photoId, {
+      caption: `🔔 YANGI TO'LOV KELDI!\n👤 Kimdan: ${ctx.from.first_name}\n📚 Fan: ${subject.replace(/_/g, ' ').toUpperCase()}\n🆔 ID: ${userId}`,
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("Tasdiqlash ✅", `approve_${userId}_${subject}`)],
+        [Markup.button.callback("Rad etish ❌", `reject_${userId}`)]
+      ])
+    });
+
+  } catch (err) {
+    console.error("Fan tanlashda xato:", err);
+  }
 });
 
-
-
-// ================= TASDIQLASH =================
-bot.action(/ok_(\d+)_(.+)/, async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+// ================== ADMIN TASDIQLASH ==================
+bot.action(/^approve_(\d+)_(.+)$/, async (ctx) => {
+  if (ctx.from.id != ADMIN_ID) return ctx.answerCbQuery("Sizda ruxsat yo'q! ❌");
 
   const userId = ctx.match[1];
   const subject = ctx.match[2];
@@ -76,41 +77,55 @@ bot.action(/ok_(\d+)_(.+)/, async (ctx) => {
     const res = await axios.get(`${FIREBASE_URL}/${subject}.json`);
     const promos = res.data;
 
-    if (!promos) return ctx.reply("Kod topilmadi ❌");
+    if (!promos) return ctx.reply(`❌ "${subject}" uchun kodlar bazada yo'q!`);
 
-    const code = Object.keys(promos).find((k) => promos[k] === false);
+    const availableCode = Object.keys(promos).find(code => promos[code] === false);
 
-    if (!code) return ctx.reply("Bo'sh kod qolmagan ❌");
+    if (!availableCode) {
+      return ctx.reply(`❌ "${subject}" uchun bo'sh kod qolmagan!`);
+    }
 
-    await axios.patch(`${FIREBASE_URL}/${subject}.json`, { [code]: true });
+    await axios.patch(`${FIREBASE_URL}/${subject}.json`, { [availableCode]: true });
 
-    await ctx.telegram.sendMessage(
-      userId,
-      `🎉 Tasdiqlandi!\n📚 ${subject}\n🔑 Kod: ${code}`
+    await ctx.telegram.sendMessage(userId,
+      `🎉 To'lovingiz tasdiqlandi!\n📚 Fan: ${subject.replace(/_/g, ' ').toUpperCase()}\n🔑 Promo-kod: ${availableCode}\n\nUshbu kodni ilovada ishlating!`
     );
 
-    await ctx.editMessageCaption("✅ Yuborildi");
-  } catch (e) {
-    console.log(e);
+    await ctx.editMessageCaption(
+      `✅ TASDIQLANDI\n📚 Fan: ${subject.replace(/_/g, ' ')}\n🔑 Kod: ${availableCode}\n👤 Foydalanuvchi: ID ${userId}`
+    );
+
+  } catch (err) {
+    console.error("Admin tasdiqlashda xato:", err);
+    await ctx.reply("❌ Bazaga ulanishda xatolik yuz berdi.");
   }
 });
 
+// ================== ADMIN RAD ETISH ==================
+bot.action(/^reject_(\d+)$/, async (ctx) => {
+  if (ctx.from.id != ADMIN_ID) return ctx.answerCbQuery("Ruxsat yo'q!");
 
+  const userId = ctx.match[1];
 
-// ================= RAD =================
-bot.action(/no_(\d+)/, async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
-
-  await ctx.telegram.sendMessage(ctx.match[1], "❌ Chek rad etildi");
-  await ctx.editMessageCaption("❌ Rad etildi");
+  try {
+    await ctx.telegram.sendMessage(userId, "❌ Kechirasiz, yuborgan chekingiz tasdiqlanmadi.");
+    await ctx.editMessageCaption("❌ Rad etildi.");
+  } catch (err) {
+    console.error("Admin rad etishda xato:", err);
+  }
 });
 
-
-
-// ================= VERCEL WEBHOOK =================
+// ================== VERCEL SERVERLESS ==================
 module.exports = async (req, res) => {
-  if (req.method === "POST") {
-    await bot.handleUpdate(req.body);
+  if (req.method === 'POST') {
+    try {
+      await bot.handleUpdate(req.body);
+      return res.status(200).send('OK');
+    } catch (err) {
+      console.error("Bot handleUpdate xato:", err);
+      return res.status(500).send('Error');
+    }
+  } else {
+    return res.status(200).send("Bot uyg‘oq va ishlamoqda... 🚀");
   }
-  res.status(200).send("ok");
 };

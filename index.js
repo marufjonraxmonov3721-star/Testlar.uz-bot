@@ -1,15 +1,17 @@
 const { Telegraf, Markup } = require('telegraf');
 const axios = require('axios');
 
+// KONFIGURATSIYA
 const BOT_TOKEN = '7116176622:AAHc0S8SdaJXU6T4tJsXCaMUldZaiTOAOZM';
 const ADMIN_ID = 7385372033;
 const FIREBASE_URL = "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com/promos";
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// Bot ishga tushganini tekshirish uchun oddiy komanda
-bot.start((ctx) => ctx.reply("Assalomu alaykum! Bot uyg'oq va chek kutmoqda. 🚀"));
+// 1. BOTNI BOSHLASH
+bot.start((ctx) => ctx.reply("Assalomu alaykum! Bot ishga tushdi. To'lov chekini rasm ko'rinishida yuboring. 🚀"));
 
+// 2. FOYDALANUVCHI RASM YUBORGANDA
 bot.on('photo', async (ctx) => {
     try {
         const photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
@@ -24,10 +26,11 @@ bot.on('photo', async (ctx) => {
             [Markup.button.callback("Yo'nalish", `select_${photoId}_yo'nalishga kirish`)]
         ]));
     } catch (err) {
-        console.error("Rasm qabul qilishda xato:", err);
+        console.error(err);
     }
 });
 
+// 3. FOYDALANUVCHI FANNI TANLAGANDA
 bot.action(/select_(.+)_(.+)/, async (ctx) => {
     const photoId = ctx.match[1];
     const subject = ctx.match[2];
@@ -44,8 +47,9 @@ bot.action(/select_(.+)_(.+)/, async (ctx) => {
     });
 });
 
+// 4. ADMIN TASDIQLASHNI BOSGANDA
 bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
-    if (ctx.from.id !== ADMIN_ID) return ctx.answerCbQuery("Ruxsat yo'q!");
+    if (ctx.from.id != ADMIN_ID) return ctx.answerCbQuery("Ruxsat yo'q!");
     const userId = ctx.match[1];
     const subject = ctx.match[2];
 
@@ -68,23 +72,23 @@ bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
     }
 });
 
+// 5. RAD ETISH
 bot.action(/reject_(\d+)/, async (ctx) => {
-    if (ctx.from.id !== ADMIN_ID) return ctx.answerCbQuery("Ruxsat yo'q!");
+    if (ctx.from.id != ADMIN_ID) return ctx.answerCbQuery("Ruxsat yo'q!");
     await ctx.telegram.sendMessage(ctx.match[1], "❌ Chekingiz tasdiqlanmadi.");
     await ctx.editMessageCaption("❌ Rad etildi.");
 });
 
 // VERCEL INTEGRATSIYASI
 module.exports = async (req, res) => {
-    try {
-        if (req.method === 'POST') {
+    if (req.method === 'POST') {
+        try {
             await bot.handleUpdate(req.body);
             res.status(200).send('OK');
-        } else {
-            res.status(200).send('Bot ishlamoqda... 🚀');
+        } catch (err) {
+            res.status(500).send('Error');
         }
-    } catch (err) {
-        console.error("Vercel Error:", err);
-        res.status(500).send('Xatolik yuz berdi');
+    } else {
+        res.status(200).send('Bot uyg\'oq va ishlamoqda... 🚀');
     }
 };

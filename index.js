@@ -1,7 +1,7 @@
 const { Telegraf, Markup } = require('telegraf');
 const axios = require('axios');
 
-// YANGI KONFIGURATSIYA
+// KONFIGURATSIYA
 const BOT_TOKEN = '7116176622:AAGodJadxD5bmEegTB4TsjDOEng8r6s3uY4';
 const ADMIN_ID = 7385372033;
 const FIREBASE_URL = "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com/promos";
@@ -9,7 +9,7 @@ const FIREBASE_URL = "https://gen-lang-client-0228947349-default-rtdb.firebaseio
 const bot = new Telegraf(BOT_TOKEN);
 
 // 1. BOTNI BOSHLASH
-bot.start((ctx) => ctx.reply("Assalomu alaykum! Yangi token bilan bot ishga tushdi. To'lov chekini rasm ko'rinishida yuboring. 🚀"));
+bot.start((ctx) => ctx.reply("Assalomu alaykum! To'lov chekini rasm ko'rinishida yuboring. Admin tasdiqlagach promo-kod olasiz. 🚀"));
 
 // 2. FOYDALANUVCHI RASM YUBORGANDA
 bot.on('photo', async (ctx) => {
@@ -25,7 +25,7 @@ bot.on('photo', async (ctx) => {
             [Markup.button.callback("Yo'nalish", `select_${photoId}_yo'nalishga kirish`)]
         ]));
     } catch (err) {
-        console.error("Rasm qabul qilishda xato:", err);
+        console.error("Xato:", err);
     }
 });
 
@@ -38,7 +38,7 @@ bot.action(/select_(.+)_(.+)/, async (ctx) => {
     await ctx.editMessageText(`Siz "${subject.toUpperCase()}" fanini tanladingiz. Admin tasdiqlashini kuting... ⏳`);
 
     await ctx.telegram.sendPhoto(ADMIN_ID, photoId, {
-        caption: `🔔 YANGI TO'LOV KELDI!\n👤 Kimdan: ${ctx.from.first_name}\n📚 Fan: ${subject.toUpperCase()}\n🆔 ID: ${userId}`,
+        caption: `🔔 YANGI TO'LOV!\n👤 Kimdan: ${ctx.from.first_name}\n📚 Fan: ${subject.toUpperCase()}\n🆔 ID: ${userId}`,
         ...Markup.inlineKeyboard([
             [Markup.button.callback("Tasdiqlash ✅", `approve_${userId}_${subject}`)],
             [Markup.button.callback("Rad etish ❌", `reject_${userId}`)]
@@ -48,8 +48,7 @@ bot.action(/select_(.+)_(.+)/, async (ctx) => {
 
 // 4. ADMIN TASDIQLASHNI BOSGANDA
 bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
-    if (ctx.from.id != ADMIN_ID) return ctx.answerCbQuery("Sizda ruxsat yo'q! ❌");
-
+    if (ctx.from.id != ADMIN_ID) return ctx.answerCbQuery("Ruxsat yo'q!");
     const userId = ctx.match[1];
     const subject = ctx.match[2];
 
@@ -61,8 +60,8 @@ bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
             const availableCode = Object.keys(promos).find(code => promos[code] === false);
             if (availableCode) {
                 await axios.patch(`${FIREBASE_URL}/${subject}.json`, { [availableCode]: true });
-                await ctx.telegram.sendMessage(userId, `🎉 To'lovingiz tasdiqlandi!\n📚 Fan: ${subject.toUpperCase()}\n🔑 Promo-kod: ${availableCode}\n\nUshbu kodni ilovada ishlating!`);
-                await ctx.editMessageCaption(`✅ TASDIQLANDI\n📚 Fan: ${subject}\n🔑 Kod: ${availableCode}\n👤 Foydalanuvchi: ID ${userId}`);
+                await ctx.telegram.sendMessage(userId, `🎉 To'lovingiz tasdiqlandi!\n📚 Fan: ${subject.toUpperCase()}\n🔑 Promo-kod: ${availableCode}`);
+                await ctx.editMessageCaption(`✅ TASDIQLANDI\n📚 Fan: ${subject}\n🔑 Kod: ${availableCode}`);
             } else {
                 await ctx.reply(`❌ "${subject}" uchun bazada bo'sh kod qolmagan!`);
             }
@@ -79,7 +78,7 @@ bot.action(/reject_(\d+)/, async (ctx) => {
     await ctx.editMessageCaption("❌ Rad etildi.");
 });
 
-// 6. VERCEL INTEGRATSIYASI
+// 6. VERCEL VA CRON-JOB INTEGRATSIYASI
 module.exports = async (req, res) => {
     if (req.method === 'POST') {
         try {
@@ -89,6 +88,7 @@ module.exports = async (req, res) => {
             res.status(500).send('Error');
         }
     } else {
+        // Cron-job.org shu yerga so'rov yuborganida Vercel uyg'onadi
         res.status(200).send('Bot uyg\'oq va ishlamoqda... 🚀');
     }
 };

@@ -1,7 +1,6 @@
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
-// Firebase sozlamalari
 if (!admin.apps.length) {
     admin.initializeApp({
         databaseURL: "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com"
@@ -11,78 +10,69 @@ const db = admin.database();
 
 const BOT_TOKEN = '7116176622:AAHc0S8SdaJXU6T4tJsXCaMUldZaiTOAOZM';
 const ADMIN_ID = 7385372033; 
-
 const bot = new Telegraf(BOT_TOKEN);
 
-bot.start((ctx) => {
-    return ctx.reply(`Salom ${ctx.from.first_name}! 🚀\n\nFanni ochish uchun ilovadan "Chekni Botga yuborish" tugmasini bosing va rasmni yuboring.`);
-});
+// Har bir fan uchun prefixlar
+const subjectPrefixes = {
+    "dinshunoslik": "DIN",
+    "fizika": "FIZ",
+    "oliy matematika": "MAT",
+    "texnik_tizimlarda_akt": "AKT",
+    "yo'nalishga kirish": "YON"
+};
+
+bot.start((ctx) => ctx.reply("Assalomu alaykum! To'lov chekini (rasm) yuboring."));
 
 bot.on('photo', async (ctx) => {
-    const caption = ctx.message.caption || "";
-    // Ilovadan kelgan xabardan fan nomini ajratib olish: "FAN_NOMI"
-    const subjectMatch = caption.match(/"([^"]+)"/);
-    const subject = subjectMatch ? subjectMatch[1] : "Noma'lum Fan";
+    const photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+    const userId = ctx.from.id;
 
-    try {
-        await ctx.telegram.sendPhoto(ADMIN_ID, ctx.message.photo[ctx.message.photo.length - 1].file_id, {
-            caption: `🔔 YANGI TO'LOV!\n👤 Kimdan: ${ctx.from.first_name}\n📚 Fan: ${subject}\n🆔 ID: ${ctx.from.id}`,
-            ...Markup.inlineKeyboard([
-                [Markup.button.callback('Tasdiqlash ✅', `approve_${ctx.from.id}_${subject}`)]
-            ])
-        });
-        return ctx.reply(`Chekingiz qabul qilindi! ✅\nAdmin "${subject}" fani uchun to'lovni tasdiqlasa, sizga maxsus promo-kod yuboriladi.`);
-    } catch (e) {
-        console.error("Xabarni yuborishda xatolik:", e);
-    }
+    // Adminga (Sizga) chekni tanlash tugmalari bilan yuboramiz
+    await ctx.telegram.sendPhoto(ADMIN_ID, photoId, {
+        caption: `🔔 YANGI TO'LOV KELDI!\n👤 Kimdan: ${ctx.from.first_name}\n🆔 ID: ${userId}\n\nIltimos, fanni tanlang va tasdiqlang:`,
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback("Dinshunoslik", `approve_${userId}_dinshunoslik`)],
+            [Markup.button.callback("Fizika", `approve_${userId}_fizika`)],
+            [Markup.button.callback("Oliy matematika", `approve_${userId}_oliy matematika`)],
+            [Markup.button.callback("AKT", `approve_${userId}_texnik_tizimlarda_akt`)],
+            [Markup.button.callback("Yo'nalishga kirish", `approve_${userId}_yo'nalishga kirish`)]
+        ])
+    });
+
+    return ctx.reply("Chekingiz qabul qilindi! Admin tasdiqlashi bilan promo-kod olasiz. ✅");
 });
 
 bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
     const userId = ctx.match[1];
-    const subject = ctx.match[2]; // Masalan: fizika
+    const subject = ctx.match[2];
 
     try {
-        // Firebase-dan ushbu fan uchun kodlarni olish
         const promoRef = db.ref(`promos/${subject}`);
         const snapshot = await promoRef.once('value');
 
         if (snapshot.exists()) {
             const allPromos = snapshot.val();
-            // Birinchi ishlatilmagan (false) kodni topish
             const availableCode = Object.keys(allPromos).find(code => allPromos[code] === false);
 
             if (availableCode) {
-                // 1. Bazada kodni ishlatilgan (true) deb belgilash
                 await promoRef.update({ [availableCode]: true });
-
-                // 2. Foydalanuvchiga kodni yuborish
-                await ctx.telegram.sendMessage(userId, `🎉 To'lovingiz tasdiqlandi!\n\n📚 Fan: ${subject.toUpperCase()}\n🔑 Promo-kod: ${availableCode}\n\n⚠️ Bu kod faqat bir marta ishlaydi!`);
-                
-                // 3. Adminga xabarni yangilash
-                await ctx.editMessageCaption(`✅ TASDIQLANDI\n👤 ID: ${userId}\n📚 Fan: ${subject}\n🔑 Kod: ${availableCode}`);
-                return ctx.answerCbQuery("Kod foydalanuvchiga yuborildi! ✅");
+                await ctx.telegram.sendMessage(userId, `🎉 To'lovingiz tasdiqlandi!\n📚 Fan: ${subject.toUpperCase()}\n🔑 Promo-kod: ${availableCode}\n\nUshbu kodni ilovaga kiriting!`);
+                await ctx.editMessageCaption(`✅ TASDIQLANDI\n👤 Kimdan: ID ${userId}\n📚 Fan: ${subject}\n🔑 Kod: ${availableCode}`);
             } else {
-                await ctx.reply(`❌ Xatolik: "${subject}" fani uchun bazada bo'sh kod qolmagan! Admin paneldan kod qo'shing.`);
-                return ctx.answerCbQuery("Bazada kod yo'q!");
+                await ctx.answerCbQuery("❌ Bazada bo'sh kod qolmagan!", { show_alert: true });
             }
         } else {
-            await ctx.reply(`❌ Xatolik: Bazada "${subject}" degan bo'lim topilmadi.`);
-            return ctx.answerCbQuery("Bo'lim topilmadi!");
+            await ctx.answerCbQuery("❌ Bazada bu fan topilmadi!", { show_alert: true });
         }
     } catch (e) {
-        console.error("Action xatoligi:", e);
-        return ctx.answerCbQuery("Xatolik yuz berdi! ❌");
+        await ctx.answerCbQuery("❌ Xatolik yuz berdi!");
     }
 });
 
 module.exports = async (req, res) => {
     if (req.method === 'POST') {
-        try {
-            await bot.handleUpdate(req.body);
-            res.status(200).send('OK');
-        } catch (err) {
-            res.status(500).send('Internal Error');
-        }
+        await bot.handleUpdate(req.body);
+        res.status(200).send('OK');
     } else {
         res.status(200).send('Bot ishlamoqda...');
     }

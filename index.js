@@ -1,27 +1,30 @@
-const axios = require('axios');
+const { Telegraf, Markup } = require('telegraf');
 
 const BOT_TOKEN = '7116176622:AAGodJadxD5bmEegTB4TsjDOEng8r6s3uY4';
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const APP_LINK = 'https://t.me/Yakuniyga_tayyorlovchi_bot/start';
+
+const bot = new Telegraf(BOT_TOKEN);
+
+bot.start((ctx) => {
+    return ctx.replyWithMarkdown(
+        `👋 **Assalomu alaykum, ${ctx.from.first_name}!**\n\n` +
+        `📚 **Yakuniy Test** ilovasiga xush kelibsiz.\n\n` +
+        `Testlarni yechishni boshlash uchun pastdagi tugmani bosing:`,
+        Markup.inlineKeyboard([
+            [Markup.button.url("🚀 Ilovani ochish", APP_LINK)]
+        ])
+    );
+});
 
 module.exports = async (req, res) => {
     if (req.method === 'POST') {
-        const { message } = req.body;
-
-        if (message && message.text === '/start') {
-            const chatId = message.chat.id;
-            const text = "👋 Assalomu alaykum! Bot noldan tozalandi va hozir 100% ishlamoqda. \n\n🚀 Ilovani ochish: https://t.me/Yakuniyga_tayyorlovchi_bot/start";
-
-            try {
-                await axios.post(`${TELEGRAM_API}/sendMessage`, {
-                    chat_id: chatId,
-                    text: text
-                });
-            } catch (e) {
-                console.error("Xabar yuborishda xato:", e);
-            }
+        try {
+            await bot.handleUpdate(req.body);
+            res.status(200).send('OK');
+        } catch (err) {
+            res.status(500).send('Error');
         }
-        return res.status(200).send('OK');
     } else {
-        return res.status(200).send('Bot uyg\'oq va sizni kutmoqda... 🚀');
+        res.status(200).send('Bot noldan tozalandi va ishlamoqda... 🚀');
     }
 };

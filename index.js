@@ -1,66 +1,46 @@
 const { Telegraf, Markup } = require('telegraf');
-
-const BOT_TOKEN = '7116176622:AAHc0S8SdaJXU6T4tJsXCaMUldZaiTOAOZM';
+const bot = new Telegraf('7116176622:AAHc0S8SdaJXU6T4tJsXCaMUldZaiTOAOZM');
 const ADMIN_ID = 7385372033; 
 
-const bot = new Telegraf(BOT_TOKEN);
-
-// Tasodifiy promo-kod yaratish funksiyasi
-function generatePromo() {
-    return 'YK' + Math.floor(1000 + Math.random() * 9000); // Masalan: YK5432
+// Promo-kod yaratish: Fanning birinchi 3 ta harfini qo'shamiz
+function generatePromo(subject) {
+    const subPrefix = subject.substring(0, 3).toUpperCase();
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `${subPrefix}_YK${randomNum}`; // Masalan: TAR_YK1234
 }
 
-bot.start((ctx) => {
-    ctx.reply(`Salom ${ctx.from.first_name}! 🚀\n\nFanni ochish uchun to'lov qiling va chekni (rasmni) shu yerga yuboring. Tasdiqlangach, bot sizga avtomatik promo-kod beradi.`);
-});
-
-// Foydalanuvchi rasm yuborganda
 bot.on('photo', async (ctx) => {
-    const userId = ctx.from.id;
-    const firstName = ctx.from.first_name;
+    // Xabar matnidan qaysi fan ekanligini ajratib olamiz
+    const caption = ctx.message.caption || "";
+    const subject = caption.split('"')[1] || "FAN"; 
 
-    try {
-        // Adminga (Sizga) xabar va tugma yuborish
-        await ctx.telegram.sendPhoto(ADMIN_ID, ctx.message.photo[ctx.message.photo.length - 1].file_id, {
-            caption: `🔔 YANGI CHEK!\n👤 Kimdan: ${firstName}\n🆔 User ID: ${userId}`,
-            ...Markup.inlineKeyboard([
-                [Markup.button.callback('Tasdiqlash ✅', `approve_${userId}`)]
-            ])
-        });
-
-        ctx.reply("Chekingiz qabul qilindi! Admin tekshirgandan so'ng kod keladi. ✅");
-    } catch (e) {
-        ctx.reply("Xatolik! Qaytadan urinib ko'ring.");
-    }
+    await ctx.telegram.sendPhoto(ADMIN_ID, ctx.message.photo[ctx.message.photo.length - 1].file_id, {
+        caption: `🔔 YANGI CHEK!\n👤 Kimdan: ${ctx.from.first_name}\n📚 Fan: ${subject}\n🆔 ID: ${ctx.from.id}`,
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback('Tasdiqlash ✅', `approve_${ctx.from.id}_${subject}`)]
+        ])
+    });
+    ctx.reply("Chek qabul qilindi! Admin tasdiqlasa, ushbu fan uchun kod keladi. ✅");
 });
 
-// Tugma bosilganda (Admin tasdiqlaganda)
-bot.action(/approve_(\d+)/, async (ctx) => {
+bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
     const userId = ctx.match[1];
-    const newPromo = generatePromo();
+    const subject = ctx.match[2];
+    const newPromo = generatePromo(subject);
 
     try {
-        // 1. Foydalanuvchiga promo-kodni yuborish
-        await ctx.telegram.sendMessage(userId, `Tabriklaymiz! To'lovingiz tasdiqlandi. 🎉\n\nSizning promo-kodingiz: ${newPromo}\n\nUshbu kodni ilovaga kiriting va fanni oching!`);
-        
-        // 2. Adminga xabarni yangilash
-        await ctx.editMessageCaption(`✅ TASDIQLANDI\n👤 ID: ${userId}\n🔑 Kod: ${newPromo}`);
-        
-        await ctx.answerCbQuery("Foydalanuvchiga kod yuborildi! ✅");
+        await ctx.telegram.sendMessage(userId, `✅ To'lov tasdiqlandi!\n\n📚 Fan: ${subject}\n🔑 Promo-kod: ${newPromo}\n\n⚠️ Diqqat: Bu kod faqat ${subject} fani uchun ishlaydi!`);
+        await ctx.editMessageCaption(`✅ TASDIQLANDI\n📚 Fan: ${subject}\n🔑 Kod: ${newPromo}`);
     } catch (e) {
-        await ctx.answerCbQuery("Xatolik yuz berdi! ❌");
+        console.error(e);
     }
 });
 
 module.exports = async (req, res) => {
     if (req.method === 'POST') {
-        try {
-            await bot.handleUpdate(req.body);
-            res.status(200).send('OK');
-        } catch (err) {
-            res.status(500).send('Error');
-        }
+        await bot.handleUpdate(req.body);
+        res.status(200).send('OK');
     } else {
-        res.status(200).send('Bot xizmati yoqilgan...');
+        res.status(200).send('Bot ishlamoqda...');
     }
 };

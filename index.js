@@ -5,16 +5,16 @@ const ADMIN_ID = 7385372033;
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// Har bir fan uchun maxsus kod yaratish funksiyasi
+// Bazadagi fanlarga qarab prefix belgilash
 function generatePromo(subject) {
     let prefix = "FAN";
     const sub = subject.toLowerCase();
 
-    // Bazangizdagi fanlarga qarab prefix belgilaymiz
+    // Firebase bazangizdagi nomlar bilan tekshirish
     if (sub.includes("dinshunoslik")) prefix = "DIN";
     else if (sub.includes("fizika")) prefix = "FIZ";
     else if (sub.includes("oliy matematika")) prefix = "MAT";
-    else if (sub.includes("texnik_tizimlarda_akt")) prefix = "AKT";
+    else if (sub.includes("texnik_tizimlarda_akt") || sub.includes("texnik tizimlarda akt")) prefix = "AKT";
     else if (sub.includes("yo'nalishga kirish")) prefix = "YON";
 
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -22,11 +22,13 @@ function generatePromo(subject) {
 }
 
 bot.start((ctx) => {
-    return ctx.reply(`Salom ${ctx.from.first_name}! 🚀\n\nFanni ochish uchun ilovadagi "Chekni Botga yuborish" tugmasini bosing.`);
+    return ctx.reply(`Salom ${ctx.from.first_name}! 🚀\n\nFanni ochish uchun ilovadan "Chekni Botga yuborish" tugmasini bosing.`);
 });
 
 bot.on('photo', async (ctx) => {
     const caption = ctx.message.caption || "";
+    
+    // Qo'shtirnoq ichidagi fan nomini ajratib olish (Regex orqali)
     const subjectMatch = caption.match(/"([^"]+)"/);
     const subject = subjectMatch ? subjectMatch[1] : "Noma'lum Fan";
 
@@ -39,7 +41,7 @@ bot.on('photo', async (ctx) => {
         });
         return ctx.reply(`Chekingiz qabul qilindi! ✅\nAdmin "${subject}" fani uchun to'lovni tasdiqlasa, sizga maxsus promo-kod yuboriladi.`);
     } catch (e) {
-        console.error(e);
+        console.error("Xatolik:", e);
     }
 });
 
@@ -53,7 +55,7 @@ bot.action(/approve_(\d+)_(.+)/, async (ctx) => {
         await ctx.editMessageCaption(`✅ TASDIQLANDI\n👤 ID: ${userId}\n📚 Fan: ${subject}\n🔑 Kod: ${newPromo}`);
         return ctx.answerCbQuery("Kod foydalanuvchiga yuborildi!");
     } catch (e) {
-        console.error(e);
+        console.error("Action xatoligi:", e);
         return ctx.answerCbQuery("Xatolik yuz berdi!");
     }
 });

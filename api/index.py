@@ -1,38 +1,47 @@
-from flask import Flask, request
-import telebot
+const { Telegraf } = require('telegraf');
 
-TOKEN = '8562563007:AAGmU2nPXKKQ3HhnymKzPve53WJGYXAp3y4' 
-bot = telebot.TeleBot(TOKEN, threaded=False)
-app = Flask(__name__)
+// Siz bergan ma'lumotlar asosida
+const BOT_TOKEN = '7116176622:AAHc0S8SdaJXU6T4tJsXCaMUldZaiTOAOZM';
+const ADMIN_ID = '7385372033'; 
 
-# To'g'ri linklar
-TEST_URL = 'https://davomad.vercel.app/'
-TURNIR_URL = 'https://telegram-bot-eight-rose.vercel.app/'
+const bot = new Telegraf(BOT_TOKEN);
 
-@app.route('/api/index', methods=['POST'])
-def webhook():
-    if request.headers.get('content-type') == 'application/json':
-        json_string = request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return ''
-    return 'OK', 200
+// Bot ishga tushganda ko'rinadigan xabar
+bot.start((ctx) => {
+    ctx.reply(`Salom ${ctx.from.first_name}!\n\n"Yakuniyga tayyorlovchi" ilovasining rasmiy botiga xush kelibsiz.\n\nFanni ochish uchun 10 000 so'm to'lov qiling va chekni (rasmni) shu yerga yuboring. To'lov tasdiqlangach, sizga promo-kod taqdim etiladi.`);
+});
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    # MENYUNI YANGILASH
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn1 = telebot.types.KeyboardButton("📚 Testlar", web_app=telebot.types.WebAppInfo(url=TEST_URL))
-    btn2 = telebot.types.KeyboardButton("🏆 Turnirlar", web_app=telebot.types.WebAppInfo(url=TURNIR_URL))
-    markup.add(btn1, btn2)
-    
-    bot.send_message(
-        message.chat.id, 
-        f"Assalomu alaykum, hurmatli {message.from_user.first_name}! 😊\n\nMenyuni tanlang:",
-        reply_markup=markup,
-        parse_mode="Markdown"
-    )
+// Foydalanuvchi rasm (chek) yuborganida
+bot.on('photo', async (ctx) => {
+    const userId = ctx.from.id;
+    const userName = ctx.from.username ? `@${ctx.from.username}` : "Username yo'q";
+    const firstName = ctx.from.first_name;
 
-@app.route('/')
-def index():
-    return "Bot ishlamoqda!"
+    try {
+        // Adminga (Sizga) chekni yuborish
+        await ctx.telegram.sendPhoto(ADMIN_ID, ctx.message.photo[ctx.message.photo.length - 1].file_id, {
+            caption: `🔔 YANGI TO'LOV CHEKI!\n\n👤 Kimdan: ${firstName} (${userName})\n🆔 User ID: ${userId}\n\nIltimos, chekni tekshiring va foydalanuvchiga promo-kod yuboring.`
+        });
+
+        // Foydalanuvchiga javob qaytarish
+        ctx.reply("Chekingiz qabul qilindi! ✅\nAdmin tez orada uni tekshiradi va sizga promo-kodni shu yerga yuboradi.");
+    } catch (error) {
+        console.error("Xatolik yuz berdi:", error);
+        ctx.reply("Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.");
+    }
+});
+
+// Botni Vercel-da ishlashi uchun eksport qilish
+module.exports = async (req, res) => {
+    if (req.method === 'POST') {
+        try {
+            await bot.handleUpdate(req.body);
+            res.status(200).send('OK');
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Internal Server Error');
+        }
+    } else {
+        res.status(200).send('Bot ishlamoqda...');
+    }
+};

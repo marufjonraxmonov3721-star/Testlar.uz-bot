@@ -6,3 +6,10 @@
   "routes": [
     { "src": "/(.*)", "dest": "index.js" }
   ],
+  "crons": [
+    {
+      "path": "/",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

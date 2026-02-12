@@ -5,11 +5,20 @@ const ADMIN_ID = 7385372033;
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// Har bir fan uchun maxsus bir martalik kod yaratish
+// Har bir fan uchun maxsus kod yaratish funksiyasi
 function generatePromo(subject) {
-    const subPrefix = subject.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+    let prefix = "FAN";
+    const sub = subject.toLowerCase();
+
+    // Bazangizdagi fanlarga qarab prefix belgilaymiz
+    if (sub.includes("dinshunoslik")) prefix = "DIN";
+    else if (sub.includes("fizika")) prefix = "FIZ";
+    else if (sub.includes("oliy matematika")) prefix = "MAT";
+    else if (sub.includes("texnik_tizimlarda_akt")) prefix = "AKT";
+    else if (sub.includes("yo'nalishga kirish")) prefix = "YON";
+
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    return `${subPrefix}_YK${randomNum}`; 
+    return `${prefix}_YK${randomNum}`; 
 }
 
 bot.start((ctx) => {
@@ -18,7 +27,6 @@ bot.start((ctx) => {
 
 bot.on('photo', async (ctx) => {
     const caption = ctx.message.caption || "";
-    // Ilovadan yuborilgan matndagi qo'shtirnoq ichidagi fan nomini ajratib olish
     const subjectMatch = caption.match(/"([^"]+)"/);
     const subject = subjectMatch ? subjectMatch[1] : "Noma'lum Fan";
 

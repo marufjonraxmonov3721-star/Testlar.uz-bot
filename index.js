@@ -1,71 +1,67 @@
 const { Telegraf, Markup } = require('telegraf');
-const axios = require('axios');
 
 const BOT_TOKEN = '7116176622:AAHyywSzvoxdeoC4OzxZs_jRDqQdzVvOyDI';
-const ADMIN_ID = 7385372033;
-const FIREBASE_URL = "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com/promos";
-
 const bot = new Telegraf(BOT_TOKEN);
 
-bot.start((ctx) => ctx.reply("Assalomu alaykum! To‘lov chekini rasm ko‘rinishida yuboring. 🚀"));
+// 1. ASOSIY MENYU
+const mainKeyboard = Markup.keyboard([
+    ['📚 Ilova haqida ma\'lumot', '🚀 Ilovani ochish'],
+    ['💳 To\'lov qilish tartibi', '🔑 Promo-kod olish'],
+    ['👨‍💻 Admin bilan bog\'lanish']
+]).resize();
 
-// RASM KELGANDA ISHLAYDIGAN ASOSIY QISM
-bot.on('photo', async (ctx) => {
-    try {
-        const photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
-        await ctx.reply("Ushbu to‘lov qaysi fan uchun?", 
-            Markup.inlineKeyboard([
-                [Markup.button.callback("Dinshunoslik", `sel_${photoId}_dinshunoslik`)],
-                [Markup.button.callback("Fizika", `sel_${photoId}_fizika`)],
-                [Markup.button.callback("Matematika", `sel_${photoId}_oliy matematika`)],
-                [Markup.button.callback("AKT", `sel_${photoId}_texnik_tizimlarda_akt`)],
-                [Markup.button.callback("Yo'nalish", `sel_${photoId}_yo'nalishga kirish`)]
-            ])
-        );
-    } catch (e) {
-        console.log("Xato:", e);
-    }
+// START BUYRUG'I
+bot.start((ctx) => {
+    return ctx.reply(
+        `👋 Assalomu alaykum, ${ctx.from.first_name}!\n\n"Yakuniyga tayyorlovchi" botiga xush kelibsiz. Men sizga ilovadan foydalanish bo'yicha yo'riqnoma beraman.`,
+        mainKeyboard
+    );
 });
 
-// FAN TANLANGANDA ADMINGA YUBORISH
-bot.action(/sel_(.+)_(.+)/, async (ctx) => {
-    const photoId = ctx.match[1];
-    const subject = ctx.match[2];
-    await ctx.editMessageText(`Siz ${subject.toUpperCase()} tanladingiz. Admin tasdiqlashini kuting... ⏳`);
-    
-    await ctx.telegram.sendPhoto(ADMIN_ID, photoId, {
-        caption: `🔔 YANGI TO'LOV!\n👤 Kimdan: ${ctx.from.first_name}\n📚 Fan: ${subject.toUpperCase()}\n🆔 ID: ${ctx.from.id}`,
-        ...Markup.inlineKeyboard([
-            [Markup.button.callback("✅ Tasdiqlash", `app_${ctx.from.id}_${subject}`)],
-            [Markup.button.callback("❌ Rad etish", `rej_${ctx.from.id}`)]
+// ILOVA HAQIDA
+bot.hears('📚 Ilova haqida ma\'lumot', (ctx) => {
+    ctx.reply(
+        `📖 **Ilova haqida:**\n\nUshbu ilova talabalar uchun yakuniy nazorat testlariga tayyorlanishda yordam beradi. \n\n✅ **Imkoniyatlar:**\n- Fanlar bo'yicha mashq qilish\n- 35 talik imtihon rejimi (35 daqiqa)\n- Xatolar ustida ishlash bo'limi\n- Kunduzgi va tungi mavzular.`
+    );
+});
+
+// TO'LOV TARTIBI
+bot.hears('💳 To\'lov qilish tartibi', (ctx) => {
+    ctx.reply(
+        `💳 **To'lov qilish tartibi:**\n\n1. Ilovada fanni tanlang.\n2. "Fanni ochish" tugmasini bosing.\n3. Berilgan karta raqamiga (4073 4200 6816 5541) 10 000 so'm o'tkazing.\n4. To'lov chekini @raxmonov_maruf profiliga yuboring.`
+    );
+});
+
+// PROMO KOD OLISH
+bot.hears('🔑 Promo-kod olish', (ctx) => {
+    ctx.reply(
+        `🔑 **Promo-kod haqida:**\n\nPromo-kod to'lov tasdiqlangandan so'ng admin tomonidan beriladi. Ushbu kodni ilovadagi "PROMO KOD" maydoniga kiritish orqali fanni to'liq ochishingiz mumkin.`
+    );
+});
+
+// ILOVANI OCHISH
+bot.hears('🚀 Ilovani ochish', (ctx) => {
+    ctx.reply(
+        `🚀 Ilovani ochish uchun quyidagi tugmani bosing:`,
+        Markup.inlineKeyboard([
+            [Markup.button.url("🌐 Ilovaga kirish", "https://testlar-uz.vercel.app/")]
         ])
-    });
+    );
 });
 
-// ADMIN TASDIQLASA
-bot.action(/app_(\d+)_(.+)/, async (ctx) => {
-    const userId = ctx.match[1];
-    const subject = ctx.match[2];
-    try {
-        const res = await axios.get(`${FIREBASE_URL}/${subject}.json`);
-        const code = Object.keys(res.data).find(c => res.data[c] === false);
-        if (code) {
-            await axios.patch(`${FIREBASE_URL}/${subject}.json`, { [code]: true });
-            await ctx.telegram.sendMessage(userId, `🎉 Tasdiqlandi! Fan: ${subject.toUpperCase()}\n🔑 Kod: ${code}`);
-            await ctx.editMessageCaption(`✅ Tasdiqlandi! Kod: ${code}`);
-        }
-    } catch (e) { await ctx.reply("Bazada kod qolmagan yoki xato!"); }
+// ADMIN BILAN BOG'LANISH
+bot.hears('👨‍💻 Admin bilan bog\'lanish', (ctx) => {
+    ctx.reply(`👨‍💻 Savollar va takliflar uchun: @raxmonov_maruf`);
 });
 
-// ADMIN RAD ETSA
-bot.action(/rej_(\d+)/, async (ctx) => {
-    await ctx.telegram.sendMessage(ctx.match[1], "❌ To'lovingiz rad etildi.");
-    await ctx.editMessageCaption("❌ Rad etildi.");
-});
-
+// VERCEL INTEGRATSIYASI
 module.exports = async (req, res) => {
     if (req.method === 'POST') {
-        try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
-        catch (e) { res.status(200).send('Error'); }
-    } else { res.status(200).send('Bot ishlayapti...'); }
+        try {
+            await bot.handleUpdate(req.body);
+            res.status(200).send('OK');
+        } catch (e) { res.status(200).send('Error'); }
+    } else {
+        res.status(200).send('Ma\'lumot beruvchi bot faol...');
+    }
 };

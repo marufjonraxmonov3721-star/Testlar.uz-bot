@@ -7,34 +7,33 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; overflow-x: hidden; }
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
         
-        /* Ekranlar */
-        .screen { display: none; }
+        .screen { display: none; animation: fadeIn 0.5s; }
         .active-screen { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; }
+        .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         h2 { color: var(--primary); font-size: 22px; margin-top: 0; }
 
-        /* Navigatsiya */
         .navbar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #1e293b; display: flex; justify-content: space-around;
             padding: 10px 0; border-top: 1px solid #334155; z-index: 1000;
         }
-        .nav-item { color: #94a3b8; font-size: 11px; text-decoration: none; cursor: pointer; transition: 0.3s; }
+        .nav-item { color: #94a3b8; font-size: 11px; text-decoration: none; cursor: pointer; text-align: center; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
 
-        /* Turnirlar tugmalari */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .t-btn { background: var(--bg); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        /* Form elementlari */
         input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; }
-        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
+        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
         .logout-btn { background: #ef4444; margin-top: 20px; }
+        
+        .welcome-box { color: #22c55e; font-weight: bold; font-size: 18px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -46,12 +45,16 @@
             <h2>🏆 Ro'yxatdan o'tish</h2>
             <input type="text" id="fname" placeholder="Ism">
             <input type="text" id="lname" placeholder="Familiya">
-            <input type="text" id="pes_name" placeholder="eFootball Akkaunt (Jamoa)">
-            <button class="btn-main" onclick="handleRegistration()">Kirish</button>
+            <input type="text" id="pes_name" placeholder="eFootball Akkaunt (Jamoa nomi)">
+            <button class="btn-main" id="start-btn" onclick="handleRegistration()">Kirish va Madhiyani Tinglash</button>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 10px;">Tugmani bosganda jamoangiz madhiyasi va fon musiqasi ishga tushadi.</p>
         </div>
     </div>
 
     <div id="screen-tournaments" class="screen">
+        <div id="welcome-msg" class="welcome-box"></div>
+        <div class="card" id="user-info-banner" style="background: linear-gradient(45deg, #1e293b, #0f172a); border: 1px solid #38bdf8;">
+            </div>
         <h2>🎮 Turnirlar</h2>
         <div class="grid">
             <button class="t-btn">8 Kishilik</button>
@@ -59,46 +62,33 @@
             <button class="t-btn">32 Kishilik</button>
             <button class="t-btn">48 Kishilik</button>
         </div>
-        <p style="color: #94a3b8; font-size: 14px; margin-top: 20px;">Tez kunda yangi turnirlar ochiladi!</p>
     </div>
 
     <div id="screen-rating" class="screen">
         <h2>📊 Reyting</h2>
-        <div class="card">Jadval hozircha bo'sh...</div>
+        <div class="card">Hozircha hech kim yo'q.</div>
     </div>
 
     <div id="screen-profile" class="screen">
-        <h2>👤 Mening Profilim</h2>
-        <div class="card">
-            <p id="prof-name">Yuklanmoqda...</p>
-            <p id="prof-pes" style="color: var(--primary);"></p>
-        </div>
+        <h2>👤 Profil</h2>
+        <div class="card" id="profile-details"></div>
     </div>
 
     <div id="screen-settings" class="screen">
         <h2>⚙️ Sozlamalar</h2>
         <div class="card">
-            <p>Ilova versiyasi: 1.0.2</p>
+            <p>Versiya: 1.0.5</p>
             <button class="btn-main logout-btn" onclick="handleLogout()">Tizimdan chiqish</button>
-            <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">Diqqat: Chiqib ketsangiz barcha ma'lumotlaringiz bazadan o'chib ketadi!</p>
         </div>
     </div>
 
 </div>
 
 <div class="navbar" id="main-nav" style="display: none;">
-    <div class="nav-item active" onclick="showScreen('tournaments', this)">
-        <span class="nav-icon">🏆</span>Turnir
-    </div>
-    <div class="nav-item" onclick="showScreen('rating', this)">
-        <span class="nav-icon">📊</span>Reyting
-    </div>
-    <div class="nav-item" onclick="showScreen('profile', this)">
-        <span class="nav-icon">👤</span>Profil
-    </div>
-    <div class="nav-item" onclick="showScreen('settings', this)">
-        <span class="nav-icon">⚙️</span>Sozlamalar
-    </div>
+    <div class="nav-item active" onclick="showScreen('tournaments', this)"><span class="nav-icon">🏆</span>Turnir</div>
+    <div class="nav-item" onclick="showScreen('rating', this)"><span class="nav-icon">📊</span>Reyting</div>
+    <div class="nav-item" onclick="showScreen('profile', this)"><span class="nav-icon">👤</span>Profil</div>
+    <div class="nav-item" onclick="showScreen('settings', this)"><span class="nav-icon">⚙️</span>Sozlamalar</div>
 </div>
 
 <script type="module">
@@ -117,24 +107,79 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "test_user_777";
+    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_test";
+    let bgMusic = null;
 
-    // Sahifalar almashishi
     window.showScreen = function(screenId, navEl) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
         document.getElementById('screen-' + screenId).classList.add('active-screen');
-        
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if(navEl) navEl.classList.add('active');
     };
 
-    // Foydalanuvchi borligini tekshirish
-    async function checkUser() {
-        const snap = await get(ref(db, 'players/' + userId));
-        if (snap.exists()) {
-            loadUserData(snap.val());
-            showMainUI();
-        }
+    // Musiqa ijro etish (Fon va Madhiya)
+    async function startAudioSystem(teamKey) {
+        try {
+            // 1. Umumiy fon musiqasini yuklash
+            const bgSnap = await get(ref(db, 'musiqalar/background'));
+            if(bgSnap.exists()) {
+                bgMusic = new Audio(bgSnap.val());
+                bgMusic.loop = true;
+                bgMusic.volume = 0.2; // Fon musiqasi pastroq
+                bgMusic.play();
+            }
+
+            // 2. Jamoa madhiyasini yuklash
+            if(teamKey) {
+                const teamSnap = await get(ref(db, 'musiqalar/' + teamKey));
+                if(teamSnap.exists()) {
+                    let anthem = new Audio(teamSnap.val());
+                    anthem.volume = 1.0;
+                    anthem.play();
+                    // Madhiya yangrayotganda fonni pasaytirib turish mumkin
+                    setTimeout(() => { if(bgMusic) bgMusic.volume = 0.2; }, 15000);
+                }
+            }
+        } catch (e) { console.log("Audio xatosi:", e); }
+    }
+
+    window.handleRegistration = async function() {
+        const f = document.getElementById('fname').value.trim();
+        const l = document.getElementById('lname').value.trim();
+        const p = document.getElementById('pes_name').value.trim();
+
+        if(!f || !l || !p) return alert("Hamma joyni to'ldiring!");
+
+        let teamKey = p.toLowerCase().includes("real") ? "realmadrid" : 
+                      p.toLowerCase().includes("barca") ? "barcelona" : 
+                      (p.toLowerCase().includes("uzb") || p.toLowerCase().includes("o'zb")) ? "uzbekistan" : "";
+
+        const userData = { full_name: f + " " + l, account: p, team_type: teamKey };
+        await set(ref(db, 'players/' + userId), userData);
+        
+        // Musiqalarni yoqish
+        startAudioSystem(teamKey);
+        
+        displayUser(userData);
+        showMainUI();
+    };
+
+    function displayUser(data) {
+        const banner = document.getElementById('user-info-banner');
+        const welcome = document.getElementById('welcome-msg');
+        
+        welcome.innerText = `Omad yor bo'lsin, ${data.full_name.split(' ')[0]}! ⚽`;
+        banner.innerHTML = `
+            <p style="margin:5px 0;"><b>O'yinchi:</b> ${data.full_name}</p>
+            <p style="margin:5px 0;"><b>Jamoa:</b> ${data.account}</p>
+            <p style="font-size:12px; color:#38bdf8;">Ro'yxatdan o'tildi ✅</p>
+        `;
+        
+        document.getElementById('profile-details').innerHTML = `
+            <p><b>FISH:</b> ${data.full_name}</p>
+            <p><b>eFootball:</b> ${data.account}</p>
+            <p><b>ID:</b> ${userId}</p>
+        `;
     }
 
     function showMainUI() {
@@ -143,41 +188,23 @@
         showScreen('tournaments');
     }
 
-    function loadUserData(data) {
-        document.getElementById('prof-name').innerText = "Ism: " + data.full_name;
-        document.getElementById('prof-pes').innerText = "Akkaunt: " + data.account.toUpperCase();
+    async function checkUser() {
+        const snap = await get(ref(db, 'players/' + userId));
+        if (snap.exists()) {
+            const data = snap.val();
+            displayUser(data);
+            // Agar foydalanuvchi bor bo'lsa, musiqani foydalanuvchi bir marta ekranga tekkanda yoqamiz
+            document.body.addEventListener('click', () => {
+                if(!bgMusic) startAudioSystem(data.team_type);
+            }, { once: true });
+            showMainUI();
+        }
     }
 
-    // Ro'yxatdan o'tish
-    window.handleRegistration = async function() {
-        const fname = document.getElementById('fname').value;
-        const lname = document.getElementById('lname').value;
-        const pesName = document.getElementById('pes_name').value;
-
-        if(!fname || !lname || !pesName) return alert("To'ldiring!");
-
-        const teamKey = pesName.toLowerCase().includes("real") ? "realmadrid" : 
-                        pesName.toLowerCase().includes("barca") ? "barcelona" : 
-                        pesName.toLowerCase().includes("uzb") ? "uzbekistan" : "";
-
-        const userData = { full_name: fname + " " + lname, account: pesName, team_type: teamKey };
-        await set(ref(db, 'players/' + userId), userData);
-        
-        if(teamKey) {
-            const snap = await get(ref(db, 'musiqalar/' + teamKey));
-            if(snap.exists()) { new Audio(snap.val()).play(); }
-        }
-
-        loadUserData(userData);
-        showMainUI();
-    };
-
-    // Tizimdan chiqish (O'chirish)
     window.handleLogout = async function() {
-        if(confirm("Ma'lumotlaringiz butunlay o'chib ketishiga rozimisiz?")) {
+        if(confirm("Ma'lumotlar o'chirilsinmi?")) {
             await remove(ref(db, 'players/' + userId));
-            alert("Sizning barcha ma'lumotlaringiz bazadan o'chirildi.");
-            location.reload(); // Sahifani yangilash
+            location.reload();
         }
     };
 

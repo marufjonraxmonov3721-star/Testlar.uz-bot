@@ -3,95 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball Turniri</title>
+    <title>eFootball Pro League</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f172a;
-            color: white;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; }
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
+        
+        /* Ekranlar */
+        .screen { display: none; }
+        .active-screen { display: block; }
+
+        .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; }
+        h2 { color: var(--primary); font-size: 22px; margin-top: 0; }
+
+        /* Navigatsiya */
+        .navbar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1e293b; display: flex; justify-content: space-around;
+            padding: 10px 0; border-top: 1px solid #334155; z-index: 1000;
         }
-        .container { width: 100%; max-width: 400px; }
-        .card {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 24px;
-            border: 1px solid #334155;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        h2 { color: #38bdf8; margin-top: 0; font-size: 24px; }
-        .input-group { text-align: left; margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px; }
-        input {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            background: #0f172a;
-            color: white;
-            border: 1px solid #334155;
-            box-sizing: border-box;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        input:focus { border-color: #38bdf8; outline: none; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
-        .btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            font-weight: 700;
-            margin-top: 10px;
-        }
-        .btn:disabled { background: #475569; }
-        #audio-status { margin-top: 15px; font-size: 13px; color: #fbbf24; }
-        .player-info { display: none; text-align: left; }
-        .info-item { background: #0f172a; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #38bdf8; }
+        .nav-item { color: #94a3b8; font-size: 11px; text-decoration: none; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+        /* Turnirlar tugmalari */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .t-btn { background: var(--bg); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+
+        /* Form elementlari */
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; }
+        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
+        .logout-btn { background: #ef4444; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card" id="reg-form">
-        <h2>🏆 Ro'yxatdan o'tish</h2>
-        
-        <div class="input-group">
-            <label>Ism</label>
-            <input type="text" id="fname" placeholder="Ismingizni kiriting">
+    
+    <div id="screen-reg" class="screen active-screen">
+        <div class="card">
+            <h2>🏆 Ro'yxatdan o'tish</h2>
+            <input type="text" id="fname" placeholder="Ism">
+            <input type="text" id="lname" placeholder="Familiya">
+            <input type="text" id="pes_name" placeholder="eFootball Akkaunt (Jamoa)">
+            <button class="btn-main" onclick="handleRegistration()">Kirish</button>
         </div>
-
-        <div class="input-group">
-            <label>Familiya</label>
-            <input type="text" id="lname" placeholder="Familiyangizni kiriting">
-        </div>
-
-        <div class="input-group">
-            <label>eFootball Akkaunt Nomi</label>
-            <input type="text" id="pes_name" placeholder="Masalan: Real Madrid, O'zbekiston...">
-        </div>
-
-        <button class="btn" id="reg-btn" onclick="handleRegistration()">Tasdiqlash</button>
-        <div id="audio-status"></div>
     </div>
 
-    <div class="card player-info" id="result-screen">
-        <h2 style="text-align: center;">Muvaffaqiyatli! ✅</h2>
-        <div class="info-item"><b>O'yinchi:</b> <span id="res-name"></span></div>
-        <div class="info-item"><b>Akkaunt:</b> <span id="res-pes"></span></div>
-        <p id="music-msg" style="text-align: center; color: #22c55e;"></p>
+    <div id="screen-tournaments" class="screen">
+        <h2>🎮 Turnirlar</h2>
+        <div class="grid">
+            <button class="t-btn">8 Kishilik</button>
+            <button class="t-btn">16 Kishilik</button>
+            <button class="t-btn">32 Kishilik</button>
+            <button class="t-btn">48 Kishilik</button>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px; margin-top: 20px;">Tez kunda yangi turnirlar ochiladi!</p>
+    </div>
+
+    <div id="screen-rating" class="screen">
+        <h2>📊 Reyting</h2>
+        <div class="card">Jadval hozircha bo'sh...</div>
+    </div>
+
+    <div id="screen-profile" class="screen">
+        <h2>👤 Mening Profilim</h2>
+        <div class="card">
+            <p id="prof-name">Yuklanmoqda...</p>
+            <p id="prof-pes" style="color: var(--primary);"></p>
+        </div>
+    </div>
+
+    <div id="screen-settings" class="screen">
+        <h2>⚙️ Sozlamalar</h2>
+        <div class="card">
+            <p>Ilova versiyasi: 1.0.2</p>
+            <button class="btn-main logout-btn" onclick="handleLogout()">Tizimdan chiqish</button>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">Diqqat: Chiqib ketsangiz barcha ma'lumotlaringiz bazadan o'chib ketadi!</p>
+        </div>
+    </div>
+
+</div>
+
+<div class="navbar" id="main-nav" style="display: none;">
+    <div class="nav-item active" onclick="showScreen('tournaments', this)">
+        <span class="nav-icon">🏆</span>Turnir
+    </div>
+    <div class="nav-item" onclick="showScreen('rating', this)">
+        <span class="nav-icon">📊</span>Reyting
+    </div>
+    <div class="nav-item" onclick="showScreen('profile', this)">
+        <span class="nav-icon">👤</span>Profil
+    </div>
+    <div class="nav-item" onclick="showScreen('settings', this)">
+        <span class="nav-icon">⚙️</span>Sozlamalar
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
@@ -105,61 +117,71 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    window.handleRegistration = async function() {
-        const fname = document.getElementById('fname').value.trim();
-        const lname = document.getElementById('lname').value.trim();
-        const pesName = document.getElementById('pes_name').value.trim().toLowerCase();
+    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "test_user_777";
+
+    // Sahifalar almashishi
+    window.showScreen = function(screenId, navEl) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById('screen-' + screenId).classList.add('active-screen');
         
-        if (!fname || !lname || !pesName) {
-            alert("Barcha maydonlarni to'ldiring!");
-            return;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if(navEl) navEl.classList.add('active');
+    };
+
+    // Foydalanuvchi borligini tekshirish
+    async function checkUser() {
+        const snap = await get(ref(db, 'players/' + userId));
+        if (snap.exists()) {
+            loadUserData(snap.val());
+            showMainUI();
+        }
+    }
+
+    function showMainUI() {
+        document.getElementById('screen-reg').classList.remove('active-screen');
+        document.getElementById('main-nav').style.display = 'flex';
+        showScreen('tournaments');
+    }
+
+    function loadUserData(data) {
+        document.getElementById('prof-name').innerText = "Ism: " + data.full_name;
+        document.getElementById('prof-pes').innerText = "Akkaunt: " + data.account.toUpperCase();
+    }
+
+    // Ro'yxatdan o'tish
+    window.handleRegistration = async function() {
+        const fname = document.getElementById('fname').value;
+        const lname = document.getElementById('lname').value;
+        const pesName = document.getElementById('pes_name').value;
+
+        if(!fname || !lname || !pesName) return alert("To'ldiring!");
+
+        const teamKey = pesName.toLowerCase().includes("real") ? "realmadrid" : 
+                        pesName.toLowerCase().includes("barca") ? "barcelona" : 
+                        pesName.toLowerCase().includes("uzb") ? "uzbekistan" : "";
+
+        const userData = { full_name: fname + " " + lname, account: pesName, team_type: teamKey };
+        await set(ref(db, 'players/' + userId), userData);
+        
+        if(teamKey) {
+            const snap = await get(ref(db, 'musiqalar/' + teamKey));
+            if(snap.exists()) { new Audio(snap.val()).play(); }
         }
 
-        const btn = document.getElementById('reg-btn');
-        btn.disabled = true;
+        loadUserData(userData);
+        showMainUI();
+    };
 
-        // Jamoani aniqlash mantiqi
-        let teamKey = "";
-        if (pesName.includes("o'zbekiston") || pesName.includes("uzbekistan")) teamKey = "uzbekistan";
-        else if (pesName.includes("real madrid") || pesName.includes("real")) teamKey = "realmadrid";
-        else if (pesName.includes("barcelona") || pesName.includes("barca")) teamKey = "barcelona";
-
-        try {
-            const user = tg.initDataUnsafe.user;
-            const userId = user ? user.id : "user_" + Date.now();
-
-            // Bazaga saqlash
-            await set(ref(db, 'players/' + userId), {
-                full_name: fname + " " + lname,
-                account: pesName,
-                team_type: teamKey || "boshqa"
-            });
-
-            // UI almashtirish
-            document.getElementById('reg-form').style.display = 'none';
-            document.getElementById('result-screen').style.display = 'block';
-            document.getElementById('res-name').innerText = fname + " " + lname;
-            document.getElementById('res-pes').innerText = pesName.toUpperCase();
-
-            // Musiqa ijrosi
-            if (teamKey) {
-                document.getElementById('music-msg').innerText = "🎵 Madhiya yangramoqda...";
-                const snapshot = await get(ref(db, 'musiqalar/' + teamKey));
-                if (snapshot.exists()) {
-                    let audio = new Audio(snapshot.val());
-                    audio.play();
-                    setTimeout(() => audio.pause(), 15000);
-                }
-            } else {
-                document.getElementById('music-msg').innerText = "⚠️ Bu jamoa uchun madhiya mavjud emas";
-                document.getElementById('music-msg').style.color = "#ef4444";
-            }
-
-        } catch (e) {
-            alert("Xato: " + e.message);
-            btn.disabled = false;
+    // Tizimdan chiqish (O'chirish)
+    window.handleLogout = async function() {
+        if(confirm("Ma'lumotlaringiz butunlay o'chib ketishiga rozimisiz?")) {
+            await remove(ref(db, 'players/' + userId));
+            alert("Sizning barcha ma'lumotlaringiz bazadan o'chirildi.");
+            location.reload(); // Sahifani yangilash
         }
     };
+
+    checkUser();
 </script>
 </body>
 </html>

@@ -17,7 +17,7 @@
         .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         h2 { color: var(--primary); font-size: 22px; margin-top: 0; }
 
-        /* Modal (Katta tabrik va To'lov oynasi) */
+        /* Modal (Katta tabrik, To'lov va Qura oynalari) */
         #welcome-modal, #payment-modal, #draw-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.98); display: none;
@@ -27,14 +27,22 @@
         .modal-content { animation: scaleUp 0.4s; width: 100%; }
         @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+        /* Tanishtiruv Kartasi (Qura vaqtidagi katta oyna) */
+        #player-intro-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 40px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.3);
+            width: 90%;
+            max-width: 350px;
+        }
+        .intro-name { font-size: 32px; font-weight: 800; color: var(--primary); margin: 10px 0; }
+        .intro-team { font-size: 20px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+
         /* To'lov Ma'lumotlari */
         .pay-box { background: #0f172a; padding: 15px; border-radius: 15px; border: 1px dashed var(--primary); margin: 15px 0; font-family: monospace; font-size: 14px; }
         .prize-info { font-size: 12px; color: var(--gold); margin-bottom: 10px; }
-
-        /* Qura tashlash */
-        .draw-container { width: 100%; max-height: 60vh; overflow-y: auto; margin-top: 20px; }
-        .draw-item { background: #2d3748; padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--primary); animation: slideIn 0.5s forwards; }
-        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         .navbar {
             position: fixed; bottom: 0; left: 0; right: 0;
@@ -81,12 +89,14 @@
 </div>
 
 <div id="draw-modal">
-    <div class="modal-content">
-        <h2 style="color: var(--gold);">🎰 Qura Tashlash Marosimi</h2>
-        <p id="draw-status">Ishtirokchilar tanishtirilmoqda...</p>
-        <div id="draw-list" class="draw-container"></div>
-        <button id="draw-finish-btn" class="btn-main" style="display:none; margin-top:20px;" onclick="location.reload()">Bosh sahifaga</button>
+    <div id="player-intro-card">
+        <div style="font-size: 50px;">⚽</div>
+        <div id="intro-status" style="color: var(--gold); font-weight: bold; margin-bottom: 10px;">NAVBATDAGI ISHTIROKCHI:</div>
+        <div id="intro-name" class="intro-name">Tanlanmoqda...</div>
+        <div id="intro-team" class="intro-team">---</div>
+        <div id="draw-progress" style="margin-top: 20px; font-size: 14px; color: #94a3b8;"></div>
     </div>
+    <button id="draw-finish-btn" class="btn-main" style="display:none; margin-top:30px; width: 80%;" onclick="location.reload()">Marosimni yakunlash</button>
 </div>
 
 <div class="container">
@@ -125,7 +135,7 @@
     <div id="screen-settings" class="screen">
         <h2>⚙️ Sozlamalar</h2>
         <div class="card">
-            <p>Versiya: 1.2.0 (Premium)</p>
+            <p>Versiya: 1.3.0 (Paid Edition)</p>
             <button class="btn-main logout-btn" onclick="handleLogout()">Tizimdan chiqish</button>
         </div>
     </div>
@@ -166,7 +176,7 @@
         if(navEl) navEl.classList.add('active');
     };
 
-    // --- TO'LOV VA QATNASHISH ---
+    // --- TO'LOV ---
     window.openPayment = function(size, price, winners) {
         selectedTour = { size, price };
         document.getElementById('pay-tour-name').innerText = size + " Kishilik Turnir";
@@ -178,19 +188,16 @@
     window.processPayment = async function() {
         const userSnap = await get(ref(db, 'players/' + userId));
         const userData = userSnap.val();
-        
-        // Navbatga qo'shish
         await set(ref(db, `queue_${selectedTour.size}/${userId}`), {
             name: userData.full_name,
             team_name: userData.account,
             team_type: userData.team_type
         });
-        
         document.getElementById('payment-modal').style.display = 'none';
         alert("To'lov tasdiqlash uchun yuborildi. Navbatga qo'shildingiz!");
     };
 
-    // --- QURA TASHLASH MAROSIMI ---
+    // --- QURA TASHLASH MAROSIMI (Yangilangan mantiq) ---
     function monitorQueues() {
         [8, 16, 32, 48].forEach(size => {
             onValue(ref(db, `queue_${size}`), (snap) => {
@@ -204,38 +211,49 @@
 
     async function runDrawCeremony(players, size) {
         const modal = document.getElementById('draw-modal');
-        const list = document.getElementById('draw-list');
+        const introName = document.getElementById('intro-name');
+        const introTeam = document.getElementById('intro-team');
+        const progress = document.getElementById('draw-progress');
+        
         modal.style.display = 'flex';
-        list.innerHTML = "";
 
-        // Tasodifiy tartiblash (Random)
+        // Random tartib
         const shuffled = players.sort(() => Math.random() - 0.5);
 
         for (let i = 0; i < shuffled.length; i++) {
-            await new Promise(r => setTimeout(r, 2500)); // Har bir ishtirokchi orasida kutish
-            
             const p = shuffled[i];
-            const div = document.createElement('div');
-            div.className = 'draw-item';
-            div.innerHTML = `<span>#${i+1} ${p.name}</span> <small>${p.team_name}</small>`;
-            list.appendChild(div);
-            list.scrollTop = list.scrollHeight;
+            
+            // Kartani yangilash
+            introName.innerText = p.name;
+            introTeam.innerText = p.team_name;
+            progress.innerText = `Ishtirokchi: ${i+1} / ${size}`;
 
-            // Madhiya ijro etish
+            // Madhiya ijro etish (15 sekund)
+            let anthem = null;
             if (p.team_type) {
                 const mSnap = await get(ref(db, 'musiqalar/' + p.team_type));
                 if (mSnap.exists()) {
-                    let anthem = new Audio(mSnap.val());
+                    anthem = new Audio(mSnap.val());
                     anthem.play();
-                    setTimeout(() => anthem.pause(), 5000); // 5 sek madhiya
                 }
             }
+
+            // Har bir foydalanuvchi uchun 15 sekund kutish
+            await new Promise(r => setTimeout(r, 15000));
+            
+            if (anthem) {
+                anthem.pause();
+                anthem.currentTime = 0;
+            }
         }
-        document.getElementById('draw-status').innerText = "Qura tugadi! Guruhlar tayyor.";
+
+        document.getElementById('intro-status').innerText = "QURA YAKUNLANDI!";
+        introName.innerText = "BARCHAGA OMAD!";
+        introTeam.innerText = "GURUXLAR TAYYOR";
         document.getElementById('draw-finish-btn').style.display = 'block';
     }
 
-    // --- ASOSIY FUNKSIYALAR ---
+    // --- ASOSIY ---
     async function playBackgroundOnly() {
         if(bgMusic) return;
         const bgSnap = await get(ref(db, 'musiqalar/background'));
@@ -251,23 +269,17 @@
         const f = document.getElementById('fname').value.trim();
         const l = document.getElementById('lname').value.trim();
         const p = document.getElementById('pes_name').value.trim();
-
         if(!f || !l || !p) return alert("To'ldiring!");
-
         let teamKey = p.toLowerCase().includes("real") ? "realmadrid" : 
                       p.toLowerCase().includes("barca") ? "barcelona" : 
                       (p.toLowerCase().includes("uzb") || p.toLowerCase().includes("o'zb")) ? "uzbekistan" : "";
-
         const userData = { full_name: f + " " + l, account: p, team_type: teamKey };
         await set(ref(db, 'players/' + userId), userData);
-        
-        // Madhiya va fon
         await playBackgroundOnly();
         if(teamKey) {
             const teamSnap = await get(ref(db, 'musiqalar/' + teamKey));
             if(teamSnap.exists()) { new Audio(teamSnap.val()).play(); }
         }
-
         document.getElementById('modal-desc').innerText = `${f}, eFootball turniriga xush kelibsiz!`;
         document.getElementById('welcome-modal').style.display = 'flex';
         displayUser(userData);
@@ -300,10 +312,7 @@
     }
 
     window.handleLogout = async function() {
-        if(confirm("Chiqishni xohlaysizmi? Ma'lumotlar o'chadi.")) {
-            await remove(ref(db, 'players/' + userId));
-            location.reload();
-        }
+        if(confirm("Chiqasizmi? Ma'lumotlar o'chadi.")) { await remove(ref(db, 'players/' + userId)); location.reload(); }
     };
 
     checkUser();

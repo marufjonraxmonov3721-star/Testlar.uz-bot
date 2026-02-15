@@ -248,6 +248,7 @@
         }
     });
 
+    // YANGILANGAN PLAY SOUND: Base64 qo'llab-quvvatlaydi
     function playSound(type, loop = false) {
         if (currentAudio) {
             currentAudio.pause();
@@ -255,9 +256,8 @@
             currentAudio = null;
         }
         
-        // Jamoa nomini tekshirish (O'zbekiston, Real Madrid, Barcelona uchun)
-        // Agar jamoa nomi audioData ichida bo'lsa, o'shani chaladi
-        const audioSource = audioData[type] || audioData[type.toLowerCase()];
+        // Bazada saqlangan base64 formatidagi musiqa (data:audio/mpeg;base64,...)
+        const audioSource = audioData[type];
         
         if (audioSource) {
             currentAudio = new Audio(audioSource);
@@ -402,10 +402,11 @@
         overlay.style.display = 'flex';
         intro.style.display = 'flex';
         
+        // 1-bosqich: Ishtirokchilarni birma-bir tanishtirish
         for (const p of players) {
-            // Har bir ishtirokchi uchun o'z jamoasi madhiyasini yoki umumiy intro-ni chalish
-            // Masalan: "O'zbekiston", "Real Madrid", "Barcelona" kalit so'zlari bo'yicha
-            if(audioData[p.teamName]) {
+            // Tanlangan jamoaga qarab maxsus madhiya yoki standart intro
+            const specialTeams = ["O'zbekiston", "Real Madrid", "Barcelona"];
+            if (specialTeams.includes(p.teamName)) {
                 playSound(p.teamName, true);
             } else {
                 playSound('intro', true);
@@ -416,15 +417,18 @@
             document.getElementById('intro-team').innerText = p.teamName;
             document.getElementById('intro-photo').src = p.photo;
             const els = ['intro-name', 'intro-lastname', 'intro-team', 'intro-photo'];
+            
             for(let i=0; i<els.length; i++){
                 await new Promise(r => setTimeout(r, 600));
                 document.getElementById(els[i]).classList.add('show');
             }
-            await new Promise(r => setTimeout(r, 2200)); // Madhiya yaxshiroq eshitilishi uchun vaqtni biroz cho'zdik
+            
+            await new Promise(r => setTimeout(r, 2200)); // Musiqa yangrashi uchun kutish
             els.forEach(id => document.getElementById(id).classList.remove('show'));
             await new Promise(r => setTimeout(r, 400));
         }
         
+        // 2-bosqich: Qur'a jarayoni boshlanishi
         playSound('process', true);
         intro.style.display = 'none';
         processPanel.style.display = 'block';
@@ -462,6 +466,7 @@
             currentGroupIdx = (currentGroupIdx + 1) % numGroups;
         }
 
+        // 3-bosqich: Yakuniy guruhlarni ko'rsatish
         playSound('anthem', false); 
         processPanel.style.display = 'none';
         

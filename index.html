@@ -436,9 +436,9 @@
             Object.keys(groups).sort().forEach(L => {
                 const p = groups[L];
                 const groupMatches = [
-                    { t1: p[0], t2: p[1], id: `G${L}M1` }, { t1: p[2], t2: p[3], id: `G${L}M2` },
-                    { t1: p[0], t2: p[2], id: `G${L}M3` }, { t1: p[1], t2: p[3], id: `G${L}M4` },
-                    { t1: p[0], t2: p[3], id: `G${L}M5` }, { t1: p[1], t2: p[2], id: `G${L}M6` }
+                    { t1: p[0], t2: p[1], id: `G_${L}_M_0` }, { t1: p[2], t2: p[3], id: `G_${L}_M_1` },
+                    { t1: p[0], t2: p[2], id: `G_${L}_M_2` }, { t1: p[1], t2: p[3], id: `G_${L}_M_3` },
+                    { t1: p[0], t2: p[3], id: `G_${L}_M_4` }, { t1: p[1], t2: p[2], id: `G_${L}_M_5` }
                 ];
                 
                 matchesDiv.innerHTML += `<div style="color:var(--ef-bonus); font-weight:900; margin: 15px 0 10px 0; font-size:12px;">GURUH ${L} O'YINLARI</div>`;
@@ -458,20 +458,15 @@
 
                     let actionHtml = "";
                     if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score && !matchRes.admin_pending) {
-                        actionHtml = `
-                            <div style="text-align:center;">
-                                <input type="file" id="file-${m.id}" accept="image/*" style="display:none" onchange="submitResultToAdmin('${tourId}', '${m.id}', '${myUid}')">
-                                <button class="btn btn-small" id="btn-${m.id}" onclick="document.getElementById('file-${m.id}').click()">NATIJANI YUBORISH (SKRINSHOT)</button>
-                            </div>
-                        `;
+                        actionHtml = `<button class="btn btn-small" onclick="triggerResultUpload('${tourId}', '${m.id}')">NATIJANI YUBORISH</button>`;
                     }
 
                     matchesDiv.innerHTML += `
                         <div class="schedule-card">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b style="flex:1; text-align:right; ${isWinner1 ? 'color:var(--ef-success)' : ''}">${m.t1.teamName}</b>
+                                <b style="flex:1; text-align:right; ${isWinner1 ? 'color:var(--ef-success)' : ''}">${m.t1.teamName} (${m.t1.firstname})</b>
                                 <span class="vs-badge">${statusText}</span>
-                                <b style="flex:1; text-align:left; ${isWinner2 ? 'color:var(--ef-success)' : ''}">${m.t2.teamName}</b>
+                                <b style="flex:1; text-align:left; ${isWinner2 ? 'color:var(--ef-success)' : ''}">${m.t2.teamName} (${m.t2.firstname})</b>
                             </div>
                             ${actionHtml}
                         </div>
@@ -481,34 +476,22 @@
         });
     }
 
-    window.submitResultToAdmin = async (tourId, matchId, uid) => {
-        const fileInput = document.getElementById(`file-${matchId}`);
-        const btn = document.getElementById(`btn-${matchId}`);
-        if (!fileInput.files[0]) return;
-
-        btn.innerText = "YUBORILMOQDA...";
-        btn.disabled = true;
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const imgData = e.target.result;
-            try {
-                // Natijani admin ko'rishi uchun pending holatida bazaga yozish
+    window.triggerResultUpload = (tourId, matchId) => {
+        const fileInput = document.getElementById('match-result-file');
+        fileInput.onchange = async (e) => {
+            if (!e.target.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
                 await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
                     admin_pending: true,
-                    screenshot: imgData,
-                    sent_by: uid,
-                    sent_at: Date.now()
+                    screenshot: ev.target.result,
+                    sent_by: myUid
                 });
-                alert("Natija adminga yuborildi. Tasdiqlanganidan so'ng jadvalda aks etadi!");
-            } catch (err) {
-                console.error(err);
-                alert("Xatolik yuz berdi.");
-                btn.disabled = false;
-                btn.innerText = "NATIJANI YUBORISH (SKRINSHOT)";
-            }
+                alert("Natija adminga yuborildi!");
+            };
+            reader.readAsDataURL(e.target.files[0]);
         };
-        reader.readAsDataURL(fileInput.files[0]);
+        fileInput.click();
     };
 
     function initApp() {

@@ -125,8 +125,7 @@
 
         .input-group { margin-bottom: 20px; }
         label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
-        input, select { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
-        select option { background: var(--ef-dark-blue); color: white; }
+        input { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
         .btn { width: 100%; padding: 18px; background: var(--ef-neon-yellow); color: #000; border: none; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%); }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #00051a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 3px solid var(--ef-neon-yellow); z-index: 1000; }
         .nav-item { text-align: center; font-size: 9px; font-weight: 900; cursor: pointer; opacity: 0.4; color: #fff; text-decoration: none; }
@@ -177,14 +176,7 @@
             <div class="card">
                 <div class="input-group"><label>Ism</label><input type="text" id="firstname" placeholder="Ismingiz"></div>
                 <div class="input-group"><label>Familiya</label><input type="text" id="lastname" placeholder="Familiyangiz"></div>
-                <div class="input-group">
-                    <label>Jamoa Turi</label>
-                    <select id="team-category">
-                        <option value="countries">DAVLAT (National Team)</option>
-                        <option value="clubs">KLUB (FC Club)</option>
-                    </select>
-                </div>
-                <div class="input-group"><label>Jamoa Nomi (Bazadagi bilan bir xil)</label><input type="text" id="teamname" placeholder="Masalan: Uzbekistan yoki Real_Madrid"></div>
+                <div class="input-group"><label>eFootball Jamoa Nomi</label><input type="text" id="teamname" placeholder="Arsenal, Real Madrid..."></div>
                 <div class="input-group">
                     <label>PES Akkaunt Rasmi</label>
                     <input type="file" id="user-photo" accept="image/*" style="padding:10px; background:rgba(0,0,0,0.2); border:1px dashed var(--ef-neon-yellow); color:#fff; width:100%; box-sizing:border-box;">
@@ -203,6 +195,12 @@
                     <b style="color:var(--ef-neon-yellow)">STARTER CUP (16)</b>
                     <span class="slot-info" id="slots-starter_cup" style="font-size:10px; display:block; margin-top:5px;">Hisoblanmoqda...</span>
                     <button class="btn reg-tour-btn" id="btn-starter_cup" data-tour-name="STARTER CUP" data-max="16" onclick="handleTourAction('starter_cup', 'STARTER CUP', 16, 5000)">QATNASHISH</button>
+                </div>
+                <div class="card">
+                    <span style="position:absolute; top:15px; right:15px; background:var(--ef-neon-yellow); color:#000; padding:2px 8px; font-size:9px; font-weight:900;">6 000 S'OM</span>
+                    <b style="color:var(--ef-neon-yellow)">PRO LEAGUE (32)</b>
+                    <span class="slot-info" id="slots-pro_league" style="font-size:10px; display:block; margin-top:5px;">Hisoblanmoqda...</span>
+                    <button class="btn reg-tour-btn" id="btn-pro_league" data-tour-name="PRO LEAGUE" data-max="32" onclick="handleTourAction('pro_league', 'PRO LEAGUE', 32, 6000)">QATNASHISH</button>
                 </div>
             </div>
         </div>
@@ -223,62 +221,66 @@
     import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyBc7tUey3q6hGZjWxisJo701-G4NbyD9zI",
-        authDomain: "gen-lang-client-0228947349.firebaseapp.com",
-        databaseURL: "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com",
-        projectId: "gen-lang-client-0228947349",
-        storageBucket: "gen-lang-client-0228947349.firebasestorage.app",
-        messagingSenderId: "253793341504",
-        appId: "1:253793341504:web:709752258000dab44fcfa5"
+      apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
+      authDomain: "efootball-11be6.firebaseapp.com",
+      databaseURL: "https://efootball-11be6-default-rtdb.firebaseio.com",
+      projectId: "efootball-11be6",
+      storageBucket: "efootball-11be6.firebasestorage.app",
+      messagingSenderId: "989986946120",
+      appId: "1:989986946120:web:2c654ac8ca6412f0bbec7d",
+      measurementId: "G-YQVRTY6EH3"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let currentSelectedTour = null;
 
-    // AUDIO ENGINE - 100% FIXED
-    let audioAssets = {};
+    // AUDIO ENGINE
+    let audioData = {};
     let currentAudio = null;
     let isInitialPlay = false;
 
     onValue(ref(db, 'tournament/assets/audio'), (snap) => {
-        audioAssets = snap.val() || {};
-        if (audioAssets.app_system?.main && !isInitialPlay && !document.getElementById('reg-screen').classList.contains('active')) {
-            playSystemSound('main', true);
+        audioData = snap.val() || {};
+        if (audioData.main && !isInitialPlay && !document.getElementById('reg-screen').classList.contains('active')) {
+            playSound('main', true);
             isInitialPlay = true;
         }
     });
 
-    function playSystemSound(type, loop = false) {
-        if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
-        const src = audioAssets.app_system?.[type];
-        if (src) {
-            currentAudio = new Audio(src);
+    function playSound(type, loop = false) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio = null;
+        }
+        if (audioData[type]) {
+            currentAudio = new Audio(audioData[type]);
             currentAudio.loop = loop;
+            
             if (type === 'anthem') {
                 currentAudio.loop = false;
-                currentAudio.onended = () => playSystemSound('main', true);
+                currentAudio.onended = () => playSound('main', true);
             }
-            currentAudio.play().catch(e => console.log("Audio block"));
-        }
-    }
-
-    function playTeamAnthem(category, teamName) {
-        if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
-        const src = audioAssets[category]?.[teamName];
-        if (src) {
-            currentAudio = new Audio(src);
-            currentAudio.play().catch(e => console.log("Anthem block"));
+            
+            currentAudio.play().catch(e => console.log("Audio play blocked."));
         }
     }
 
     function stopSounds() {
-        if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio = null;
+        }
     }
 
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) { if (currentAudio) currentAudio.pause(); }
-        else { if (currentAudio) currentAudio.play(); }
+        if (document.hidden) {
+            if (currentAudio) currentAudio.pause();
+        } else {
+            if (currentAudio) currentAudio.play();
+        }
     });
 
     window.showScreen = (name, el) => {
@@ -288,27 +290,25 @@
         if(el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
         
         if (name === 'tournaments' && (!currentAudio || currentAudio.paused)) {
-            playSystemSound('main', true);
+            playSound('main', true);
         }
+        
         if(name === 'tournaments') checkUserStatus();
     };
 
     window.register = async () => {
         const fn = document.getElementById('firstname').value.trim();
         const ln = document.getElementById('lastname').value.trim();
-        const tc = document.getElementById('team-category').value;
-        const tn = document.getElementById('teamname').value.trim().replace(/\s+/g, '_');
+        const tn = document.getElementById('teamname').value.trim();
         const photoInput = document.getElementById('user-photo');
-        if(!fn || !tn || !photoInput.files[0]) return alert("Ma'lumotlarni to'ldiring!");
+        if(!fn || !tn || !photoInput.files[0]) return alert("Ma'lumotlarni to'ldiring va rasm yuklang!");
         const reader = new FileReader();
         reader.onload = async (e) => {
+            const photoData = e.target.result;
             const uid = "EF_" + Date.now();
-            await set(ref(db, 'tournament/users/' + uid), { 
-                id: uid, firstname: fn, lastname: ln, teamName: tn, teamCategory: tc, 
-                photo: e.target.result, status: 'normal', activeTour: "YO'Q" 
-            });
+            await set(ref(db, 'tournament/users/' + uid), { id: uid, firstname: fn, lastname: ln, teamName: tn, photo: photoData, status: 'normal', activeTour: "YO'Q" });
             localStorage.setItem('tournament_uid', uid);
-            playSystemSound('main', true);
+            playSound('main', true);
             initApp();
         };
         reader.readAsDataURL(photoInput.files[0]);
@@ -381,7 +381,7 @@
             } else {
                 groupsDiv.innerHTML = `<h3 style="color:var(--ef-neon-yellow); font-size:14px;">ISHTIROKCHILAR (${approvedPlayers.length}/${maxPlayers})</h3>`;
                 approvedPlayers.forEach((u, i) => { 
-                    groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName.replace(/_/g, ' ')}</span></div>`; 
+                    groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName}</span></div>`; 
                 });
             }
         });
@@ -397,27 +397,24 @@
         overlay.style.display = 'flex';
         intro.style.display = 'flex';
         
+        playSound('intro', true);
+        
         for (const p of players) {
-            // MADHIYA BOSHLANADI (100% 15 SEKUND)
-            playTeamAnthem(p.teamCategory, p.teamName);
-            
             document.getElementById('intro-name').innerText = p.firstname;
             document.getElementById('intro-lastname').innerText = p.lastname;
-            document.getElementById('intro-team').innerText = p.teamName.replace(/_/g, ' ');
+            document.getElementById('intro-team').innerText = p.teamName;
             document.getElementById('intro-photo').src = p.photo;
-            
             const els = ['intro-name', 'intro-lastname', 'intro-team', 'intro-photo'];
             for(let i=0; i<els.length; i++){
                 await new Promise(r => setTimeout(r, 600));
                 document.getElementById(els[i]).classList.add('show');
             }
-            // ISHTIROKCHI EKRANDA QOLISHI (MADHIYA BILAN SINXRON)
-            await new Promise(r => setTimeout(r, 12000)); 
+            await new Promise(r => setTimeout(r, 1800));
             els.forEach(id => document.getElementById(id).classList.remove('show'));
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 400));
         }
         
-        playSystemSound('process', true);
+        playSound('process', true);
         intro.style.display = 'none';
         processPanel.style.display = 'block';
         document.getElementById('mini-groups-grid').innerHTML = "";
@@ -440,7 +437,7 @@
             groups[groupLetter].push({teamName: p.teamName, photo: p.photo, id: p.id});
 
             activeCard.classList.remove('animate-player'); void activeCard.offsetWidth; activeCard.classList.add('animate-player');
-            document.getElementById('active-draw-team').innerText = p.teamName.replace(/_/g, ' ');
+            document.getElementById('active-draw-team').innerText = p.teamName;
             document.getElementById('active-draw-player').innerText = p.firstname + " " + p.lastname;
             
             await new Promise(r => setTimeout(r, 1200));
@@ -450,15 +447,19 @@
             miniG.classList.add('highlight-focus'); 
             
             await new Promise(r => setTimeout(r, 1000));
-            document.getElementById(`mini-body-${groupLetter}`).innerHTML += `<div class="mini-player-row"><img src="${p.photo}" class="mini-avatar"><span>${p.teamName.replace(/_/g, ' ')}</span></div>`;
+            document.getElementById(`mini-body-${groupLetter}`).innerHTML += `<div class="mini-player-row"><img src="${p.photo}" class="mini-avatar"><span>${p.teamName}</span></div>`;
             currentGroupIdx = (currentGroupIdx + 1) % numGroups;
         }
 
-        playSystemSound('anthem', false); 
+        playSound('anthem', false); 
         processPanel.style.display = 'none';
+        
         for (const letter of groupLetters) {
             document.getElementById('reveal-group-name').innerText = `Guruh ${letter}`;
-            document.getElementById('reveal-players-list').innerHTML = groups[letter].map(p => `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; border-radius:2px; object-fit:cover;"> ${p.teamName.replace(/_/g, ' ')}</div>`).join('');
+            document.getElementById('reveal-players-list').innerHTML = "";
+            groups[letter].forEach((p) => {
+                document.getElementById('reveal-players-list').innerHTML += `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; border-radius:2px; object-fit:cover;"> ${p.teamName}</div>`;
+            });
             finalReveal.classList.remove('animate-reveal'); void finalReveal.offsetWidth; finalReveal.classList.add('animate-reveal');
             await new Promise(r => setTimeout(r, 4100));
         }
@@ -472,7 +473,7 @@
             const gCard = document.createElement('div'); gCard.className = 'group-card';
             gCard.innerHTML = `<div class="group-title">GURUH ${label}</div>`;
             groups[label].forEach(u => {
-                gCard.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><div style="display:flex; align-items:center; gap:10px;"><img src="${u.photo}" class="mini-avatar"><span>${u.teamName.replace(/_/g, ' ')}</span></div></div>`;
+                gCard.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><div style="display:flex; align-items:center; gap:10px;"><img src="${u.photo}" class="mini-avatar"><span>${u.teamName}</span></div></div>`;
             });
             groupsDiv.appendChild(gCard);
         });
@@ -486,7 +487,7 @@
             onValue(ref(db, 'tournament/users/' + uid), (snap) => {
                 const u = snap.val();
                 if(u) { 
-                    document.getElementById('prof-team').innerText = u.teamName.replace(/_/g, ' '); 
+                    document.getElementById('prof-team').innerText = u.teamName; 
                     document.getElementById('prof-user').innerText = u.firstname; 
                     if(u.status === 'checking') showScreen('checking'); else showScreen('tournaments'); 
                 }

@@ -6,123 +6,172 @@
     <title>eFootball Tournament</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
-    <style id="dynamic-styles">
-        /* Admin paneldan keladigan dinamik uslublar */
+    <style>
         :root {
             --ef-dark: #00051a;
             --ef-blue: #001e7a;
             --ef-neon: #dfff00;
-            --ef-radius: 12px;
-            --ef-font-h1: 18px;
-            --ef-font-p: 12px;
+            --ef-danger: #ff004c;
+            --ef-card: rgba(0, 21, 90, 0.95);
+            --ef-text: #ffffff;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background: var(--ef-dark);
-            color: #fff;
+            color: var(--ef-text);
             margin: 0;
             padding-bottom: 60px;
             background-image: radial-gradient(circle at 50% 50%, var(--ef-blue) 0%, var(--ef-dark) 100%);
             background-attachment: fixed;
             overflow-x: hidden;
-            transition: 0.5s;
         }
 
         .container { padding: 10px; max-width: 420px; margin: auto; }
-        h1 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); font-size: var(--ef-font-h1); }
-        p { font-size: var(--ef-font-p); }
+        
+        h1 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); margin: 5px 0 10px; text-align: left; font-size: 18px; letter-spacing: 0.5px; }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ef-dark); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .spinner {
+            width: 35px; height: 35px; border: 3px solid rgba(223, 255, 0, 0.1);
+            border-top: 3px solid var(--ef-neon); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .ef-card {
-            background: rgba(0, 21, 90, 0.95);
-            border-left: 3px solid var(--ef-neon);
-            padding: 12px;
-            border-radius: var(--ef-radius);
-            margin-bottom: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            transition: 0.3s;
+            background: var(--ef-card); border-left: 3px solid var(--ef-neon);
+            padding: 10px 12px; border-radius: 2px; margin-bottom: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
         }
+
+        .reg-card { padding: 25px 15px; border-left-width: 5px; }
+        .reg-card label { font-size: 11px; margin-bottom: 6px; }
+        .reg-card .input-box { padding: 14px; font-size: 15px; margin-bottom: 15px; }
+        .reg-card .btn { padding: 16px; font-size: 14px; }
+
+        .ef-card h3 { font-family: 'Oswald', sans-serif; margin: 0; font-size: 14px; color: var(--ef-neon); }
+        .ef-card p { margin: 2px 0 8px; font-size: 11px; opacity: 0.8; }
+
+        label { display: block; font-size: 9px; color: var(--ef-neon); font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+        .input-box {
+            width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--ef-blue);
+            color: white; border-radius: 2px; margin-bottom: 8px; box-sizing: border-box; font-size: 12px;
+        }
+
+        .team-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+            max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 5px;
+        }
+        .team-item { text-align: center; font-size: 8px; padding: 3px; border-radius: 2px; position: relative; }
+        .team-item img { width: 28px; height: 28px; object-fit: contain; background: white; border-radius: 2px; padding: 1px; }
+        .team-item p { margin: 2px 0 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .team-item.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+        .team-item.taken::before {
+            content: "TANLANGAN";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            background: var(--ef-danger);
+            color: white;
+            font-size: 6px;
+            font-weight: 900;
+            padding: 2px 4px;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .team-item.selected { border: 1px solid var(--ef-neon); background: rgba(223,255,0,0.1); }
 
         .btn {
-            width: 100%; padding: 12px; background: var(--ef-neon); color: #000;
-            border: none; font-weight: 900; text-transform: uppercase; cursor: pointer;
-            border-radius: var(--ef-radius); font-size: 11px;
+            width: 100%; padding: 10px; background: var(--ef-neon); color: #000;
+            border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px;
+            clip-path: polygon(0 0, 97% 0, 100% 25%, 100% 100%, 3% 100%, 0 75%);
         }
-        .btn:disabled { background: #333; color: #666; }
+        .btn:disabled { background: #333; color: #666; opacity: 0.5; }
 
-        /* --- 15 TA DINAMIK ANIMATSIYALAR --- */
-        @keyframes slideLeft { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
-        @keyframes zoomOut { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); } }
-        @keyframes flipX { from { transform: perspective(400px) rotateX(90deg); opacity: 0; } to { transform: perspective(400px) rotateX(0deg); opacity: 1; } }
-        @keyframes flipY { from { transform: perspective(400px) rotateY(90deg); opacity: 0; } to { transform: perspective(400px) rotateY(0deg); opacity: 1; } }
-        @keyframes bounceIn { 0% { opacity: 0; transform: scale(.3); } 50% { opacity: 1; transform: scale(1.05); } 100% { transform: scale(1); } }
-        @keyframes rotateIn { from { transform: rotate(-200deg); opacity: 0; } to { transform: rotate(0); opacity: 1; } }
-        @keyframes fadeScale { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        @keyframes rollIn { from { opacity: 0; transform: translateX(-100%) rotate(-120deg); } to { opacity: 1; transform: translateX(0) rotate(0deg); } }
-        @keyframes jackInTheBox { 0% { opacity: 0; transform: scale(0.1) rotate(30deg); } 50% { transform: rotate(-10deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
-        @keyframes swing { 20% { transform: rotate(15deg); } 40% { transform: rotate(-10deg); } 60% { transform: rotate(5deg); } 80% { transform: rotate(-5deg); } 100% { transform: rotate(0); } }
-        @keyframes glitch { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        .draw-animation { animation-duration: 0.8s; animation-fill-mode: both; }
-
-        #screen-draw-live { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: var(--ef-dark); z-index: 9999; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box;
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #000; border-top: 1px solid rgba(223,255,0,0.3);
+            display: flex; justify-content: space-around; padding: 6px 0; z-index: 1000;
         }
-
-        .group-container { background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 15px; border: 1px solid var(--ef-neon); border-radius: var(--ef-radius); }
-        .group-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
-        .group-row img { width: 20px; background: #fff; border-radius: 2px; }
-
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.1); }
-        .nav-item { font-size: 9px; font-weight: 900; opacity: 0.4; color: #fff; cursor: pointer; }
+        .nav-item { text-align: center; font-size: 8px; font-weight: 900; color: #fff; opacity: 0.4; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--ef-neon); }
 
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--ef-dark); z-index: 2000; display: none; padding: 15px; box-sizing: border-box; overflow-y: auto; }
+        
         .screen { display: none; }
         .screen.active { display: block; }
     </style>
 </head>
 <body>
 
-<div id="broadcast-notice" style="position:fixed; top:0; width:100%; background:var(--ef-neon); color:#000; padding:10px; text-align:center; font-weight:900; z-index:5000; display:none;"></div>
-<div id="loader" style="position:fixed; top:0; width:100%; height:100%; background:#000; display:flex; justify-content:center; align-items:center; z-index:10000;"><div class="spinner"></div></div>
-
-<div id="screen-draw-live">
-    <div id="app-logo-draw" style="text-align:center; margin-bottom:20px;"></div>
-    <h1 style="text-align:center;">🔴 LIVE QURA</h1>
-    <div id="draw-results-list"></div>
-    <button class="btn" onclick="document.getElementById('screen-draw-live').style.display='none'">YOPISH</button>
-</div>
+<div id="loader"><div class="spinner"></div><p style="color:var(--ef-neon); font-size:10px; margin-top:10px; font-weight:900; text-transform: uppercase;">eFootball Tournament</p></div>
 
 <div class="container">
-    <div id="app-branding" style="text-align:center; margin: 10px 0;"></div>
-    
     <div id="screen-reg" class="screen">
-        <h1 id="reg-title">RO'YXATDAN O'TISH</h1>
-        <div class="ef-card">
-            <p id="reg-msg"></p>
-            <input type="text" id="reg-username" class="input-box" style="width:100%; padding:10px; box-sizing:border-box; background:#000; border:1px solid var(--ef-blue); color:#fff; border-radius:var(--ef-radius);">
-            <button class="btn" style="margin-top:15px;" onclick="openTeams()">DAVOM ETISH ➔</button>
+        <h1 style="text-align:center; font-size:22px; margin-bottom:20px;">RO'YXATDAN O'TISH</h1>
+        <div class="ef-card reg-card">
+            <label>ISM</label>
+            <input type="text" id="reg-name" class="input-box" placeholder="Ismingiz" oninput="validateReg()">
+            <label>FAMILIYA</label>
+            <input type="text" id="reg-surname" class="input-box" placeholder="Familiyangiz" oninput="validateReg()">
+            <label>TUG'ILGAN SANA</label>
+            <input type="date" id="reg-bday" class="input-box" oninput="validateReg()">
+            <button id="next-btn" class="btn" onclick="openTeams()" style="display:none; margin-top:10px;">KEYINGI BOSQICH ➔</button>
         </div>
     </div>
 
     <div id="screen-tournaments" class="screen">
         <h1>TURNIRLAR</h1>
-        <div id="tournament-options"></div>
+        <div id="tournament-options">
+            <p style="text-align:center; opacity:0.5;">Narxlar yuklanmoqda...</p>
+        </div>
     </div>
 
     <div id="screen-ranking" class="screen"><h1>REYTING</h1><div id="ranking-list"></div></div>
     <div id="screen-profile" class="screen"><h1>PROFIL</h1><div id="profile-data"></div></div>
+    <div id="screen-settings" class="screen"><h1>SOZLAMALAR</h1><div class="ef-card"><button class="btn" style="background:var(--ef-danger); color:#fff; clip-path:none;" onclick="logout()">LOGOUT</button></div></div>
+</div>
+
+<div id="team-overlay" class="overlay">
+    <h1>JAMOA TANLASH</h1>
+    <div class="ef-card">
+        <div style="display:flex; gap:4px; margin-bottom:8px;">
+            <button onclick="loadTeams('nation')" class="btn" style="padding:6px; font-size:9px;">DAVLATLAR</button>
+            <button onclick="loadTeams('club')" class="btn" style="padding:6px; font-size:9px;">KLUBLAR</button>
+        </div>
+        <div class="team-grid" id="team-selector"></div>
+        <button class="btn" style="margin-top:12px;" onclick="handleRegistration()">SAQLASH</button>
+        <button class="btn" style="margin-top:6px; background:transparent; color:white; border:1px solid #333;" onclick="closeOverlay('team-overlay')">ORTGA</button>
+    </div>
+</div>
+
+<div id="pay-overlay" class="overlay">
+    <h1>TO'LOV</h1>
+    <div class="ef-card">
+        <h3 style="color:var(--ef-danger)">TO'LOV MA'LUMOTLARI</h3>
+        <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:2px; margin:8px 0; font-size:12px;">
+            <p>Karta: <b style="color:var(--ef-neon)">4073 4200 6816 5541</b></p>
+            <p>Ega: <b>Maruf Raxmonov</b></p>
+            <p>Summa: <b id="pay-amount" style="color:var(--ef-neon)">0</b> so'm</p>
+        </div>
+        <button class="btn" onclick="confirmPayment()">TO'LOV QILDIM</button>
+        <button class="btn" style="margin-top:6px; background:transparent; color:white; border:1px solid #333;" onclick="closeOverlay('pay-overlay')">BEKOR QILISH</button>
+    </div>
 </div>
 
 <nav class="nav-bar" id="main-nav" style="display:none;">
     <div class="nav-item active" onclick="nav('tournaments', this)">🏟 TURNIRLAR</div>
     <div class="nav-item" onclick="nav('ranking', this)">🏆 REYTING</div>
     <div class="nav-item" onclick="nav('profile', this)">👤 PROFIL</div>
+    <div class="nav-item" onclick="nav('settings', this)">⚙️ SOZLAMALAR</div>
 </nav>
 
 <script type="module">
@@ -143,152 +192,162 @@
     const db = getDatabase(app);
     const tg = window.Telegram.WebApp;
     const user_id = tg.initDataUnsafe?.user?.id || "DEBUG_USER";
-    const tg_username = tg.initDataUnsafe?.user?.username ? "@" + tg.initDataUnsafe?.user?.username : "";
 
-    let userData = null, appSettings = null, allUsers = {}, prices = {};
+    let userData = null, selectedTeam = null, allTeams = [], takenTeams = [], prices = {};
 
-    // 1. DINAMIK SOZLAMALARNI QABUL QILISH
-    onValue(ref(db, 'app_settings'), (snap) => {
+    const toggleLoader = (show) => document.getElementById('loader').style.display = show ? 'flex' : 'none';
+    const closeOverlay = (id) => document.getElementById(id).style.display = 'none';
+    window.closeOverlay = closeOverlay;
+
+    // BAZADAN NARXLARNI OLISH
+    const fetchPrices = async () => {
+        const snap = await get(ref(db, 'tournaments_config'));
         if(snap.exists()) {
-            appSettings = snap.val();
-            applySettings();
+            prices = snap.val();
+            renderTournaments();
         }
-    });
+    };
 
-    function applySettings() {
-        const s = appSettings;
-        const root = document.documentElement.style;
-        root.setProperty('--ef-dark', s.colors.dark);
-        root.setProperty('--ef-blue', s.colors.blue);
-        root.setProperty('--ef-neon', s.colors.neon);
-        root.setProperty('--ef-radius', s.sizes.radius + 'px');
-        root.setProperty('--ef-font-h1', s.sizes.h1 + 'px');
-        root.setProperty('--ef-font-p', s.sizes.p + 'px');
-
-        if(s.branding.logo) {
-            const img = `<img src="${s.branding.logo}" style="height:${s.branding.logoH}px;">`;
-            document.getElementById('app-branding').innerHTML = img;
-            document.getElementById('app-logo-draw').innerHTML = img;
-        }
-    }
-
-    // 2. QURA VA ANIMATSIYA
-    onValue(ref(db, 'draw_status'), async (snap) => {
-        const screen = document.getElementById('screen-draw-live');
-        if(snap.exists() && snap.val().live) {
-            screen.style.display = 'block';
-            renderSequentialDraw();
-        } else {
-            screen.style.display = 'none';
-        }
-    });
-
-    async function renderSequentialDraw() {
-        const drawSnap = await get(ref(db, 'final_draw'));
-        if(!drawSnap.exists()) return;
-        
-        const groups = drawSnap.val();
-        const container = document.getElementById('draw-results-list');
-        container.innerHTML = "";
-        
-        const animType = appSettings.animation.type; // Admin paneldan kelgan animatsiya nomi
-        const speed = appSettings.animation.speed;
-
-        for (const [gName, users] of Object.entries(groups)) {
-            let gHtml = `<div class="group-container"><div style="color:var(--ef-neon); font-weight:800; margin-bottom:10px;">GROUP ${gName}</div>`;
-            container.innerHTML += gHtml;
-            const currentGroupDiv = container.lastElementChild;
-
-            for (const user of users) {
-                const row = document.createElement('div');
-                row.className = `group-row draw-animation`;
-                row.style.animationName = animType; // TANLANGAN ANIMATSIYA
-                row.innerHTML = `<img src="${user.teamLogo}"> <span><b>${user.name}</b></span>`;
-                currentGroupDiv.appendChild(row);
-                await new Promise(r => setTimeout(r, speed));
-            }
-            container.innerHTML += `</div>`;
-        }
-    }
-
-    // 3. TURNIRLAR VA NARXLAR
-    onValue(ref(db, 'tournaments_config'), (s) => { if(s.exists()){ prices = s.val(); renderTournaments(); }});
-    onValue(ref(db, 'users'), (s) => { if(s.exists()){ allUsers = s.val(); renderTournaments(); }});
-
-    function renderTournaments() {
+    const renderTournaments = () => {
         const container = document.getElementById('tournament-options');
-        if(!prices.f8 || !allUsers) return;
+        const list = [
+            {f: 8, p: prices.f8}, {f: 16, p: prices.f16}, 
+            {f: 32, p: prices.f32}, {f: 48, p: prices.f48}
+        ];
         container.innerHTML = "";
-        [8, 16, 32].forEach(f => {
-            const count = Object.values(allUsers).filter(u => u.currentTournament === f + " Talik" && u.paymentStatus === 'approved').length;
-            const price = prices['f' + f];
-            const name = appSettings.formats['f' + f];
-
+        list.forEach(item => {
             container.innerHTML += `
                 <div class="ef-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <h3 style="margin:0; font-size:14px;">${name}</h3>
-                        <span style="color:var(--ef-neon); font-weight:900;">${count}/${f}</span>
-                    </div>
-                    <p>Kirish: ${price.toLocaleString()} so'm</p>
-                    <button class="btn" ${userData?.currentTournament ? 'disabled' : ''} onclick="showPay(${f}, ${price})">QATNASHISH</button>
-                </div>`;
+                    <h3>${item.f} TALIK FORMAT</h3>
+                    <p>Kirish: ${item.p.toLocaleString()} so'm</p>
+                    <button class="btn btn-join" onclick="showPay(${item.f}, ${item.p})">QATNASHISH</button>
+                </div>
+            `;
         });
-    }
+        if(userData?.currentTournament) document.querySelectorAll('.btn-join').forEach(b => b.disabled = true);
+    };
 
-    // --- BOSHQA FUNKSIYALAR ---
+    window.validateReg = () => {
+        const name = document.getElementById('reg-name').value;
+        const surname = document.getElementById('reg-surname').value;
+        const bday = document.getElementById('reg-bday').value;
+        document.getElementById('next-btn').style.display = (name && surname && bday) ? 'block' : 'none';
+    };
+
+    window.openTeams = () => {
+        document.getElementById('team-overlay').style.display = 'block';
+        loadTeams('nation');
+    };
+
+    window.showPay = (format, price) => {
+        if(userData.currentTournament) return alert("Sizda faol turnir bor!");
+        document.getElementById('pay-amount').innerText = price.toLocaleString();
+        document.getElementById('pay-overlay').style.display = 'block';
+        window.tempJoin = { format, price };
+    };
+
     window.nav = (id, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-' + id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
+        if(id === 'ranking') loadRanking();
+        if(id === 'profile') loadProfile();
     };
 
-    window.showPay = (f, p) => {
-        document.getElementById('pay-amount').innerText = p.toLocaleString();
-        document.getElementById('pay-overlay').style.display = 'block';
-        window.tempJoin = { f, p };
+    window.loadTeams = async (type) => {
+        toggleLoader(true);
+        const snap = await get(ref(db, 'available_teams'));
+        const usersSnap = await get(ref(db, 'users'));
+        takenTeams = usersSnap.exists() ? Object.values(usersSnap.val()).map(u => u.teamId) : [];
+        allTeams = snap.val() ? Object.values(snap.val()) : [];
+        const container = document.getElementById('team-selector');
+        container.innerHTML = "";
+        allTeams.filter(t => t.type === type).forEach(team => {
+            const isTaken = takenTeams.includes(team.id);
+            const div = document.createElement('div');
+            div.className = `team-item ${isTaken ? 'taken' : ''}`;
+            div.onclick = () => {
+                document.querySelectorAll('.team-item').forEach(i => i.classList.remove('selected'));
+                div.classList.add('selected');
+                selectedTeam = team;
+            };
+            div.innerHTML = `<img src="${team.logo}"> <p>${team.name}</p>`;
+            container.appendChild(div);
+        });
+        toggleLoader(false);
+    };
+
+    window.handleRegistration = async () => {
+        if(!selectedTeam) return alert("Jamoa tanlang!");
+        toggleLoader(true);
+        const newUser = {
+            id: user_id, name: document.getElementById('reg-name').value, 
+            surname: document.getElementById('reg-surname').value, 
+            bday: document.getElementById('reg-bday').value,
+            teamId: selectedTeam.id, teamName: selectedTeam.name, teamLogo: selectedTeam.logo,
+            currentTournament: null, paymentStatus: null
+        };
+        await set(ref(db, 'users/' + user_id), newUser);
+        location.reload();
     };
 
     window.confirmPayment = async () => {
-        await update(ref(db, 'users/' + user_id), { currentTournament: window.tempJoin.f + " Talik", paymentStatus: 'pending' });
-        document.getElementById('pay-overlay').style.display = 'none';
-    };
-
-    async function checkAuth() {
-        const snap = await get(ref(db, 'users/' + user_id));
-        document.getElementById('loader').style.display = 'none';
-        if(!snap.exists()) {
-            document.getElementById('screen-reg').classList.add('active');
-            document.getElementById('reg-username').value = tg_username;
-        } else {
-            startUserListener();
-            document.getElementById('main-nav').style.display = 'flex';
-            document.getElementById('screen-tournaments').classList.add('active');
-        }
-    }
-
-    const startUserListener = () => {
-        onValue(ref(db, 'users/' + user_id), (snap) => {
-            if(snap.exists()) {
-                userData = snap.val();
-                if(userData.status === 'blocked') alert("Siz bloklandingiz!");
-                loadProfile();
-            }
+        toggleLoader(true);
+        // TASDIQLASH UCHUN 'pending' STATUSINI YUBORISH
+        await update(ref(db, 'users/' + user_id), { 
+            currentTournament: window.tempJoin.format + " Talik",
+            paymentStatus: 'pending' 
         });
+        location.reload();
     };
+
+    function loadRanking() {
+        onValue(ref(db, 'users'), (snap) => {
+            const list = document.getElementById('ranking-list'); list.innerHTML = "";
+            if(snap.exists()) Object.values(snap.val()).forEach(u => {
+                // FAQAT TASDIQLANGANLARNI REYTINGGA CHIQARISH (IXTIYORIY)
+                if(u.paymentStatus === 'approved') {
+                    list.innerHTML += `<div class="ef-card" style="display:flex; align-items:center; gap:10px; padding:8px;"><img src="${u.teamLogo}" style="width:25px; background:white; border-radius:2px; padding:1px;"><div><div style="font-weight:900; font-size:12px;">${u.name} ${u.surname}</div><div style="font-size:9px; opacity:0.6;">${u.teamName}</div></div></div>`;
+                }
+            });
+        });
+    }
 
     function loadProfile() {
-        if(!userData) return;
+        const b = new Date(userData.bday), t = new Date();
+        let age = t.getFullYear() - b.getFullYear();
+        if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) age--;
+        let next = new Date(t.getFullYear(), b.getMonth(), b.getDate());
+        if (t > next) next.setFullYear(t.getFullYear() + 1);
+        const days = Math.ceil((next - t) / 86400000);
+
+        let statusText = "";
+        if(userData.paymentStatus === 'pending') statusText = " (Kutilmoqda...)";
+        if(userData.paymentStatus === 'approved') statusText = " (Tasdiqlangan)";
+
         document.getElementById('profile-data').innerHTML = `
-            <div class="ef-card" style="text-align:center;">
-                <img src="${userData.teamLogo}" style="width:60px; background:#fff; border-radius:50%; padding:5px;">
-                <h2>${userData.name}</h2>
-                <p>Jamoa: ${userData.teamName}</p>
-                <p>Status: ${userData.paymentStatus || 'Ro\'yxatdan o\'tgan'}</p>
-            </div>`;
+            <div style="text-align:center; margin-bottom:8px;"><img src="${userData.teamLogo}" style="width:45px; background:white; padding:3px; border-radius:4px;"><h2 style="font-size:16px; margin:4px 0;">${userData.name} ${userData.surname}</h2></div>
+            <p style="font-size:11px;">🎂 Yosh: <b>${age}</b> | 🎉 Tug'ilgan kunga: <b>${days} kun</b></p>
+            <p style="font-size:11px;">🏟 Turnir: <b style="color:var(--ef-neon)">${userData.currentTournament || "Yo'q"}${statusText}</b></p>
+            <p style="font-size:11px;">🛡 Jamoa: <b>${userData.teamName}</b></p>
+        `;
     }
 
+    async function checkAuth() {
+        toggleLoader(true);
+        await fetchPrices(); // NARXLARNI YUKLASH
+        const snap = await get(ref(db, 'users/' + user_id));
+        if(!snap.exists()) {
+            document.getElementById('screen-reg').classList.add('active');
+        } else {
+            userData = snap.val();
+            document.getElementById('main-nav').style.display = 'flex';
+            document.getElementById('screen-tournaments').classList.add('active');
+            renderTournaments(); // BAZADAGI NARXLAR BILAN QAYTA CHIZISH
+        }
+        toggleLoader(false);
+    }
     checkAuth();
 </script>
 </body>

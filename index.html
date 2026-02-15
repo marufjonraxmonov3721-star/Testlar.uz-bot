@@ -53,21 +53,6 @@
             padding-bottom: 80px;
         }
 
-        #intro-stage {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 4000; display: none;
-            flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; padding: 20px; box-sizing: border-box;
-        }
-
-        .intro-text { opacity: 0; transform: translateY(20px); transition: 0.6s all ease-out; }
-        .intro-text.show { opacity: 1; transform: translateY(0); }
-        .intro-name { font-size: 18px; color: #fff; font-weight: 400; margin-bottom: 5px; }
-        .intro-lastname { font-size: 32px; color: var(--ef-neon-yellow); font-weight: 900; text-transform: uppercase; margin-bottom: 15px; }
-        .intro-team { font-size: 16px; color: var(--ef-bonus); font-weight: 700; letter-spacing: 2px; margin-bottom: 25px; }
-        .intro-photo { width: 220px; height: 220px; border: 5px solid var(--ef-neon-yellow); border-radius: 8px; object-fit: cover; opacity: 0; transform: scale(0.8); transition: 0.8s all ease-in-out; }
-        .intro-photo.show { opacity: 1; transform: scale(1); box-shadow: 0 0 30px rgba(223, 255, 0, 0.3); }
-
         .sticky-draw-header {
             position: sticky; top: 0; background: var(--ef-dark-blue);
             z-index: 3001; padding: 10px; border-bottom: 2px solid var(--ef-neon-yellow);
@@ -80,8 +65,6 @@
             display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
             max-height: 70px; overflow-y: auto;
         }
-        .pool-item { font-size: 8px; background: #fff; color: #000; padding: 2px 5px; border-radius: 15px; font-weight: 700; opacity: 0.3; }
-        .pool-item.active { opacity: 1; background: var(--ef-neon-yellow); box-shadow: 0 0 8px var(--ef-neon-yellow); }
 
         #draw-stage { height: 140px; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
         
@@ -92,7 +75,7 @@
             display: none;
         }
         
-        .animate-player { animation: card-reveal 2.2s ease-in-out forwards; display: block !important; }
+        .animate-player { animation: card-reveal 1.8s ease-in-out forwards; display: block !important; }
         @keyframes card-reveal {
             0% { transform: scale(0.3) rotateX(90deg); opacity: 0; }
             20% { transform: scale(1.1) rotateX(0deg); opacity: 1; }
@@ -108,7 +91,7 @@
             z-index: 4000; display: none; box-shadow: 0 0 100px rgba(0,0,0,1);
         }
         
-        .animate-reveal { display: block !important; animation: group-modal-pop 4s ease-in-out forwards; }
+        .animate-reveal { display: block !important; animation: group-modal-pop 3s ease-in-out forwards; }
         @keyframes group-modal-pop {
             0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
             10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
@@ -141,18 +124,10 @@
 </head>
 <body>
 
-    <div id="intro-stage">
-        <div id="intro-name" class="intro-name intro-text">ISM</div>
-        <div id="intro-lastname" class="intro-lastname intro-text">FAMILIYA</div>
-        <div id="intro-team" class="intro-team intro-text">JAMOANOMI</div>
-        <img id="intro-photo" class="intro-photo" src="">
-    </div>
-
     <div id="draw-overlay">
         <div id="draw-process-panel">
             <div class="sticky-draw-header">
                 <h2 style="color:var(--ef-neon-yellow); text-align:center; font-size:10px; margin: 0 0 5px 0;">QUR'A TASHALISH</h2>
-                <div class="draw-pool" id="draw-pool-container"></div>
                 <div id="draw-stage">
                     <div class="big-card" id="active-draw-card">
                         <div style="font-size:9px; opacity:0.7; font-weight:900;" id="active-draw-group">GURUH ?</div>
@@ -334,33 +309,12 @@
     }
 
     async function startWorldCupDraw(players, groupsRef, myUid) {
-        const intro = document.getElementById('intro-stage');
         const overlay = document.getElementById('draw-overlay');
         const activeCard = document.getElementById('active-draw-card');
         const processPanel = document.getElementById('draw-process-panel');
         const finalReveal = document.getElementById('final-reveal-modal');
         
         overlay.style.display = 'flex';
-        intro.style.display = 'flex';
-        
-        for (const p of players) {
-            document.getElementById('intro-name').innerText = p.firstname;
-            document.getElementById('intro-lastname').innerText = p.lastname;
-            document.getElementById('intro-team').innerText = p.teamName;
-            document.getElementById('intro-photo').src = p.photo;
-            const els = ['intro-name', 'intro-lastname', 'intro-team', 'intro-photo'];
-            
-            for(let i=0; i<els.length; i++){
-                await new Promise(r => setTimeout(r, 400));
-                document.getElementById(els[i]).classList.add('show');
-            }
-            
-            await new Promise(r => setTimeout(r, 1200));
-            els.forEach(id => document.getElementById(id).classList.remove('show'));
-            await new Promise(r => setTimeout(r, 200));
-        }
-        
-        intro.style.display = 'none';
         processPanel.style.display = 'block';
         document.getElementById('mini-groups-grid').innerHTML = "";
         
@@ -385,13 +339,13 @@
             document.getElementById('active-draw-team').innerText = p.teamName;
             document.getElementById('active-draw-player').innerText = p.firstname + " " + p.lastname;
             
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 600));
             document.getElementById('active-draw-group').innerText = `GURUH ${groupLetter}`;
             const miniG = document.getElementById(`mini-g-${groupLetter}`);
             document.querySelectorAll('.mini-group-card').forEach(g => g.classList.remove('highlight-focus'));
             miniG.classList.add('highlight-focus'); 
             
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 400));
             document.getElementById(`mini-body-${groupLetter}`).innerHTML += `<div class="mini-player-row"><img src="${p.photo}" class="mini-avatar"><span>${p.teamName}</span></div>`;
             currentGroupIdx = (currentGroupIdx + 1) % numGroups;
         }
@@ -405,7 +359,7 @@
                 document.getElementById('reveal-players-list').innerHTML += `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; border-radius:2px; object-fit:cover;"> ${p.teamName}</div>`;
             });
             finalReveal.classList.remove('animate-reveal'); void finalReveal.offsetWidth; finalReveal.classList.add('animate-reveal');
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise(r => setTimeout(r, 2000));
         }
 
         await set(groupsRef, groups); overlay.style.display = 'none'; renderGroups(groups, myUid);

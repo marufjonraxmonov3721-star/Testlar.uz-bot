@@ -254,8 +254,13 @@
             currentAudio.src = "";
             currentAudio = null;
         }
-        if (audioData[type]) {
-            currentAudio = new Audio(audioData[type]);
+        
+        // Jamoa nomini tekshirish (O'zbekiston, Real Madrid, Barcelona uchun)
+        // Agar jamoa nomi audioData ichida bo'lsa, o'shani chaladi
+        const audioSource = audioData[type] || audioData[type.toLowerCase()];
+        
+        if (audioSource) {
+            currentAudio = new Audio(audioSource);
             currentAudio.loop = loop;
             
             if (type === 'anthem') {
@@ -397,9 +402,15 @@
         overlay.style.display = 'flex';
         intro.style.display = 'flex';
         
-        playSound('intro', true);
-        
         for (const p of players) {
+            // Har bir ishtirokchi uchun o'z jamoasi madhiyasini yoki umumiy intro-ni chalish
+            // Masalan: "O'zbekiston", "Real Madrid", "Barcelona" kalit so'zlari bo'yicha
+            if(audioData[p.teamName]) {
+                playSound(p.teamName, true);
+            } else {
+                playSound('intro', true);
+            }
+
             document.getElementById('intro-name').innerText = p.firstname;
             document.getElementById('intro-lastname').innerText = p.lastname;
             document.getElementById('intro-team').innerText = p.teamName;
@@ -409,7 +420,7 @@
                 await new Promise(r => setTimeout(r, 600));
                 document.getElementById(els[i]).classList.add('show');
             }
-            await new Promise(r => setTimeout(r, 1800));
+            await new Promise(r => setTimeout(r, 2200)); // Madhiya yaxshiroq eshitilishi uchun vaqtni biroz cho'zdik
             els.forEach(id => document.getElementById(id).classList.remove('show'));
             await new Promise(r => setTimeout(r, 400));
         }

@@ -6,7 +6,7 @@
     <title>eFootball Pro League</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; --success: #22c55e; }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; --success: #22c55e; --gold: #fbbf24; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; overflow-x: hidden; }
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
         
@@ -17,48 +17,51 @@
         .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         h2 { color: var(--primary); font-size: 22px; margin-top: 0; }
 
-        /* Modal (Katta tabrik oynasi) */
-        #welcome-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95); display: none;
-            flex-direction: column; justify-content: center; align-items: center;
-            z-index: 2000; padding: 20px; text-align: center; box-sizing: border-box;
-        }
-        .modal-content { animation: scaleUp 0.4s; }
-        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Modal va To'lov */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; padding: 20px; box-sizing: border-box; }
+        .payment-info { background: #0f172a; padding: 20px; border-radius: 15px; border: 1px dashed var(--primary); margin: 15px 0; font-family: monospace; }
 
-        .navbar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #1e293b; display: flex; justify-content: space-around;
-            padding: 10px 0; border-top: 1px solid #334155; z-index: 1000;
-        }
+        /* Turnir Setkasi */
+        .draw-box { animation: slideUp 0.8s ease; width: 100%; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .player-item { display: flex; justify-content: space-between; background: #2d3748; padding: 10px; margin: 5px 0; border-radius: 8px; border-left: 4px solid var(--primary); }
+
+        .navbar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #334155; z-index: 1000; }
         .nav-item { color: #94a3b8; font-size: 11px; text-decoration: none; cursor: pointer; text-align: center; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .t-btn { background: var(--bg); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .t-btn { background: var(--bg); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; position: relative; overflow: hidden; }
+        .t-btn span { display: block; font-size: 10px; color: var(--gold); }
 
         input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
-        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-main:active { transform: scale(0.95); }
+        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
         .logout-btn { background: #ef4444; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div id="welcome-modal">
-    <div class="modal-content">
-        <h1 style="font-size: 60px; margin: 0;">🏆</h1>
-        <h2 id="modal-title" style="color: var(--success); font-size: 28px;">Omad yor bo'lsin!</h2>
-        <p id="modal-desc" style="font-size: 18px; margin-bottom: 30px;"></p>
-        <button class="btn-main" onclick="closeModal()">Davom etish</button>
+<div id="payment-modal" class="modal">
+    <h2>💳 To'lov Ma'lumotlari</h2>
+    <p id="t-type-display" style="color: var(--gold); font-weight: bold;"></p>
+    <div class="payment-info">
+        Karta: 4073 4200 6816 5541<br>
+        Ega: Maruf Raxmonov<br>
+        Summa: <span id="t-price-display"></span> so'm
     </div>
+    <p style="font-size: 12px; color: #94a3b8;">To'lovni amalga oshirib, skrinshotni adminga yuboring.</p>
+    <button class="btn-main" onclick="confirmJoin()">To'lov qildim</button>
+    <button class="btn-main" style="background:none; margin-top:10px;" onclick="closePayment()">Yopish</button>
+</div>
+
+<div id="draw-modal" class="modal">
+    <h1 id="draw-title">Qura Tashlash Marosimi 🎰</h1>
+    <div id="draw-list" class="draw-box"></div>
+    <button class="btn-main" id="draw-close-btn" style="display:none; margin-top:20px;" onclick="closeDraw()">Boshlash!</button>
 </div>
 
 <div class="container">
-    
     <div id="screen-reg" class="screen active-screen">
         <div class="card">
             <h2>🏆 Ro'yxatdan o'tish</h2>
@@ -73,11 +76,12 @@
         <div class="card" id="user-info-banner" style="background: linear-gradient(45deg, #1e293b, #0f172a); border: 1px solid #38bdf8;"></div>
         <h2>🎮 Turnirlar</h2>
         <div class="grid">
-            <button class="t-btn">8 Kishilik</button>
-            <button class="t-btn">16 Kishilik</button>
-            <button class="t-btn">32 Kishilik</button>
-            <button class="t-btn">48 Kishilik</button>
+            <button class="t-btn" onclick="openPayment(8, 5000)">8 Kishilik <span>5 000 so'm</span></button>
+            <button class="t-btn" onclick="openPayment(16, 10000)">16 Kishilik <span>10 000 so'm</span></button>
+            <button class="t-btn" onclick="openPayment(32, 15000)">32 Kishilik <span>15 000 so'm</span></button>
+            <button class="t-btn" onclick="openPayment(48, 20000)">48 Kishilik <span>20 000 so'm</span></button>
         </div>
+        <p style="font-size: 11px; color: var(--gold); margin-top: 15px;">* 5% komissiya, qolgani sovrin jamg'armasiga!</p>
     </div>
 
     <div id="screen-rating" class="screen">
@@ -93,11 +97,10 @@
     <div id="screen-settings" class="screen">
         <h2>⚙️ Sozlamalar</h2>
         <div class="card">
-            <p>Versiya: 1.1.0</p>
+            <p>Versiya: 1.2.0 (Paid)</p>
             <button class="btn-main logout-btn" onclick="handleLogout()">Tizimdan chiqish</button>
         </div>
     </div>
-
 </div>
 
 <div class="navbar" id="main-nav" style="display: none;">
@@ -109,7 +112,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
@@ -125,6 +128,7 @@
 
     const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_test";
     let bgMusic = null;
+    let selectedT = { size: 0, price: 0 };
 
     window.showScreen = function(screenId, navEl) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
@@ -133,73 +137,99 @@
         if(navEl) navEl.classList.add('active');
     };
 
-    // Musiqa: Faqat fon musiqasini yoqish
-    async function playBackgroundOnly() {
-        if(bgMusic) return;
-        const bgSnap = await get(ref(db, 'musiqalar/background'));
-        if(bgSnap.exists()) {
-            bgMusic = new Audio(bgSnap.val());
-            bgMusic.loop = true;
-            bgMusic.volume = 0.3;
-            bgMusic.play();
+    window.openPayment = function(size, price) {
+        selectedT = { size, price };
+        document.getElementById('t-type-display').innerText = size + " kishilik turnir";
+        document.getElementById('t-price-display').innerText = price.toLocaleString();
+        document.getElementById('payment-modal').style.display = 'flex';
+    };
+
+    window.closePayment = () => document.getElementById('payment-modal').style.display = 'none';
+
+    window.confirmJoin = async function() {
+        const userSnap = await get(ref(db, 'players/' + userId));
+        const userData = userSnap.val();
+        
+        await set(ref(db, `queue_${selectedT.size}/${userId}`), {
+            name: userData.full_name,
+            team: userData.account,
+            team_type: userData.team_type
+        });
+        
+        closePayment();
+        alert("Siz navbatga qo'shildingiz. To'lov tasdiqlangach ro'yxatga olinasiz!");
+    };
+
+    // Qura tashlash mantiqi (Real-time monitoring)
+    function monitorQueue(size) {
+        onValue(ref(db, `queue_${size}`), (snap) => {
+            const players = snap.val();
+            if (players && Object.keys(players).length >= size) {
+                startCeremony(players, size);
+            }
+        });
+    }
+
+    async function startCeremony(players, size) {
+        const modal = document.getElementById('draw-modal');
+        const list = document.getElementById('draw-list');
+        modal.style.display = 'flex';
+        list.innerHTML = "";
+        
+        const playerArray = Object.values(players);
+        // Random (Qura)
+        playerArray.sort(() => Math.random() - 0.5);
+
+        for (let i = 0; i < playerArray.length; i++) {
+            const p = playerArray[i];
+            setTimeout(async () => {
+                const item = document.createElement('div');
+                item.className = 'player-item';
+                item.innerHTML = `<span>${i+1}. ${p.name}</span> <span style="font-size:10px; color:var(--primary)">${p.team}</span>`;
+                list.appendChild(item);
+                
+                // Madhiya chalish
+                if (p.team_type) {
+                    const music = await get(ref(db, 'musiqalar/' + p.team_type));
+                    if (music.exists()) new Audio(music.val()).play();
+                }
+                
+                if (i === playerArray.length - 1) {
+                    document.getElementById('draw-close-btn').style.display = 'block';
+                }
+            }, i * 2000); // Har 2 sekundda bitta ishtirokchi chiqadi
         }
     }
 
-    // Musiqa: Fon + Madhiya (faqat ro'yxatdan o'tganda)
-    async function playRegistrationAudio(teamKey) {
-        await playBackgroundOnly();
-        if(teamKey) {
-            const teamSnap = await get(ref(db, 'musiqalar/' + teamKey));
-            if(teamSnap.exists()) {
-                let anthem = new Audio(teamSnap.val());
-                anthem.play();
-            }
-        }
-    }
+    window.closeDraw = () => document.getElementById('draw-modal').style.display = 'none';
 
     window.handleRegistration = async function() {
         const f = document.getElementById('fname').value.trim();
         const l = document.getElementById('lname').value.trim();
         const p = document.getElementById('pes_name').value.trim();
+        if(!f || !l || !p) return alert("To'ldiring!");
 
-        if(!f || !l || !p) return alert("Iltimos, ma'lumotlarni to'ldiring!");
-
-        let teamKey = p.toLowerCase().includes("real") ? "realmadrid" : 
+        const teamKey = p.toLowerCase().includes("real") ? "realmadrid" : 
                       p.toLowerCase().includes("barca") ? "barcelona" : 
                       (p.toLowerCase().includes("uzb") || p.toLowerCase().includes("o'zb")) ? "uzbekistan" : "";
 
         const userData = { full_name: f + " " + l, account: p, team_type: teamKey };
         await set(ref(db, 'players/' + userId), userData);
-        
-        // Musiqa va Modalni chiqarish
-        playRegistrationAudio(teamKey);
-        document.getElementById('modal-desc').innerText = `${f}, eFootball turniriga xush kelibsiz!`;
-        document.getElementById('welcome-modal').style.display = 'flex';
-        
+        showMainUI();
         displayUser(userData);
     };
 
-    window.closeModal = function() {
-        document.getElementById('welcome-modal').style.display = 'none';
-        showMainUI();
-    };
-
     function displayUser(data) {
-        document.getElementById('user-info-banner').innerHTML = `
-            <p><b>O'yinchi:</b> ${data.full_name}</p>
-            <p><b>Akkaunt:</b> ${data.account}</p>
-        `;
-        document.getElementById('profile-details').innerHTML = `
-            <p><b>FISH:</b> ${data.full_name}</p>
-            <p><b>eFootball:</b> ${data.account}</p>
-            <p><b>ID:</b> ${userId}</p>
-        `;
+        document.getElementById('user-info-banner').innerHTML = `<p><b>${data.full_name}</b></p><p>${data.account}</p>`;
+        document.getElementById('profile-details').innerHTML = `<p>FISH: ${data.full_name}</p><p>Account: ${data.account}</p><p>ID: ${userId}</p>`;
     }
 
     function showMainUI() {
         document.getElementById('screen-reg').classList.remove('active-screen');
         document.getElementById('main-nav').style.display = 'flex';
         showScreen('tournaments');
+        // Navbatni kuzatishni boshlash
+        [8, 16, 32, 48].forEach(size => monitorQueue(size));
     }
 
     async function checkUser() {
@@ -207,16 +237,11 @@
         if (snap.exists()) {
             displayUser(snap.val());
             showMainUI();
-            // Qayta kirganda faqat fon musiqasi (birinchi klikda)
-            document.body.addEventListener('click', playBackgroundOnly, { once: true });
         }
     }
 
     window.handleLogout = async function() {
-        if(confirm("Chiqishni xohlaysizmi? Ma'lumotlar o'chadi.")) {
-            await remove(ref(db, 'players/' + userId));
-            location.reload();
-        }
+        if(confirm("Chiqasizmi?")) { await remove(ref(db, 'players/' + userId)); location.reload(); }
     };
 
     checkUser();

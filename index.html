@@ -2,397 +2,326 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball Tournament Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>eFootball Tournament</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --ef-dark-blue: #000a2d; 
-            --ef-light-blue: #00155a; 
-            --ef-neon-yellow: #dfff00; 
-            --ef-text: #ffffff;
+            --ef-dark: #00051a;
+            --ef-blue: #001e7a;
+            --ef-neon: #dfff00;
             --ef-danger: #ff004c;
-            --ef-border: rgba(223, 255, 0, 0.3);
-            --ef-success: #00ff41;
-            --ef-bonus: #00e5ff;
+            --ef-card: rgba(0, 21, 90, 0.9);
+            --ef-text: #ffffff;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--ef-dark-blue);
+            background: var(--ef-dark);
             color: var(--ef-text);
             margin: 0;
-            padding-bottom: 100px;
-            overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 50%, #001e7a 0%, #000a2d 100%);
+            padding-bottom: 70px;
+            background-image: radial-gradient(circle at 50% 50%, var(--ef-blue) 0%, var(--ef-dark) 100%);
+            background-attachment: fixed;
         }
 
-        .container { padding: 20px; max-width: 500px; margin: auto; }
-        .screen { display: none; animation: ef-fade 0.4s ease-out; }
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        
+        /* Typography */
+        h1, h2, h3 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); letter-spacing: 1px; }
+
+        /* Inputs */
+        .input-box {
+            width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--ef-blue);
+            color: white; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box;
+        }
+
+        /* eFootball Cards */
+        .ef-card {
+            background: var(--ef-card); border-left: 5px solid var(--ef-neon);
+            padding: 15px; border-radius: 4px; margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Navigation */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #000; border-top: 3px solid var(--ef-neon);
+            display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000;
+        }
+        .nav-item { text-align: center; font-size: 10px; font-weight: 900; color: #fff; opacity: 0.5; cursor: pointer; }
+        .nav-item.active { opacity: 1; color: var(--ef-neon); }
+
+        /* Team Selector Grid */
+        .team-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px;
+        }
+        .team-item {
+            text-align: center; font-size: 10px; padding: 5px; border: 1px solid transparent; opacity: 1;
+        }
+        .team-item.taken { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+        .team-item.taken::after { content: "TANLANGAN"; display: block; color: red; font-size: 7px; font-weight: 900; }
+        .team-item.selected { border: 1px solid var(--ef-neon); background: rgba(223,255,0,0.1); }
+        .team-item img { width: 35px; height: 35px; object-fit: contain; background: white; border-radius: 4px; }
+
+        /* Buttons */
+        .btn {
+            width: 100%; padding: 15px; background: var(--ef-neon); color: #000;
+            border: none; font-weight: 900; text-transform: uppercase; cursor: pointer;
+            clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%);
+        }
+        .btn:disabled { background: #555; cursor: not-allowed; }
+
+        .screen { display: none; }
         .screen.active { display: block; }
-        @keyframes ef-fade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-        .header { text-align: center; padding: 25px 0; }
-        .header h1 { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--ef-neon-yellow); margin: 0; }
-
-        .card { 
-            background: var(--ef-light-blue); 
-            border: 1px solid var(--ef-border); 
-            padding: 20px; 
-            border-radius: 4px; 
-            margin-bottom: 15px; 
-            position: relative; 
-            clip-path: polygon(0 0, 100% 0, 100% 95%, 96% 100%, 0 100%);
-        }
-
-        #draw-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--ef-dark-blue);
-            z-index: 3000; display: none; flex-direction: column; 
-            box-sizing: border-box; overflow-y: auto; scroll-behavior: smooth;
-            padding-bottom: 80px;
-        }
-
-        .sticky-draw-header {
-            position: sticky; top: 0; background: var(--ef-dark-blue);
-            z-index: 3001; padding: 10px; border-bottom: 2px solid var(--ef-neon-yellow);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        }
-
-        .draw-pool {
-            background: rgba(255,255,255,0.05);
-            padding: 10px; border-radius: 8px; margin-bottom: 10px;
-            display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
-        }
-        .pool-player {
-            width: 35px; height: 35px; border-radius: 2px; border: 1px solid var(--ef-border);
-            object-fit: cover; transition: 0.3s; opacity: 1;
-        }
-        .pool-player.drawn { opacity: 0.2; border-color: transparent; transform: scale(0.8); }
-
-        #draw-stage { height: 180px; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
-        
-        .big-card {
-            background: var(--ef-neon-yellow); color: #000; padding: 15px;
-            border-radius: 4px; width: 85%; display: none;
-            box-shadow: 0 0 50px rgba(223, 255, 0, 0.4);
-            border-left: 5px solid #000;
-        }
-        
-        .animate-player { animation: card-reveal 1.5s ease-in-out forwards; display: flex !important; flex-direction: row; align-items: center; gap: 15px; }
-        @keyframes card-reveal {
-            0% { transform: scale(0.5) rotateY(-90deg); opacity: 0; }
-            30% { transform: scale(1.1) rotateY(0deg); opacity: 1; }
-            100% { transform: scale(1); rotateY(0deg); opacity: 1; }
-        }
-
-        .draw-card-photo { width: 70px; height: 70px; object-fit: cover; border: 2px solid #000; border-radius: 2px; }
-        .draw-card-info { text-align: left; }
-        .draw-card-name { font-size: 11px; font-weight: 700; text-transform: uppercase; margin: 0; color: #000; opacity: 0.8; }
-        .draw-card-team { font-size: 14px; font-weight: 900; text-transform: uppercase; margin: 2px 0; color: #000; }
-
-        .group-reveal-card {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--ef-light-blue); color: #fff; padding: 40px 20px;
-            border: 3px solid var(--ef-neon-yellow); border-radius: 15px;
-            width: 85%; max-width: 400px; text-align: center; 
-            z-index: 4000; display: none; box-shadow: 0 0 100px rgba(0,0,0,1);
-        }
-        
-        .animate-reveal { display: block !important; animation: group-modal-pop 3.5s ease-in-out forwards; }
-        @keyframes group-modal-pop {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            90% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0; }
-        }
-
-        .draw-groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
-        .mini-group-card { background: rgba(255,255,255,0.05); border: 1px solid var(--ef-border); border-radius: 4px; padding: 8px; min-height: 100px; }
-        .mini-group-card.highlight { border-color: var(--ef-neon-yellow); background: rgba(223, 255, 0, 0.1); }
-        .mini-group-title { color: var(--ef-neon-yellow); font-size: 11px; font-weight: 900; margin-bottom: 5px; border-bottom: 1px solid var(--ef-border); }
-        .mini-player-row { display: flex; align-items: center; gap: 5px; font-size: 8px; margin-bottom: 3px; overflow: hidden; white-space: nowrap; }
-        .mini-avatar { width: 14px; height: 14px; border-radius: 1px; }
-
-        .schedule-card { background: rgba(255,255,255,0.05); border: 1px solid var(--ef-border); padding: 12px; margin-bottom: 10px; border-radius: 4px; position: relative; }
-        .vs-badge { color: var(--ef-neon-yellow); font-weight: 900; margin: 0 5px; }
-        .pending-badge { font-size: 8px; background: var(--ef-bonus); color: #000; padding: 2px 5px; border-radius: 2px; }
-
-        /* PROFESSIONAL TABLE */
-        .group-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 10px 0; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
-        .group-table th { background: #00051a; color: var(--ef-neon-yellow); padding: 8px 4px; text-transform: uppercase; font-weight: 900; border: 1px solid rgba(223, 255, 0, 0.2); }
-        .group-table td { padding: 8px 4px; text-align: center; border: 1px solid rgba(223, 255, 0, 0.1); }
-        .group-table td:nth-child(2) { text-align: left; font-weight: 700; color: #fff; }
-        .pos-up { background: var(--ef-success); width: 4px; }
-
-        .round-title { background: var(--ef-neon-yellow); color: #000; padding: 4px 10px; font-size: 10px; font-weight: 900; margin: 15px 0 10px 0; display: inline-block; clip-path: polygon(0 0, 90% 0, 100% 100%, 0% 100%); }
-
-        .input-group { margin-bottom: 20px; }
-        label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
-        input { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
-        .btn { width: 100%; padding: 18px; background: var(--ef-neon-yellow); color: #000; border: none; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%); }
-        .btn-small { padding: 8px; font-size: 9px; margin-top: 10px; width: 100%; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #00051a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 3px solid var(--ef-neon-yellow); z-index: 1000; }
-        .nav-item { text-align: center; font-size: 9px; font-weight: 900; cursor: pointer; opacity: 0.4; color: #fff; text-decoration: none; }
-        .nav-item.active { opacity: 1; color: var(--ef-neon-yellow); }
-        .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--ef-neon-yellow); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .my-team-highlight { background: rgba(223, 255, 0, 0.15) !important; }
     </style>
 </head>
 <body>
 
-    <div id="draw-overlay">
-        <div class="sticky-draw-header">
-            <h2 style="color:var(--ef-neon-yellow); text-align:center; font-size:12px; margin: 0 0 10px 0;">QUR'A TASHALISH</h2>
-            <div class="draw-pool" id="draw-pool-container"></div>
-            <div id="draw-stage">
-                <div class="big-card" id="active-draw-card">
-                    <img id="draw-card-img" class="draw-card-photo" src="">
-                    <div class="draw-card-info">
-                        <p id="draw-card-fullname" class="draw-card-name">-</p>
-                        <h3 id="draw-card-teamname" class="draw-card-team">-</h3>
-                    </div>
-                </div>
+<div class="container">
+    <div id="screen-reg" class="screen">
+        <h1>Ro'yxatdan o'tish</h1>
+        <div class="ef-card">
+            <label>ISM</label>
+            <input type="text" id="reg-name" class="input-box" placeholder="Ismingizni kiriting">
+            <label>FAMILIYA</label>
+            <input type="text" id="reg-surname" class="input-box" placeholder="Familiyangizni kiriting">
+            <label>TUG'ILGAN SANA</label>
+            <input type="date" id="reg-bday" class="input-box">
+            
+            <p style="color:var(--ef-neon); font-weight:900; font-size:12px;">JAMOA TANLANG:</p>
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <button onclick="loadTeams('nation')" class="btn" style="padding:5px; font-size:10px;">DAVLATLAR</button>
+                <button onclick="loadTeams('club')" class="btn" style="padding:5px; font-size:10px;">KLUBLAR</button>
             </div>
-        </div>
-        <div class="draw-groups-grid" id="mini-groups-grid"></div>
-
-        <div class="group-reveal-card" id="final-reveal-modal">
-            <h1 id="reveal-group-name" style="color:var(--ef-neon-yellow); margin:0; font-size: 28px;">Guruh A</h1>
-            <div id="reveal-players-list" style="text-align:left; font-size:14px; font-weight:900; line-height:2.2; margin-top: 20px;"></div>
+            <div class="team-grid" id="team-selector">Baza yuklanmoqda...</div>
+            <button class="btn" style="margin-top:15px;" onclick="handleRegistration()">SAQLASH</button>
         </div>
     </div>
 
-    <div id="reg-screen" class="screen active">
-        <div class="container">
-            <div class="header"><h1>eFootball<br>Tournament</h1></div>
-            <div class="card">
-                <div class="input-group"><label>Ism</label><input type="text" id="firstname" placeholder="Ismingiz"></div>
-                <div class="input-group"><label>Familiya</label><input type="text" id="lastname" placeholder="Familiyangiz"></div>
-                <div class="input-group"><label>eFootball Jamoa Nomi</label><input type="text" id="teamname" placeholder="Arsenal, Real Madrid..."></div>
-                <div class="input-group">
-                    <label>PES Akkaunt Rasmi</label>
-                    <input type="file" id="user-photo" accept="image/*" style="padding:10px; background:rgba(0,0,0,0.2); border:1px dashed var(--ef-neon-yellow); color:#fff; width:100%; box-sizing:border-box;">
-                </div>
-                <button class="btn" onclick="register()">Profil Yaratish</button>
+    <div id="screen-tournaments" class="screen active">
+        <h1>Turnirlar</h1>
+        <div id="tour-list">
+            <div class="ef-card">
+                <h3>8 TALIK FORMAT</h3>
+                <p>Kirish: 5 000 so'm</p>
+                <button class="btn btn-join" onclick="joinTournament(8, 5000)">QATNASHISH</button>
             </div>
+            <div class="ef-card">
+                <h3>16 TALIK FORMAT</h3>
+                <p>Kirish: 10 000 so'm</p>
+                <button class="btn btn-join" onclick="joinTournament(16, 10000)">QATNASHISH</button>
+            </div>
+            <div class="ef-card">
+                <h3>32 TALIK FORMAT</h3>
+                <p>Kirish: 15 000 so'm</p>
+                <button class="btn btn-join" onclick="joinTournament(32, 15000)">QATNASHISH</button>
+            </div>
+            <div class="ef-card">
+                <h3>48 TALIK FORMAT</h3>
+                <p>Kirish: 20 000 so'm</p>
+                <button class="btn btn-join" onclick="joinTournament(48, 20000)">QATNASHISH</button>
+            </div>
+        </div>
+        
+        <div id="payment-modal" style="display:none;" class="ef-card">
+            <h2 style="color:red">TO'LOV QILING</h2>
+            <p>Karta: <b>4073 4200 6816 5541</b></p>
+            <p>Ega: <b>Maruf Raxmonov</b></p>
+            <p>Summa: <b id="pay-amount">0</b> so'm</p>
+            <button class="btn" onclick="confirmPayment()">TO'LOV QILDIM</button>
         </div>
     </div>
 
-    <div id="tournaments-screen" class="screen">
-        <div class="container">
-            <div class="header"><h1>Turnirlar</h1></div>
-            <div id="tour-cards-container">
-                <div class="card">
-                    <span style="position:absolute; top:15px; right:15px; background:var(--ef-neon-yellow); color:#000; padding:2px 8px; font-size:9px; font-weight:900;">5 000 S'OM</span>
-                    <b style="color:var(--ef-neon-yellow)">STARTER CUP (16)</b>
-                    <span class="slot-info" id="slots-starter_cup" style="font-size:10px; display:block; margin-top:5px;">Hisoblanmoqda...</span>
-                    <button class="btn reg-tour-btn" id="btn-starter_cup" data-tour-name="STARTER CUP" data-max="16" onclick="handleTourAction('starter_cup', 'STARTER CUP', 16, 5000)">QATNASHISH</button>
-                </div>
-            </div>
-        </div>
+    <div id="screen-ranking" class="screen">
+        <h1>Reyting</h1>
+        <div id="ranking-list"></div>
     </div>
 
-    <div id="tour-info-screen" class="screen"><div class="container"><div class="header"><h1 id="info-tour-title">-</h1></div><div id="groups-container"></div><div id="matches-container"></div><button class="btn" onclick="showScreen('tournaments')" style="margin-top:20px;">ORQAGA</button></div></div>
-    <div id="payment-screen" class="screen"><div class="container"><div class="header"><h1>To'lov</h1></div><div class="card"><p>Summa: <b id="pay-amount">-</b></p><div class="card-box" onclick="navigator.clipboard.writeText('4073420068165541'); alert('Nusxalandi!')" style="border: 2px dashed var(--ef-neon-yellow); padding: 15px; margin: 20px 0; text-align: center; cursor: pointer; background: rgba(223, 255, 0, 0.05);"><h2 style="color: var(--ef-neon-yellow); margin: 5px 0;">4073 4200 6816 5541</h2><p>Maruf Raxmonov</p></div><input type="file" id="receipt-file" accept="image/*" style="display:none" onchange="uploadReceipt(this)"><button class="btn" onclick="document.getElementById('receipt-file').click()">CHEKNI YUBORISH</button></div></div></div>
-    <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2>TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
-    <div id="profile-screen" class="screen"><div class="container"><div class="header"><h1>Profil</h1></div><div class="card"><h2 id="prof-team">-</h2><p id="prof-user">-</p></div><button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="localStorage.clear(); location.reload();">Logout</button></div></div>
+    <div id="screen-profile" class="screen">
+        <h1>Profil</h1>
+        <div class="ef-card" id="profile-data">
+            </div>
+    </div>
 
-    <input type="file" id="match-result-file" accept="image/*" style="display:none">
-    <nav class="bottom-nav" id="main-nav" style="display:none">
-        <div class="nav-item active" onclick="showScreen('tournaments', this)">🏟O'yin</div>
-        <div class="nav-item" onclick="showScreen('profile', this)">👤Profil</div>
-    </nav>
+    <div id="screen-settings" class="screen">
+        <h1>Sozlamalar</h1>
+        <div class="ef-card">
+            <button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="logout()">LOGOUT</button>
+        </div>
+    </div>
+</div>
+
+<nav class="nav-bar">
+    <div class="nav-item active" onclick="nav('tournaments', this)">🏟 TURNIRLAR</div>
+    <div class="nav-item" onclick="nav('ranking', this)">🏆 REYTING</div>
+    <div class="nav-item" onclick="nav('profile', this)">👤 PROFIL</div>
+    <div class="nav-item" onclick="nav('settings', this)">⚙️ SOZLAMALAR</div>
+</nav>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
-      authDomain: "efootball-11be6.firebaseapp.com",
-      databaseURL: "https://efootball-11be6-default-rtdb.firebaseio.com",
-      projectId: "efootball-11be6",
-      storageBucket: "efootball-11be6.firebasestorage.app",
-      messagingSenderId: "989986946120",
-      appId: "1:989986946120:web:2c654ac8ca6412f0bbec7d",
-      measurementId: "G-YQVRTY6EH3"
+        apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
+        authDomain: "efootball-11be6.firebaseapp.com",
+        databaseURL: "https://efootball-11be6-default-rtdb.firebaseio.com",
+        projectId: "efootball-11be6",
+        storageBucket: "efootball-11be6.firebasestorage.app",
+        messagingSenderId: "989986946120",
+        appId: "1:989986946120:web:2c654ac8ca6412f0bbec7d"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let myUid = localStorage.getItem('tournament_uid');
-    let myUser = null;
+    const tg = window.Telegram.WebApp;
+    const user_id = tg.initDataUnsafe?.user?.id || "DEBUG_USER";
 
-    window.showScreen = (name, el) => {
+    let userData = null;
+    let selectedTeam = null;
+    let allTeams = [];
+    let takenTeams = [];
+
+    // NAVIGATSIYA
+    window.nav = (id, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(name + '-screen').classList.add('active');
-        if(el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
-        if(name === 'tournaments') checkUserStatus();
+        document.getElementById('screen-' + id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        if(id === 'ranking') loadRanking();
+        if(id === 'profile') loadProfile();
     };
 
-    window.register = async () => {
-        const fn = document.getElementById('firstname').value.trim();
-        const ln = document.getElementById('lastname').value.trim();
-        const tn = document.getElementById('teamname').value.trim();
-        const photoInput = document.getElementById('user-photo');
-        if(!fn || !tn || !photoInput.files[0]) return alert("Ma'lumotlarni to'ldiring!");
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const uid = "EF_" + Date.now();
-            await set(ref(db, 'tournament/users/' + uid), { id: uid, firstname: fn, lastname: ln, teamName: tn, photo: e.target.result, status: 'normal', activeTour: "YO'Q" });
-            localStorage.setItem('tournament_uid', uid);
-            myUid = uid; initApp();
-        };
-        reader.readAsDataURL(photoInput.files[0]);
-    };
+    // YOSH VA TUG'ILGAN KUN HISOBI
+    function getBirthdayStats(bdayStr) {
+        const today = new Date();
+        const bday = new Date(bdayStr);
+        let age = today.getFullYear() - bday.getFullYear();
+        const m = today.getMonth() - bday.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < bday.getDate())) age--;
 
-    window.handleTourAction = async (id, name, max, price) => {
-        const snap = await get(ref(db, 'tournament/users/' + myUid));
-        const u = snap.val();
-        if (u.status === 'approved' && u.activeTour === name) openTourInfo(name, max);
-        else { document.getElementById('pay-amount').innerText = price.toLocaleString() + " SO'M"; showScreen('payment'); window.currentSelectedTour = {name}; }
-    };
+        let nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+        if (today > nextBday) nextBday.setFullYear(today.getFullYear() + 1);
+        const diff = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
 
-    window.uploadReceipt = async (input) => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            await set(ref(db, 'tournament/payments/' + myUid), { userId: myUid, tourName: window.currentSelectedTour.name, receipt: e.target.result, status: 'pending' });
-            await update(ref(db, 'tournament/users/' + myUid), { status: 'checking', activeTour: window.currentSelectedTour.name });
-            showScreen('checking');
-        };
-        reader.readAsDataURL(input.files[0]);
-    };
-
-    function checkUserStatus() {
-        if(!myUid) return;
-        onValue(ref(db, 'tournament/users'), (snap) => {
-            const all = snap.val() || {}; myUser = all[myUid];
-            const counts = {}; Object.values(all).forEach(u => { if(u.status === 'approved' && u.activeTour !== "YO'Q") counts[u.activeTour] = (counts[u.activeTour] || 0) + 1; });
-            const current = counts["STARTER CUP"] || 0;
-            document.getElementById('slots-starter_cup').innerText = `To'lgan: ${current}/16`;
-            const btn = document.getElementById('btn-starter_cup');
-            if(myUser.activeTour === "STARTER CUP") btn.innerText = myUser.status === 'approved' ? "KIRISH ➡️" : "KUTILMOQDA...";
-        });
+        return { age, daysLeft: diff, formatted: bday.toLocaleDateString('uz-UZ', {month:'long', year:'numeric'}) };
     }
 
-    async function openTourInfo(tourName, max) {
-        const tourId = tourName.replace(/\s+/g, '_');
-        showScreen('tour-info');
-        document.getElementById('info-tour-title').innerText = tourName;
+    // REGISTRATION LOGIC
+    window.loadTeams = async (type) => {
+        const snap = await get(ref(db, 'available_teams'));
+        const usersSnap = await get(ref(db, 'users'));
+        takenTeams = [];
+        if(usersSnap.exists()){
+            Object.values(usersSnap.val()).forEach(u => takenTeams.push(u.teamId));
+        }
 
-        onValue(ref(db, `tournament/groups/${tourId}`), async (snap) => {
-            const groups = snap.val();
-            const resSnap = await get(ref(db, `tournament/results/${tourId}`));
-            const results = resSnap.val() || {};
-
-            if (groups) {
-                let myGroupName = null;
-                Object.keys(groups).forEach(L => { if(groups[L].find(p => p.id === myUid)) myGroupName = L; });
-                
-                if(myGroupName) {
-                    renderProfessionalTable(groups[myGroupName], results, myGroupName);
-                    renderMatchesByRounds(groups[myGroupName], results, tourId, myGroupName);
-                }
-                checkAndGeneratePlayoffs(groups, results, tourId);
-            } else {
-                const uSnap = await get(ref(db, 'tournament/users'));
-                let approved = Object.values(uSnap.val()).filter(u => u.activeTour === tourName && u.status === 'approved');
-                if (approved.length >= max) startWorldCupDraw(approved, tourName, myUid);
-                else document.getElementById('groups-container').innerHTML = `Kutilmoqda... (${approved.length}/${max})`;
-            }
-        });
-    }
-
-    function renderProfessionalTable(players, results, L) {
-        const stats = {};
-        players.forEach(p => { stats[p.id] = { name: p.firstname, team: p.teamName, photo: p.photo, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 }; });
-
-        Object.keys(results).forEach(mId => {
-            if(!mId.startsWith(`G_${L}`)) return;
-            const m = results[mId]; if(!m.score) return;
-            const s = m.score.split('-').map(Number);
-            const p1 = players[mId.split('_')[3][1]]; // Bu qism mId formatiga bog'liq
-            // Soddalashtirilgan mantiq: matchId ichidan ishtirokchilarni topish
-        });
-
-        // Eslatma: To'liq stats hisoblash mantiqi renderGroups dagi bilan bir xil
-        const sorted = Object.values(stats).sort((a,b) => b.pts - a.pts || (b.gf-b.ga) - (a.gf-a.ga));
+        allTeams = snap.val() ? Object.values(snap.val()) : [];
+        const container = document.getElementById('team-selector');
+        container.innerHTML = "";
         
-        let html = `<h3>GURUH ${L} JADVALI</h3><table class="group-table"><tr><th>#</th><th>JAMOA</th><th>O'</th><th>G'</th><th>D</th><th>M</th><th>O</th></tr>`;
-        sorted.forEach((s, i) => {
-            html += `<tr class="${s.name === myUser.firstname ? 'my-team-highlight' : ''}"><td>${i+1}</td><td>${s.team}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.pts}</td></tr>`;
+        allTeams.filter(t => t.type === type).forEach(team => {
+            const isTaken = takenTeams.includes(team.id);
+            const div = document.createElement('div');
+            div.className = `team-item ${isTaken ? 'taken' : ''}`;
+            div.onclick = () => {
+                document.querySelectorAll('.team-item').forEach(i => i.classList.remove('selected'));
+                div.classList.add('selected');
+                selectedTeam = team;
+            };
+            div.innerHTML = `<img src="${team.logo}"> <p>${team.name}</p>`;
+            container.appendChild(div);
         });
-        document.getElementById('groups-container').innerHTML = html + `</table>`;
-    }
+    };
 
-    function renderMatchesByRounds(players, results, tourId, L) {
-        const div = document.getElementById('matches-container'); div.innerHTML = "";
-        const rounds = [
-            { name: "1-TUR", matches: [[players[0], players[1], "M0"], [players[2], players[3], "M1"]] },
-            { name: "2-TUR", matches: [[players[0], players[2], "M2"], [players[1], players[3], "M3"]] },
-            { name: "3-TUR", matches: [[players[0], players[3], "M4"], [players[1], players[2], "M5"]] }
-        ];
+    window.handleRegistration = async () => {
+        const name = document.getElementById('reg-name').value;
+        const surname = document.getElementById('reg-surname').value;
+        const bday = document.getElementById('reg-bday').value;
 
-        rounds.forEach(r => {
-            div.innerHTML += `<div class="round-title">${r.name}</div>`;
-            r.matches.forEach(m => {
-                const mId = `G_${L}_${m[2]}`; const res = results[mId] || {};
-                let status = res.score || (res.admin_pending ? "TASDIQLANMOQDA" : "VS");
-                let btn = (m[0].id === myUid || m[1].id === myUid) && !res.score && !res.admin_pending ? 
-                    `<button class="btn btn-small" onclick="submitResult('${tourId}', '${mId}', '${m[0].teamName}','${m[1].teamName}')">NATIJANI YUBORISH</button>` : "";
-                div.innerHTML += `<div class="schedule-card"><b>${m[0].teamName}</b> <span class="vs-badge">${status}</span> <b>${m[1].teamName}</b>${btn}</div>`;
+        if(!name || !surname || !bday || !selectedTeam) return alert("Barcha maydonlarni to'ldiring!");
+
+        const newUser = {
+            id: user_id, name, surname, bday,
+            teamId: selectedTeam.id, teamName: selectedTeam.name, teamLogo: selectedTeam.logo,
+            currentTournament: null
+        };
+
+        await set(ref(db, 'users/' + user_id), newUser);
+        location.reload();
+    };
+
+    // TOURNAMENT LOGIC
+    window.joinTournament = async (format, price) => {
+        if(userData.currentTournament) return alert("Siz allaqachon turnirga qo'shilgansiz!");
+        document.getElementById('pay-amount').innerText = price;
+        document.getElementById('payment-modal').style.display = 'block';
+        window.currentJoinAttempt = { format, price };
+    };
+
+    window.confirmPayment = async () => {
+        await update(ref(db, 'users/' + user_id), { 
+            currentTournament: window.currentJoinAttempt.format + " Talik" 
+        });
+        alert("To'lov qabul qilindi! Admin tasdiqlashini kuting.");
+        location.reload();
+    };
+
+    // RANKING & PROFILE
+    function loadRanking() {
+        onValue(ref(db, 'users'), (snap) => {
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = "";
+            if(!snap.exists()) return;
+            Object.values(snap.val()).forEach(u => {
+                list.innerHTML += `
+                    <div class="ef-card" style="display:flex; align-items:center; gap:15px;">
+                        <img src="${u.teamLogo}" style="width:40px; background:white; border-radius:4px;">
+                        <div>
+                            <div style="font-weight:900;">${u.name} ${u.surname}</div>
+                            <div style="font-size:10px; opacity:0.7;">${u.teamName}</div>
+                        </div>
+                    </div>`;
             });
         });
     }
 
-    async function startWorldCupDraw(players, tourName, myUid) {
-        const overlay = document.getElementById('draw-overlay'); overlay.style.display = 'flex';
-        const groups = { A:[], B:[], C:[], D:[] };
-        let remaining = [...players];
-        let letters = ['A','B','C','D'];
-        let curr = 0;
+    function loadProfile() {
+        const stats = getBirthdayStats(userData.bday);
+        document.getElementById('profile-data').innerHTML = `
+            <div style="text-align:center; margin-bottom:15px;">
+                <img src="${userData.teamLogo}" style="width:80px; background:white; padding:5px; border-radius:8px;">
+                <h2 style="margin:5px 0;">${userData.name} ${userData.surname}</h2>
+            </div>
+            <p>🗓 Tug'ilgan sana: <b>${stats.formatted}</b></p>
+            <p>🎂 Yosh: <b>${stats.age} yosh</b></p>
+            <p>🎉 Tug'ilgan kunga: <b>${stats.daysLeft} kun qoldi</b></p>
+            <p>🏟 Turnir: <b style="color:var(--ef-neon)">${userData.currentTournament || "Qatnashmayapti"}</b></p>
+            <p>🛡 Jamoa: <b>${userData.teamName}</b></p>
+        `;
+    }
 
-        while(remaining.length > 0) {
-            const rand = Math.floor(Math.random()*remaining.length);
-            const p = remaining.splice(rand, 1)[0];
-            const L = letters[curr];
-            document.getElementById('draw-card-img').src = p.photo;
-            document.getElementById('draw-card-fullname').innerText = p.firstname;
-            document.getElementById('draw-card-teamname').innerText = p.teamName;
-            document.getElementById('active-draw-card').classList.remove('animate-player');
-            void document.getElementById('active-draw-card').offsetWidth;
-            document.getElementById('active-draw-card').classList.add('animate-player');
-            await new Promise(r => setTimeout(r, 1500));
-            groups[L].push(p);
-            curr = (curr + 1) % 4;
+    // CHECK AUTH
+    async function checkAuth() {
+        const snap = await get(ref(db, 'users/' + user_id));
+        if(!snap.exists()) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-reg').classList.add('active');
+            document.querySelector('.nav-bar').style.display = 'none';
+            loadTeams('nation');
+        } else {
+            userData = snap.val();
+            if(userData.currentTournament) {
+                document.querySelectorAll('.btn-join').forEach(b => b.disabled = true);
+            }
         }
-        await set(ref(db, `tournament/groups/${tourName.replace(/\s+/g, '_')}`), groups);
-        overlay.style.display = 'none';
     }
 
-    window.submitResult = (tourId, matchId, t1, t2) => {
-        const input = document.getElementById('match-result-file');
-        input.onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                await update(ref(db, `tournament/results/${tourId}/${matchId}`), { 
-                    admin_pending: true, screenshot: ev.target.result, 
-                    sender_name: myUser.firstname, match_details: `${t1} VS ${t2}` 
-                });
-                alert("Adminga yuborildi!");
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        };
-        input.click();
-    };
-
-    function initApp() {
-        if(myUid) { document.getElementById('reg-screen').classList.remove('active'); document.getElementById('main-nav').style.display = 'flex'; showScreen('tournaments'); }
-    }
-    initApp();
+    checkAuth();
 </script>
+
 </body>
 </html>

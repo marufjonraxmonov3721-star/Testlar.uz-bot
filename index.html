@@ -118,11 +118,9 @@
         .vs-badge { color: var(--ef-neon-yellow); font-weight: 900; margin: 0 5px; }
         .pending-badge { font-size: 8px; background: var(--ef-bonus); color: #000; padding: 2px 5px; border-radius: 2px; }
 
-        /* JADVAL STYLE */
-        .group-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.2); }
-        .group-table th { background: var(--ef-light-blue); color: var(--ef-neon-yellow); padding: 8px 4px; text-align: left; border-bottom: 1px solid var(--ef-border); }
-        .group-table td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .group-table tr:nth-child(-n+2) td:first-child { color: var(--ef-success); font-weight: 900; }
+        .group-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 15px; }
+        .group-table th { background: rgba(223, 255, 0, 0.1); color: var(--ef-neon-yellow); padding: 5px; border: 1px solid var(--ef-border); }
+        .group-table td { padding: 5px; text-align: center; border: 1px solid var(--ef-border); }
 
         .input-group { margin-bottom: 20px; }
         label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
@@ -233,6 +231,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    let currentSelectedTour = null;
     let myUid = localStorage.getItem('tournament_uid');
     let myUser = null;
 
@@ -312,13 +311,32 @@
         const tourId = tourName.replace(/\s+/g, '_');
         showScreen('tour-info');
         
-        onValue(ref(db, `tournament/groups/${tourId}`), (snap) => {
+        onValue(ref(db, `tournament/groups/${tourId}`), async (snap) => {
             const groupsData = snap.val() || {};
-            onValue(ref(db, `tournament/results/${tourId}`), (resSnap) => {
-                const resultsData = resSnap.val() || {};
-                renderGroups(groupsData, resultsData, myUid);
-                renderMatches(groupsData, resultsData, tourId, myUid);
-            });
+            const groupsDiv = document.getElementById('groups-container');
+            const matchesDiv = document.getElementById('matches-container');
+            
+            if (Object.keys(groupsData).length > 0) {
+                onValue(ref(db, `tournament/results/${tourId}`), (resSnap) => {
+                    const resultsData = resSnap.val() || {};
+                    renderGroups(groupsData, resultsData, myUid);
+                    renderMatches(groupsData, resultsData, tourId, myUid);
+                });
+            } else {
+                matchesDiv.innerHTML = "";
+                const userSnap = await get(ref(db, 'tournament/users'));
+                let approved = [];
+                Object.values(userSnap.val() || {}).forEach(u => { if(u.activeTour === tourName && u.status === 'approved') approved.push(u); });
+                
+                if (approved.length >= maxPlayers) {
+                    startWorldCupDraw(approved, tourName, myUid);
+                } else {
+                    groupsDiv.innerHTML = `<h3 style="color:var(--ef-neon-yellow); font-size:14px;">ISHTIROKCHILAR (${approved.length}/${maxPlayers})</h3>`;
+                    approved.forEach((u, i) => { 
+                        groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName} (${u.firstname} ${u.lastname})</span></div>`; 
+                    });
+                }
+            }
         });
     }
 
@@ -391,14 +409,13 @@
             const stats = {};
             players.forEach(p => { stats[p.id] = { id: p.id, name: p.firstname, team: p.teamName, photo: p.photo, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }; });
 
-            // Natijalarni hisoblash
             Object.keys(results).forEach(mId => {
                 if (!mId.startsWith(`G_${L}`)) return;
                 const m = results[mId];
                 if (!m.score || !m.score.includes('-')) return;
                 
-                const matchParts = mId.split('_'); // G_A_M_0
-                const mIdx = parseInt(matchParts[3]);
+                const mParts = mId.split('_'); 
+                const mIdx = parseInt(mParts[3]);
                 const pairs = [[players[0],players[1]], [players[2],players[3]], [players[0],players[2]], [players[1],players[3]], [players[0],players[3]], [players[1],players[2]]];
                 const t1 = pairs[mIdx][0]; const t2 = pairs[mIdx][1];
                 const scores = m.score.split('-').map(Number);
@@ -412,11 +429,11 @@
                 else { stats[t1.id].d++; stats[t2.id].d++; stats[t1.id].pts += 1; stats[t2.id].pts += 1; }
             });
 
-            const sorted = Object.values(stats).sort((a,b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+            const sorted = Object.values(stats).sort((a,b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
 
             let tableHtml = `<div class="group-card"><div class="group-title">GURUH ${L}</div><table class="group-table"><thead><tr><th>#</th><th>Jamoa</th><th>O'</th><th>G'</th><th>D</th><th>M</th><th>T-F</th><th>O</th></tr></thead><tbody>`;
             sorted.forEach((s, i) => {
-                tableHtml += `<tr class="${s.id === myUid ? 'my-team-highlight' : ''}"><td>${i+1}</td><td style="display:flex;align-items:center;gap:4px;"><img src="${s.photo}" style="width:15px;height:15px;border-radius:2px;">${s.team}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}-${s.ga}</td><td>${s.pts}</td></tr>`;
+                tableHtml += `<tr class="${s.id === myUid ? 'my-team-highlight' : ''}"><td>${i+1}</td><td style="text-align:left;"><img src="${s.photo}" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;">${s.team}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}-${s.ga}</td><td>${s.pts}</td></tr>`;
             });
             tableHtml += `</tbody></table></div>`;
             groupsDiv.innerHTML += tableHtml;

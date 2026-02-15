@@ -3,227 +3,497 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball Pro League</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>eFootball Tournament Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; --success: #22c55e; --gold: #fbbf24; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; overflow-x: hidden; }
-        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
-        
-        .screen { display: none; animation: fadeIn 0.5s; }
-        .active-screen { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        :root {
+            --ef-dark-blue: #000a2d; 
+            --ef-light-blue: #00155a; 
+            --ef-neon-yellow: #dfff00; 
+            --ef-text: #ffffff;
+            --ef-danger: #ff004c;
+            --ef-border: rgba(223, 255, 0, 0.3);
+            --ef-success: #00ff41;
+            --ef-bonus: #00e5ff;
+        }
 
-        .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
-        h2 { color: var(--primary); font-size: 22px; margin-top: 0; text-transform: uppercase; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--ef-dark-blue);
+            color: var(--ef-text);
+            margin: 0;
+            padding-bottom: 100px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #001e7a 0%, #000a2d 100%);
+        }
 
-        /* Qura Marosimi Modali */
-        #draw-modal {
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        .screen { display: none; animation: ef-fade 0.4s ease-out; }
+        .screen.active { display: block; }
+        @keyframes ef-fade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .header { text-align: center; padding: 25px 0; }
+        .header h1 { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--ef-neon-yellow); margin: 0; }
+
+        .card { 
+            background: var(--ef-light-blue); 
+            border: 1px solid var(--ef-border); 
+            padding: 20px; 
+            border-radius: 4px; 
+            margin-bottom: 15px; 
+            position: relative; 
+            clip-path: polygon(0 0, 100% 0, 100% 95%, 96% 100%, 0 100%);
+        }
+
+        #draw-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.99); display: none;
+            background: var(--ef-dark-blue);
+            z-index: 3000; display: none; flex-direction: column; 
+            box-sizing: border-box; overflow-y: auto; scroll-behavior: smooth;
+            padding-bottom: 80px;
+        }
+
+        #intro-stage {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 4000; display: none;
             flex-direction: column; justify-content: center; align-items: center;
-            z-index: 3000; padding: 20px; text-align: center;
+            text-align: center; padding: 20px; box-sizing: border-box;
         }
-        #player-intro-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            padding: 40px 20px; border-radius: 30px; border: 2px solid var(--primary);
-            box-shadow: 0 0 50px rgba(56, 189, 248, 0.3); width: 90%; max-width: 350px;
-        }
-        .intro-name { font-size: 32px; font-weight: 800; color: var(--primary); margin: 10px 0; }
-        .intro-team { font-size: 20px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
 
-        .navbar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #1e293b; display: flex; justify-content: space-around;
-            padding: 10px 0; border-top: 1px solid #334155; z-index: 1000;
-        }
-        .nav-item { color: #94a3b8; font-size: 11px; cursor: pointer; text-align: center; text-decoration: none; }
-        .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+        .intro-text { opacity: 0; transform: translateY(20px); transition: 0.6s all ease-out; }
+        .intro-text.show { opacity: 1; transform: translateY(0); }
+        .intro-name { font-size: 18px; color: #fff; font-weight: 400; margin-bottom: 5px; }
+        .intro-lastname { font-size: 32px; color: var(--ef-neon-yellow); font-weight: 900; text-transform: uppercase; margin-bottom: 15px; }
+        .intro-team { font-size: 16px; color: var(--ef-bonus); font-weight: 700; letter-spacing: 2px; margin-bottom: 25px; }
+        .intro-photo { width: 220px; height: 220px; border: 5px solid var(--ef-neon-yellow); border-radius: 8px; object-fit: cover; opacity: 0; transform: scale(0.8); transition: 0.8s all ease-in-out; }
+        .intro-photo.show { opacity: 1; transform: scale(1); box-shadow: 0 0 30px rgba(223, 255, 0, 0.3); }
 
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; }
-        select option { background: var(--bg); color: white; }
-        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; margin-top: 5px; }
+        .sticky-draw-header {
+            position: sticky; top: 0; background: var(--ef-dark-blue);
+            z-index: 3001; padding: 10px; border-bottom: 2px solid var(--ef-neon-yellow);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .draw-pool {
+            background: rgba(255,255,255,0.05);
+            padding: 5px; border-radius: 8px; margin-bottom: 10px;
+            display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+            max-height: 70px; overflow-y: auto;
+        }
+        .pool-item { font-size: 8px; background: #fff; color: #000; padding: 2px 5px; border-radius: 15px; font-weight: 700; opacity: 0.3; }
+        .pool-item.active { opacity: 1; background: var(--ef-neon-yellow); box-shadow: 0 0 8px var(--ef-neon-yellow); }
+
+        #draw-stage { height: 140px; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
         
-        .t-btn { background: var(--card); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .big-card {
+            background: var(--ef-neon-yellow); color: #000; padding: 15px;
+            border-radius: 12px; width: 90%; text-align: center;
+            box-shadow: 0 0 40px rgba(223, 255, 0, 0.4);
+            display: none;
+        }
+        
+        .animate-player { animation: card-reveal 2.2s ease-in-out forwards; display: block !important; }
+        @keyframes card-reveal {
+            0% { transform: scale(0.3) rotateX(90deg); opacity: 0; }
+            20% { transform: scale(1.1) rotateX(0deg); opacity: 1; }
+            80% { transform: scale(1) rotateX(0deg); opacity: 1; }
+            100% { transform: scale(1.4) rotateX(-90deg); opacity: 0; }
+        }
+
+        .group-reveal-card {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--ef-light-blue); color: #fff; padding: 40px 20px;
+            border: 3px solid var(--ef-neon-yellow); border-radius: 15px;
+            width: 85%; max-width: 400px; text-align: center; 
+            z-index: 4000; display: none; box-shadow: 0 0 100px rgba(0,0,0,1);
+        }
+        
+        .animate-reveal { display: block !important; animation: group-modal-pop 4s ease-in-out forwards; }
+        @keyframes group-modal-pop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            90% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0; }
+        }
+
+        .draw-groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 15px; }
+        .mini-group-card { background: rgba(255,255,255,0.05); border: 1px solid var(--ef-border); border-radius: 4px; padding: 8px; min-height: 90px; transition: all 0.3s; }
+        .mini-group-card.highlight-focus { border-color: var(--ef-neon-yellow); background: rgba(223, 255, 0, 0.15); transform: scale(1.05); }
+        .mini-group-title { color: var(--ef-neon-yellow); font-size: 10px; font-weight: 900; border-bottom: 1px solid var(--ef-border); margin-bottom: 4px; }
+        .mini-player-row { display: flex; align-items: center; gap: 5px; font-size: 9px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .mini-avatar { width: 18px; height: 18px; border-radius: 2px; object-fit: cover; border: 1px solid var(--ef-neon-yellow); }
+
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
+        input, select { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
+        select option { background: var(--ef-dark-blue); color: white; }
+        .btn { width: 100%; padding: 18px; background: var(--ef-neon-yellow); color: #000; border: none; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #00051a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 3px solid var(--ef-neon-yellow); z-index: 1000; }
+        .nav-item { text-align: center; font-size: 9px; font-weight: 900; cursor: pointer; opacity: 0.4; color: #fff; text-decoration: none; }
+        .nav-item.active { opacity: 1; color: var(--ef-neon-yellow); }
+        .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--ef-neon-yellow); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .player-list-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; }
+        .my-team-highlight { border: 1px solid var(--ef-neon-yellow); background: rgba(223, 255, 0, 0.1); }
+        .group-card { background: var(--ef-light-blue); border: 1px solid var(--ef-border); border-radius: 4px; padding: 15px; margin-bottom: 15px; }
+        .group-title { color: var(--ef-neon-yellow); font-weight: 900; font-size: 14px; border-bottom: 1px solid var(--ef-border); padding-bottom: 5px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div id="draw-modal">
-    <div id="player-intro-card">
-        <div style="font-size: 50px;">⚽</div>
-        <div style="color: var(--gold); font-weight: bold; margin-bottom: 10px;">TANISHTIRILMOQDA:</div>
-        <div id="intro-name" class="intro-name">---</div>
-        <div id="intro-team" class="intro-team">---</div>
+    <div id="intro-stage">
+        <div id="intro-name" class="intro-name intro-text">ISM</div>
+        <div id="intro-lastname" class="intro-lastname intro-text">FAMILIYA</div>
+        <div id="intro-team" class="intro-team intro-text">JAMOANOMI</div>
+        <img id="intro-photo" class="intro-photo" src="">
     </div>
-</div>
 
-<div class="container">
-    
-    <div id="screen-reg" class="screen active-screen">
-        <div class="card">
-            <h2>🏆 Ro'yxatdan o'tish</h2>
-            <input type="text" id="fname" placeholder="Ismingiz">
-            
-            <label style="font-size: 10px; display: block; text-align: left; color: var(--primary); font-weight: 900;">JAMOA TURI</label>
-            <select id="team-cat" onchange="updateTeamList()">
-                <option value="">Tanlang...</option>
-                <option value="countries">DAVLATLAR</option>
-                <option value="clubs">KLUBLAR</option>
-            </select>
+    <div id="draw-overlay">
+        <div id="draw-process-panel">
+            <div class="sticky-draw-header">
+                <h2 style="color:var(--ef-neon-yellow); text-align:center; font-size:10px; margin: 0 0 5px 0;">QUR'A TASHALISH</h2>
+                <div class="draw-pool" id="draw-pool-container"></div>
+                <div id="draw-stage">
+                    <div class="big-card" id="active-draw-card">
+                        <div style="font-size:9px; opacity:0.7; font-weight:900;" id="active-draw-group">GURUH ?</div>
+                        <div style="font-size:18px; font-weight:900; margin:5px 0; text-transform: uppercase;" id="active-draw-team">-</div>
+                        <div style="font-size:11px; font-weight:700;" id="active-draw-player">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="draw-groups-grid" id="mini-groups-grid"></div>
+        </div>
 
-            <label style="font-size: 10px; display: block; text-align: left; color: var(--primary); font-weight: 900;">JAMOA NOMI (BAZADAGILAR)</label>
-            <select id="team-name">
-                <option value="">Avval turni tanlang...</option>
-            </select>
-
-            <button class="btn-main" onclick="handleRegistration()">Ilovaga Kirish</button>
+        <div class="group-reveal-card" id="final-reveal-modal">
+            <h1 id="reveal-group-name" style="color:var(--ef-neon-yellow); margin:0; font-size: 28px;">Guruh A</h1>
+            <div id="reveal-players-list" style="text-align:left; font-size:16px; font-weight:900; line-height:2.5; margin-top: 20px;"></div>
         </div>
     </div>
 
-    <div id="screen-tournaments" class="screen">
-        <div class="card" id="user-banner" style="background: linear-gradient(45deg, #1e293b, #0f172a); border: 1px solid #38bdf8;"></div>
-        <h2>🎮 Turnirlar</h2>
-        <div class="grid">
-            <button class="t-btn" onclick="joinQueue(8)">8 Kishilik</button>
-            <button class="t-btn" onclick="joinQueue(16)">16 Kishilik</button>
+    <div id="reg-screen" class="screen active">
+        <div class="container">
+            <div class="header"><h1>eFootball<br>Tournament</h1></div>
+            <div class="card">
+                <div class="input-group"><label>Ism</label><input type="text" id="firstname" placeholder="Ismingiz"></div>
+                <div class="input-group"><label>Familiya</label><input type="text" id="lastname" placeholder="Familiyangiz"></div>
+                <div class="input-group">
+                    <label>Jamoa Turi</label>
+                    <select id="team-category">
+                        <option value="countries">DAVLAT (National Team)</option>
+                        <option value="clubs">KLUB (FC Club)</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>Jamoa Nomi (Bazadagi bilan bir xil)</label><input type="text" id="teamname" placeholder="Masalan: Uzbekistan yoki Real_Madrid"></div>
+                <div class="input-group">
+                    <label>PES Akkaunt Rasmi</label>
+                    <input type="file" id="user-photo" accept="image/*" style="padding:10px; background:rgba(0,0,0,0.2); border:1px dashed var(--ef-neon-yellow); color:#fff; width:100%; box-sizing:border-box;">
+                </div>
+                <button class="btn" onclick="register()">Profil Yaratish</button>
+            </div>
         </div>
-        <div id="status-info" style="text-align: center; margin-top: 20px; color: var(--gold); font-weight: 900;"></div>
     </div>
 
-    <div id="screen-profile" class="screen">
-        <h2>👤 Profil</h2>
-        <div class="card" id="profile-details"></div>
-        <button class="btn-main" style="background:#ef4444" onclick="localStorage.clear(); location.reload();">Tizimdan chiqish</button>
+    <div id="tournaments-screen" class="screen">
+        <div class="container">
+            <div class="header"><h1>Turnirlar</h1></div>
+            <div id="tour-cards-container">
+                <div class="card">
+                    <span style="position:absolute; top:15px; right:15px; background:var(--ef-neon-yellow); color:#000; padding:2px 8px; font-size:9px; font-weight:900;">5 000 S'OM</span>
+                    <b style="color:var(--ef-neon-yellow)">STARTER CUP (16)</b>
+                    <span class="slot-info" id="slots-starter_cup" style="font-size:10px; display:block; margin-top:5px;">Hisoblanmoqda...</span>
+                    <button class="btn reg-tour-btn" id="btn-starter_cup" data-tour-name="STARTER CUP" data-max="16" onclick="handleTourAction('starter_cup', 'STARTER CUP', 16, 5000)">QATNASHISH</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-</div>
+    <div id="tour-info-screen" class="screen"><div class="container"><div class="header"><h1 id="info-tour-title">-</h1></div><div id="groups-container"></div><button class="btn" onclick="showScreen('tournaments')">ORQAGA</button></div></div>
+    <div id="payment-screen" class="screen"><div class="container"><div class="header"><h1>To'lov</h1></div><div class="card"><p>Summa: <b id="pay-amount">-</b></p><div class="card-box" onclick="navigator.clipboard.writeText('4073420068165541'); alert('Nusxalandi!')" style="border: 2px dashed var(--ef-neon-yellow); padding: 15px; margin: 20px 0; text-align: center; cursor: pointer; background: rgba(223, 255, 0, 0.05);"><h2 style="color: var(--ef-neon-yellow); margin: 5px 0;">4073 4200 6816 5541</h2><p>Maruf Raxmonov</p></div><input type="file" id="receipt-file" accept="image/*" style="display:none" onchange="uploadReceipt(this)"><button class="btn" onclick="document.getElementById('receipt-file').click()">CHEKNI YUBORISH</button></div></div></div>
+    <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2>TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
+    <div id="profile-screen" class="screen"><div class="container"><div class="header"><h1>Profil</h1></div><div class="card"><h2 id="prof-team">-</h2><p id="prof-user">-</p></div><button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="localStorage.clear(); location.reload();">Logout</button></div></div>
 
-<div class="navbar" id="main-nav" style="display: none;">
-    <div class="nav-item active" onclick="showScreen('tournaments', this)"><span class="nav-icon">🏆</span>Turnir</div>
-    <div class="nav-item" onclick="showScreen('profile', this)"><span class="nav-icon">👤</span>Profil</div>
-</div>
+    <nav class="bottom-nav" id="main-nav" style="display:none">
+        <div class="nav-item active" onclick="showScreen('tournaments', this)"><span class="nav-icon">🏟</span>O'yin</div>
+        <div class="nav-item" onclick="showScreen('profile', this)"><span class="nav-icon">👤</span>Profil</div>
+    </nav>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
-        databaseURL: "https://efootball-11be6-default-rtdb.firebaseio.com",
-        projectId: "efootball-11be6",
-        appId: "1:989986946120:web:2c654ac8ca6412f0bbec7d"
+        apiKey: "AIzaSyBc7tUey3q6hGZjWxisJo701-G4NbyD9zI",
+        authDomain: "gen-lang-client-0228947349.firebaseapp.com",
+        databaseURL: "https://gen-lang-client-0228947349-default-rtdb.firebaseio.com",
+        projectId: "gen-lang-client-0228947349",
+        storageBucket: "gen-lang-client-0228947349.firebasestorage.app",
+        messagingSenderId: "253793341504",
+        appId: "1:253793341504:web:709752258000dab44fcfa5"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    let currentSelectedTour = null;
 
-    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "test_user";
-    let audioCache = {};
-    let currentAudio = new Audio();
+    // AUDIO ENGINE - 100% FIXED
+    let audioAssets = {};
+    let currentAudio = null;
+    let isInitialPlay = false;
 
-    // 1. KESHLASH - Barcha musiqalarni bir marta yuklab olish
     onValue(ref(db, 'tournament/assets/audio'), (snap) => {
-        if(snap.exists()) {
-            audioCache = snap.val();
-            console.log("Musiqalar keshlandi");
-            if(localStorage.getItem('ef_user_data')) playMusic('app_system', 'main', true);
+        audioAssets = snap.val() || {};
+        if (audioAssets.app_system?.main && !isInitialPlay && !document.getElementById('reg-screen').classList.contains('active')) {
+            playSystemSound('main', true);
+            isInitialPlay = true;
         }
     });
 
-    // 2. BAZADAGI JAMOALARNI SELECTGA CHIQARISH
-    window.updateTeamList = () => {
-        const cat = document.getElementById('team-cat').value;
-        const select = document.getElementById('team-name');
-        select.innerHTML = '<option value="">Tanlang...</option>';
-        if(cat && audioCache[cat]) {
-            Object.keys(audioCache[cat]).forEach(team => {
-                let opt = document.createElement('option');
-                opt.value = team; opt.innerText = team.replace(/_/g, ' ');
-                select.appendChild(opt);
-            });
-        }
-    }
-
-    function playMusic(cat, name, loop = false) {
-        currentAudio.pause();
-        const src = audioCache[cat]?.[name];
-        if(src) {
-            currentAudio.src = src;
+    function playSystemSound(type, loop = false) {
+        if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
+        const src = audioAssets.app_system?.[type];
+        if (src) {
+            currentAudio = new Audio(src);
             currentAudio.loop = loop;
-            currentAudio.play().catch(e => console.log("Audio block active"));
+            if (type === 'anthem') {
+                currentAudio.loop = false;
+                currentAudio.onended = () => playSystemSound('main', true);
+            }
+            currentAudio.play().catch(e => console.log("Audio block"));
         }
     }
 
-    window.handleRegistration = async () => {
-        const name = document.getElementById('fname').value.trim();
-        const cat = document.getElementById('team-cat').value;
-        const team = document.getElementById('team-name').value;
-        if(!name || !team) return alert("Hamma joyni to'ldiring!");
+    function playTeamAnthem(category, teamName) {
+        if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
+        const src = audioAssets[category]?.[teamName];
+        if (src) {
+            currentAudio = new Audio(src);
+            currentAudio.play().catch(e => console.log("Anthem block"));
+        }
+    }
 
-        const userData = { id: userId, name, team, cat };
-        await set(ref(db, 'players/' + userId), userData);
-        localStorage.setItem('ef_user_data', JSON.stringify(userData));
-        location.reload();
+    function stopSounds() {
+        if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) { if (currentAudio) currentAudio.pause(); }
+        else { if (currentAudio) currentAudio.play(); }
+    });
+
+    window.showScreen = (name, el) => {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(name + '-screen');
+        if(target) target.classList.add('active');
+        if(el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
+        
+        if (name === 'tournaments' && (!currentAudio || currentAudio.paused)) {
+            playSystemSound('main', true);
+        }
+        if(name === 'tournaments') checkUserStatus();
     };
 
-    window.joinQueue = async (size) => {
-        const user = JSON.parse(localStorage.getItem('ef_user_data'));
-        await set(ref(db, `queue_${size}/${userId}`), user);
-        
-        onValue(ref(db, `queue_${size}`), (snap) => {
-            const players = Object.values(snap.val() || {});
-            document.getElementById('status-info').innerText = `NAVBTADA: ${players.length} / ${size}`;
-            if(players.length >= size) startCeremony(players, size);
+    window.register = async () => {
+        const fn = document.getElementById('firstname').value.trim();
+        const ln = document.getElementById('lastname').value.trim();
+        const tc = document.getElementById('team-category').value;
+        const tn = document.getElementById('teamname').value.trim().replace(/\s+/g, '_');
+        const photoInput = document.getElementById('user-photo');
+        if(!fn || !tn || !photoInput.files[0]) return alert("Ma'lumotlarni to'ldiring!");
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const uid = "EF_" + Date.now();
+            await set(ref(db, 'tournament/users/' + uid), { 
+                id: uid, firstname: fn, lastname: ln, teamName: tn, teamCategory: tc, 
+                photo: e.target.result, status: 'normal', activeTour: "YO'Q" 
+            });
+            localStorage.setItem('tournament_uid', uid);
+            playSystemSound('main', true);
+            initApp();
+        };
+        reader.readAsDataURL(photoInput.files[0]);
+    };
+
+    window.handleTourAction = async (id, name, max, price) => {
+        const uid = localStorage.getItem('tournament_uid');
+        const userSnap = await get(ref(db, 'tournament/users/' + uid));
+        const u = userSnap.val();
+        if (u.status === 'approved' && u.activeTour === name) {
+            openTourInfo(name, max);
+        } else { 
+            currentSelectedTour = { id, name, max, price }; 
+            document.getElementById('pay-amount').innerText = price.toLocaleString() + " SO'M"; 
+            showScreen('payment'); 
+        }
+    };
+
+    window.uploadReceipt = async (input) => {
+        if (input.files && input.files[0]) {
+            const uid = localStorage.getItem('tournament_uid');
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                await set(ref(db, 'tournament/payments/' + uid), { userId: uid, tourName: currentSelectedTour.name, receipt: e.target.result, status: 'pending', time: new Date().toLocaleString() });
+                await update(ref(db, 'tournament/users/' + uid), { status: 'checking', activeTour: currentSelectedTour.name });
+                showScreen('checking');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    function checkUserStatus() {
+        const uid = localStorage.getItem('tournament_uid');
+        if(!uid) return;
+        onValue(ref(db, 'tournament/users'), (snap) => {
+            const allUsers = snap.val() || {};
+            const me = allUsers[uid];
+            const tourCounts = {};
+            Object.values(allUsers).forEach(u => { if(u.activeTour !== "YO'Q" && u.status === 'approved') tourCounts[u.activeTour] = (tourCounts[u.activeTour] || 0) + 1; });
+            document.querySelectorAll('.reg-tour-btn').forEach(btn => {
+                const tourName = btn.getAttribute('data-tour-name');
+                const max = parseInt(btn.getAttribute('data-max'));
+                const current = tourCounts[tourName] || 0;
+                const slotLabel = document.getElementById('slots-' + btn.id.replace('btn-', ''));
+                if(slotLabel) slotLabel.innerText = `To'lgan: ${current}/${max}`;
+                if(me.activeTour !== "YO'Q") {
+                    if(me.activeTour === tourName) { btn.disabled = (me.status !== 'approved'); btn.innerText = (me.status === 'approved') ? "KIRISH ➡️" : "TEKSHIRILMOQDA..."; }
+                    else { btn.disabled = true; btn.innerText = "YOPILGAN 🔒"; }
+                } else if(current >= max) { btn.disabled = true; btn.innerText = "TURNIR TO'LGAN 🚫"; }
+            });
         });
     }
 
-    // 3. TANISHTIRUV MAROSIMI - 15 SEKUNDLI
-    async function startCeremony(players, size) {
-        const modal = document.getElementById('draw-modal');
-        modal.style.display = 'flex';
+    async function openTourInfo(tourName, maxPlayers) {
+        document.getElementById('info-tour-title').innerText = tourName;
+        const myUid = localStorage.getItem('tournament_uid');
+        showScreen('tour-info');
+        
+        onValue(ref(db, 'tournament/users'), async (snap) => {
+            let approvedPlayers = [];
+            if (snap.exists()) Object.values(snap.val()).forEach(u => { if (u.activeTour === tourName && u.status === 'approved') approvedPlayers.push(u); });
+            const groupsRef = ref(db, 'tournament/groups/' + tourName.replace(/\s+/g, '_'));
+            const groupsSnap = await get(groupsRef);
+            const groupsDiv = document.getElementById('groups-container');
+            
+            if (approvedPlayers.length >= maxPlayers && !groupsSnap.exists()) {
+                startWorldCupDraw(approvedPlayers, groupsRef, myUid);
+            } else if (groupsSnap.exists()) {
+                renderGroups(groupsSnap.val(), myUid);
+            } else {
+                groupsDiv.innerHTML = `<h3 style="color:var(--ef-neon-yellow); font-size:14px;">ISHTIROKCHILAR (${approvedPlayers.length}/${maxPlayers})</h3>`;
+                approvedPlayers.forEach((u, i) => { 
+                    groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName.replace(/_/g, ' ')}</span></div>`; 
+                });
+            }
+        });
+    }
 
-        for(const p of players) {
-            // Har bir o'yinchi madhiyasini keshdan darrov chaladi
-            playMusic(p.cat, p.team, false);
+    async function startWorldCupDraw(players, groupsRef, myUid) {
+        const intro = document.getElementById('intro-stage');
+        const overlay = document.getElementById('draw-overlay');
+        const activeCard = document.getElementById('active-draw-card');
+        const processPanel = document.getElementById('draw-process-panel');
+        const finalReveal = document.getElementById('final-reveal-modal');
+        
+        overlay.style.display = 'flex';
+        intro.style.display = 'flex';
+        
+        for (const p of players) {
+            // MADHIYA BOSHLANADI (100% 15 SEKUND)
+            playTeamAnthem(p.teamCategory, p.teamName);
             
-            document.getElementById('intro-name').innerText = p.name;
-            document.getElementById('intro-team').innerText = p.team.replace(/_/g, ' ');
+            document.getElementById('intro-name').innerText = p.firstname;
+            document.getElementById('intro-lastname').innerText = p.lastname;
+            document.getElementById('intro-team').innerText = p.teamName.replace(/_/g, ' ');
+            document.getElementById('intro-photo').src = p.photo;
             
-            // 15 soniya qat'iy kutish
-            await new Promise(r => setTimeout(r, 15000));
+            const els = ['intro-name', 'intro-lastname', 'intro-team', 'intro-photo'];
+            for(let i=0; i<els.length; i++){
+                await new Promise(r => setTimeout(r, 600));
+                document.getElementById(els[i]).classList.add('show');
+            }
+            // ISHTIROKCHI EKRANDA QOLISHI (MADHIYA BILAN SINXRON)
+            await new Promise(r => setTimeout(r, 12000)); 
+            els.forEach(id => document.getElementById(id).classList.remove('show'));
+            await new Promise(r => setTimeout(r, 600));
+        }
+        
+        playSystemSound('process', true);
+        intro.style.display = 'none';
+        processPanel.style.display = 'block';
+        document.getElementById('mini-groups-grid').innerHTML = "";
+        
+        const numGroups = players.length / 4;
+        const groups = {};
+        for (let i = 0; i < numGroups; i++) {
+            const letter = String.fromCharCode(65 + i); groups[letter] = [];
+            document.getElementById('mini-groups-grid').innerHTML += `<div class="mini-group-card" id="mini-g-${letter}"><div class="mini-group-title">GURUH ${letter}</div><div id="mini-body-${letter}"></div></div>`;
         }
 
-        modal.style.display = 'none';
-        playMusic('app_system', 'process', true);
-        alert("Qur'a tugadi!");
+        let remainingPlayers = [...players];
+        let currentGroupIdx = 0;
+        const groupLetters = Object.keys(groups).sort();
+
+        while (remainingPlayers.length > 0) {
+            const pIdx = Math.floor(Math.random() * remainingPlayers.length);
+            const p = remainingPlayers.splice(pIdx, 1)[0];
+            const groupLetter = groupLetters[currentGroupIdx];
+            groups[groupLetter].push({teamName: p.teamName, photo: p.photo, id: p.id});
+
+            activeCard.classList.remove('animate-player'); void activeCard.offsetWidth; activeCard.classList.add('animate-player');
+            document.getElementById('active-draw-team').innerText = p.teamName.replace(/_/g, ' ');
+            document.getElementById('active-draw-player').innerText = p.firstname + " " + p.lastname;
+            
+            await new Promise(r => setTimeout(r, 1200));
+            document.getElementById('active-draw-group').innerText = `GURUH ${groupLetter}`;
+            const miniG = document.getElementById(`mini-g-${groupLetter}`);
+            document.querySelectorAll('.mini-group-card').forEach(g => g.classList.remove('highlight-focus'));
+            miniG.classList.add('highlight-focus'); 
+            
+            await new Promise(r => setTimeout(r, 1000));
+            document.getElementById(`mini-body-${groupLetter}`).innerHTML += `<div class="mini-player-row"><img src="${p.photo}" class="mini-avatar"><span>${p.teamName.replace(/_/g, ' ')}</span></div>`;
+            currentGroupIdx = (currentGroupIdx + 1) % numGroups;
+        }
+
+        playSystemSound('anthem', false); 
+        processPanel.style.display = 'none';
+        for (const letter of groupLetters) {
+            document.getElementById('reveal-group-name').innerText = `Guruh ${letter}`;
+            document.getElementById('reveal-players-list').innerHTML = groups[letter].map(p => `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; border-radius:2px; object-fit:cover;"> ${p.teamName.replace(/_/g, ' ')}</div>`).join('');
+            finalReveal.classList.remove('animate-reveal'); void finalReveal.offsetWidth; finalReveal.classList.add('animate-reveal');
+            await new Promise(r => setTimeout(r, 4100));
+        }
+
+        await set(groupsRef, groups); overlay.style.display = 'none'; renderGroups(groups, myUid);
     }
 
-    window.showScreen = (id, el) => {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-        document.getElementById('screen-' + id).classList.add('active-screen');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        if(el) el.classList.add('active');
+    function renderGroups(groups, myUid) {
+        const groupsDiv = document.getElementById('groups-container'); groupsDiv.innerHTML = "";
+        Object.keys(groups).sort().forEach(label => {
+            const gCard = document.createElement('div'); gCard.className = 'group-card';
+            gCard.innerHTML = `<div class="group-title">GURUH ${label}</div>`;
+            groups[label].forEach(u => {
+                gCard.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><div style="display:flex; align-items:center; gap:10px;"><img src="${u.photo}" class="mini-avatar"><span>${u.teamName.replace(/_/g, ' ')}</span></div></div>`;
+            });
+            groupsDiv.appendChild(gCard);
+        });
     }
 
-    function init() {
-        const stored = localStorage.getItem('ef_user_data');
-        if(stored) {
-            const user = JSON.parse(stored);
-            document.getElementById('screen-reg').classList.remove('active-screen');
+    function initApp() {
+        const uid = localStorage.getItem('tournament_uid');
+        if(uid) {
+            document.getElementById('reg-screen').classList.remove('active');
             document.getElementById('main-nav').style.display = 'flex';
-            document.getElementById('screen-tournaments').classList.add('active-screen');
-            document.getElementById('user-banner').innerHTML = `<h3>Xush kelibsiz, ${user.name}!</h3><p>${user.team.replace(/_/g, ' ')}</p>`;
-            document.getElementById('profile-details').innerHTML = `<p>ID: ${user.id}</p><p>Ism: ${user.name}</p><p>Jamoa: ${user.team}</p>`;
+            onValue(ref(db, 'tournament/users/' + uid), (snap) => {
+                const u = snap.val();
+                if(u) { 
+                    document.getElementById('prof-team').innerText = u.teamName.replace(/_/g, ' '); 
+                    document.getElementById('prof-user').innerText = u.firstname; 
+                    if(u.status === 'checking') showScreen('checking'); else showScreen('tournaments'); 
+                }
+            });
         }
     }
-    init();
-
+    initApp();
 </script>
 </body>
 </html>

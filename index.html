@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball Pro League - Fixed</title>
+    <title>eFootball Pro League</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -18,7 +18,7 @@
         .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         h2 { color: var(--primary); font-size: 22px; margin-top: 0; text-transform: uppercase; }
 
-        /* Tanishtiruv Kartasi (Qura vaqtidagi katta oyna) */
+        /* Qura Marosimi Modali */
         #draw-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.99); display: none;
@@ -38,14 +38,15 @@
             background: #1e293b; display: flex; justify-content: space-around;
             padding: 10px 0; border-top: 1px solid #334155; z-index: 1000;
         }
-        .nav-item { color: #94a3b8; font-size: 11px; cursor: pointer; text-align: center; }
+        .nav-item { color: #94a3b8; font-size: 11px; cursor: pointer; text-align: center; text-decoration: none; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
 
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; }
+        select option { background: var(--bg); color: white; }
         .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; margin-top: 5px; }
         
-        .t-btn { background: var(--bg); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .t-btn { background: var(--card); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     </style>
 </head>
@@ -54,8 +55,8 @@
 <div id="draw-modal">
     <div id="player-intro-card">
         <div style="font-size: 50px;">⚽</div>
-        <div style="color: var(--gold); font-weight: bold; margin-bottom: 10px;">ISHTIROKCHI TANISHTIRILMOQDA:</div>
-        <div id="intro-name" class="intro-name">Yuklanmoqda...</div>
+        <div style="color: var(--gold); font-weight: bold; margin-bottom: 10px;">TANISHTIRILMOQDA:</div>
+        <div id="intro-name" class="intro-name">---</div>
         <div id="intro-team" class="intro-team">---</div>
     </div>
 </div>
@@ -66,26 +67,31 @@
         <div class="card">
             <h2>🏆 Ro'yxatdan o'tish</h2>
             <input type="text" id="fname" placeholder="Ismingiz">
-            <select id="team-cat" onchange="loadTeams()">
-                <option value="">Jamoa turini tanlang...</option>
+            
+            <label style="font-size: 10px; display: block; text-align: left; color: var(--primary); font-weight: 900;">JAMOA TURI</label>
+            <select id="team-cat" onchange="updateTeamList()">
+                <option value="">Tanlang...</option>
                 <option value="countries">DAVLATLAR</option>
                 <option value="clubs">KLUBLAR</option>
             </select>
+
+            <label style="font-size: 10px; display: block; text-align: left; color: var(--primary); font-weight: 900;">JAMOA NOMI (BAZADAGILAR)</label>
             <select id="team-name">
                 <option value="">Avval turni tanlang...</option>
             </select>
+
             <button class="btn-main" onclick="handleRegistration()">Ilovaga Kirish</button>
         </div>
     </div>
 
     <div id="screen-tournaments" class="screen">
-        <div class="card" id="user-banner"></div>
+        <div class="card" id="user-banner" style="background: linear-gradient(45deg, #1e293b, #0f172a); border: 1px solid #38bdf8;"></div>
         <h2>🎮 Turnirlar</h2>
         <div class="grid">
             <button class="t-btn" onclick="joinQueue(8)">8 Kishilik</button>
             <button class="t-btn" onclick="joinQueue(16)">16 Kishilik</button>
         </div>
-        <div id="status-info" style="text-align: center; margin-top: 20px; color: var(--gold);"></div>
+        <div id="status-info" style="text-align: center; margin-top: 20px; color: var(--gold); font-weight: 900;"></div>
     </div>
 
     <div id="screen-profile" class="screen">
@@ -115,20 +121,23 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const tg = window.Telegram.WebApp;
-    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_" + Date.now();
+    tg.expand();
 
+    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "test_user";
     let audioCache = {};
     let currentAudio = new Audio();
 
-    // 1. KESHLASH - Barcha musiqalarni ilova yuklanishida olish
+    // 1. KESHLASH - Barcha musiqalarni bir marta yuklab olish
     onValue(ref(db, 'tournament/assets/audio'), (snap) => {
         if(snap.exists()) {
             audioCache = snap.val();
-            if(localStorage.getItem('ef_user')) playMusic('app_system', 'main', true);
+            console.log("Musiqalar keshlandi");
+            if(localStorage.getItem('ef_user_data')) playMusic('app_system', 'main', true);
         }
     });
 
-    window.loadTeams = () => {
+    // 2. BAZADAGI JAMOALARNI SELECTGA CHIQARISH
+    window.updateTeamList = () => {
         const cat = document.getElementById('team-cat').value;
         const select = document.getElementById('team-name');
         select.innerHTML = '<option value="">Tanlang...</option>';
@@ -147,66 +156,70 @@
         if(src) {
             currentAudio.src = src;
             currentAudio.loop = loop;
-            currentAudio.play().catch(e => console.log("Audio play blocked"));
+            currentAudio.play().catch(e => console.log("Audio block active"));
         }
     }
 
     window.handleRegistration = async () => {
-        const name = document.getElementById('fname').value;
+        const name = document.getElementById('fname').value.trim();
         const cat = document.getElementById('team-cat').value;
         const team = document.getElementById('team-name').value;
         if(!name || !team) return alert("Hamma joyni to'ldiring!");
 
         const userData = { id: userId, name, team, cat };
         await set(ref(db, 'players/' + userId), userData);
-        localStorage.setItem('ef_user', JSON.stringify(userData));
+        localStorage.setItem('ef_user_data', JSON.stringify(userData));
         location.reload();
     };
 
     window.joinQueue = async (size) => {
-        const user = JSON.parse(localStorage.getItem('ef_user'));
+        const user = JSON.parse(localStorage.getItem('ef_user_data'));
         await set(ref(db, `queue_${size}/${userId}`), user);
         
         onValue(ref(db, `queue_${size}`), (snap) => {
             const players = Object.values(snap.val() || {});
-            document.getElementById('status-info').innerText = `Navbat: ${players.length} / ${size}`;
-            if(players.length >= size) startDraw(players, size);
+            document.getElementById('status-info').innerText = `NAVBTADA: ${players.length} / ${size}`;
+            if(players.length >= size) startCeremony(players, size);
         });
     }
 
-    async function startDraw(players, size) {
+    // 3. TANISHTIRUV MAROSIMI - 15 SEKUNDLI
+    async function startCeremony(players, size) {
         const modal = document.getElementById('draw-modal');
         modal.style.display = 'flex';
 
         for(const p of players) {
+            // Har bir o'yinchi madhiyasini keshdan darrov chaladi
             playMusic(p.cat, p.team, false);
+            
             document.getElementById('intro-name').innerText = p.name;
             document.getElementById('intro-team').innerText = p.team.replace(/_/g, ' ');
             
-            // 15 soniya kutish (Madhiya vaqti)
+            // 15 soniya qat'iy kutish
             await new Promise(r => setTimeout(r, 15000));
         }
 
         modal.style.display = 'none';
         playMusic('app_system', 'process', true);
-        alert("Qur'a yakunlandi. Guruhlar tayyor!");
+        alert("Qur'a tugadi!");
     }
 
     window.showScreen = (id, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
         document.getElementById('screen-' + id).classList.add('active-screen');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+        if(el) el.classList.add('active');
     }
 
     function init() {
-        const stored = localStorage.getItem('ef_user');
+        const stored = localStorage.getItem('ef_user_data');
         if(stored) {
             const user = JSON.parse(stored);
             document.getElementById('screen-reg').classList.remove('active-screen');
             document.getElementById('main-nav').style.display = 'flex';
             document.getElementById('screen-tournaments').classList.add('active-screen');
-            document.getElementById('user-banner').innerHTML = `<h3>Xush kelibsiz, ${user.name}!</h3>`;
+            document.getElementById('user-banner').innerHTML = `<h3>Xush kelibsiz, ${user.name}!</h3><p>${user.team.replace(/_/g, ' ')}</p>`;
+            document.getElementById('profile-details').innerHTML = `<p>ID: ${user.id}</p><p>Ism: ${user.name}</p><p>Jamoa: ${user.team}</p>`;
         }
     }
     init();

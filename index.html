@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eFootball Tournament Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --ef-dark-blue: #000a2d; 
@@ -117,13 +116,13 @@
 
         .schedule-card { background: rgba(255,255,255,0.05); border: 1px solid var(--ef-border); padding: 12px; margin-bottom: 10px; border-radius: 4px; }
         .vs-badge { color: var(--ef-neon-yellow); font-weight: 900; margin: 0 5px; }
-        .timer-badge { font-size: 9px; background: var(--ef-danger); padding: 2px 5px; border-radius: 2px; float: right; }
+        .pending-badge { font-size: 8px; background: var(--ef-bonus); color: #000; padding: 2px 5px; border-radius: 2px; }
 
         .input-group { margin-bottom: 20px; }
         label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
         input { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
         .btn { width: 100%; padding: 18px; background: var(--ef-neon-yellow); color: #000; border: none; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%); }
-        .btn-small { padding: 8px; font-size: 10px; margin-top: 10px; width: 100%; }
+        .btn-small { padding: 8px; font-size: 9px; margin-top: 10px; width: 100%; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #00051a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 3px solid var(--ef-neon-yellow); z-index: 1000; }
         .nav-item { text-align: center; font-size: 9px; font-weight: 900; cursor: pointer; opacity: 0.4; color: #fff; text-decoration: none; }
         .nav-item.active { opacity: 1; color: var(--ef-neon-yellow); }
@@ -196,10 +195,15 @@
         </div>
     </div>
 
-    <div id="tour-info-screen" class="screen"><div class="container"><div class="header"><h1 id="info-tour-title">-</h1></div><div id="groups-container"></div><div id="matches-container"></div><button class="btn" onclick="showScreen('tournaments')">ORQAGA</button></div></div>
+    <div id="tour-info-screen" class="screen"><div class="container"><div class="header"><h1 id="info-tour-title">-</h1></div><div id="groups-container"></div><div id="matches-container"></div><button class="btn" onclick="showScreen('tournaments')" style="margin-top:20px;">ORQAGA</button></div></div>
+    
     <div id="payment-screen" class="screen"><div class="container"><div class="header"><h1>To'lov</h1></div><div class="card"><p>Summa: <b id="pay-amount">-</b></p><div class="card-box" onclick="navigator.clipboard.writeText('4073420068165541'); alert('Nusxalandi!')" style="border: 2px dashed var(--ef-neon-yellow); padding: 15px; margin: 20px 0; text-align: center; cursor: pointer; background: rgba(223, 255, 0, 0.05);"><h2 style="color: var(--ef-neon-yellow); margin: 5px 0;">4073 4200 6816 5541</h2><p>Maruf Raxmonov</p></div><input type="file" id="receipt-file" accept="image/*" style="display:none" onchange="uploadReceipt(this)"><button class="btn" onclick="document.getElementById('receipt-file').click()">CHEKNI YUBORISH</button></div></div></div>
-    <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2 id="checking-status">TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
+    
+    <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2>TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
+    
     <div id="profile-screen" class="screen"><div class="container"><div class="header"><h1>Profil</h1></div><div class="card"><h2 id="prof-team">-</h2><p id="prof-user">-</p></div><button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="localStorage.clear(); location.reload();">Logout</button></div></div>
+
+    <input type="file" id="match-result-file" accept="image/*" style="display:none">
 
     <nav class="bottom-nav" id="main-nav" style="display:none">
         <div class="nav-item active" onclick="showScreen('tournaments', this)"><span class="nav-icon">🏟</span>O'yin</div>
@@ -223,7 +227,6 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let currentSelectedTour = null;
     let myUid = localStorage.getItem('tournament_uid');
     let myUser = null;
 
@@ -315,7 +318,7 @@
                 matchesDiv.innerHTML = "";
                 const userSnap = await get(ref(db, 'tournament/users'));
                 let approved = [];
-                Object.values(userSnap.val()).forEach(u => { if(u.activeTour === tourName && u.status === 'approved') approved.push(u); });
+                Object.values(userSnap.val() || {}).forEach(u => { if(u.activeTour === tourName && u.status === 'approved') approved.push(u); });
                 
                 if (approved.length >= maxPlayers) {
                     startWorldCupDraw(approved, tourName, myUid);
@@ -402,7 +405,6 @@
 
         const tourId = tourName.replace(/\s+/g, '_');
         await set(ref(db, `tournament/groups/${tourId}`), groups);
-        await set(ref(db, `tournament/times/${tourId}`), { startTime: Date.now() });
         overlay.style.display = 'none';
     }
 
@@ -424,11 +426,9 @@
         });
     }
 
-    async function renderMatches(groups, tourId, myUid) {
+    function renderMatches(groups, tourId, myUid) {
         const matchesDiv = document.getElementById('matches-container');
-        const timeSnap = await get(ref(db, `tournament/times/${tourId}`));
-        const startTime = timeSnap.exists() ? timeSnap.val().startTime : Date.now();
-
+        
         onValue(ref(db, `tournament/results/${tourId}`), (snap) => {
             const results = snap.val() || {};
             matchesDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-top:30px; margin-bottom:15px;">O\'YINLAR JADVALI</h2>';
@@ -444,15 +444,24 @@
                 matchesDiv.innerHTML += `<div style="color:var(--ef-bonus); font-weight:900; margin: 15px 0 10px 0; font-size:12px;">GURUH ${L} O'YINLARI</div>`;
                 groupMatches.forEach((m) => {
                     const matchRes = results[m.id] || {};
-                    let scoreText = 'VS';
-                    if(matchRes.score) scoreText = matchRes.score;
+                    let statusText = 'VS';
+                    let isWinner1 = false;
+                    let isWinner2 = false;
+
+                    if(matchRes.score) {
+                        statusText = matchRes.score;
+                        isWinner1 = matchRes.winner === m.t1.id;
+                        isWinner2 = matchRes.winner === m.t2.id;
+                    } else if(matchRes.admin_pending) {
+                        statusText = '<span class="pending-badge">TASDIQLANMOQDA</span>';
+                    }
 
                     let actionHtml = "";
-                    if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score) {
+                    if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score && !matchRes.admin_pending) {
                         actionHtml = `
                             <div style="text-align:center;">
-                                <input type="file" id="file-${m.id}" accept="image/*" style="display:none" onchange="processScreenshot('${tourId}', '${m.id}', '${myUid}')">
-                                <button class="btn btn-small" id="btn-${m.id}" onclick="document.getElementById('file-${m.id}').click()">NATIJANI YUKLASH (SKRINSHOT)</button>
+                                <input type="file" id="file-${m.id}" accept="image/*" style="display:none" onchange="submitResultToAdmin('${tourId}', '${m.id}', '${myUid}')">
+                                <button class="btn btn-small" id="btn-${m.id}" onclick="document.getElementById('file-${m.id}').click()">NATIJANI YUBORISH (SKRINSHOT)</button>
                             </div>
                         `;
                     }
@@ -460,9 +469,9 @@
                     matchesDiv.innerHTML += `
                         <div class="schedule-card">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b style="flex:1; text-align:right;">${m.t1.teamName}</b>
-                                <span class="vs-badge">${scoreText}</span>
-                                <b style="flex:1; text-align:left;">${m.t2.teamName}</b>
+                                <b style="flex:1; text-align:right; ${isWinner1 ? 'color:var(--ef-success)' : ''}">${m.t1.teamName}</b>
+                                <span class="vs-badge">${statusText}</span>
+                                <b style="flex:1; text-align:left; ${isWinner2 ? 'color:var(--ef-success)' : ''}">${m.t2.teamName}</b>
                             </div>
                             ${actionHtml}
                         </div>
@@ -472,48 +481,31 @@
         });
     }
 
-    // --- AVTOMATIK SKRINSHOT TAHLILI (OCR) ---
-    window.processScreenshot = async (tourId, matchId, uid) => {
+    window.submitResultToAdmin = async (tourId, matchId, uid) => {
         const fileInput = document.getElementById(`file-${matchId}`);
         const btn = document.getElementById(`btn-${matchId}`);
         if (!fileInput.files[0]) return;
 
-        btn.innerText = "TAHLIL QILINMOQDA...";
+        btn.innerText = "YUBORILMOQDA...";
         btn.disabled = true;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
             const imgData = e.target.result;
             try {
-                // Tesseract.js orqali rasmdan matnni o'qish
-                const { data: { text } } = await Tesseract.recognize(imgData, 'eng');
-                console.log("OCR MATN:", text);
-
-                // Matn ichidan hisobni qidirish (Masalan: "3 - 0" yoki "3 0")
-                const scoreMatch = text.match(/(\d+)\s*[-:]\s*(\d+)/) || text.match(/(\d+)\s+(\d+)/);
-                
-                if (scoreMatch) {
-                    const s1 = scoreMatch[1];
-                    const s2 = scoreMatch[2];
-                    const finalScore = `${s1} - ${s2}`;
-
-                    // Bazaga natijani yozish
-                    await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
-                        score: finalScore,
-                        winner: (parseInt(s1) > parseInt(s2)) ? "Team1" : (parseInt(s1) < parseInt(s2) ? "Team2" : "Draw"),
-                        last_upload_by: uid,
-                        timestamp: Date.now()
-                    });
-                    alert(`Natija aniqlandi: ${finalScore}. Bazaga saqlandi!`);
-                } else {
-                    alert("Hisobni aniqlab bo'lmadi. Iltimos, aniqroq rasm yuklang!");
-                }
+                // Natijani admin ko'rishi uchun pending holatida bazaga yozish
+                await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
+                    admin_pending: true,
+                    screenshot: imgData,
+                    sent_by: uid,
+                    sent_at: Date.now()
+                });
+                alert("Natija adminga yuborildi. Tasdiqlanganidan so'ng jadvalda aks etadi!");
             } catch (err) {
                 console.error(err);
-                alert("Tizimda xatolik yuz berdi.");
-            } finally {
-                btn.innerText = "NATIJANI YUKLASH (SKRINSHOT)";
+                alert("Xatolik yuz berdi.");
                 btn.disabled = false;
+                btn.innerText = "NATIJANI YUBORISH (SKRINSHOT)";
             }
         };
         reader.readAsDataURL(fileInput.files[0]);

@@ -118,6 +118,12 @@
         .vs-badge { color: var(--ef-neon-yellow); font-weight: 900; margin: 0 5px; }
         .pending-badge { font-size: 8px; background: var(--ef-bonus); color: #000; padding: 2px 5px; border-radius: 2px; }
 
+        /* JADVAL STYLE */
+        .group-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.2); }
+        .group-table th { background: var(--ef-light-blue); color: var(--ef-neon-yellow); padding: 8px 4px; text-align: left; border-bottom: 1px solid var(--ef-border); }
+        .group-table td { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .group-table tr:nth-child(-n+2) td:first-child { color: var(--ef-success); font-weight: 900; }
+
         .input-group { margin-bottom: 20px; }
         label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
         input { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
@@ -306,29 +312,13 @@
         const tourId = tourName.replace(/\s+/g, '_');
         showScreen('tour-info');
         
-        onValue(ref(db, `tournament/groups/${tourId}`), async (snap) => {
-            const groupsData = snap.val();
-            const groupsDiv = document.getElementById('groups-container');
-            const matchesDiv = document.getElementById('matches-container');
-            
-            if (groupsData) {
-                renderGroups(groupsData, myUid);
-                renderMatches(groupsData, tourId, myUid);
-            } else {
-                matchesDiv.innerHTML = "";
-                const userSnap = await get(ref(db, 'tournament/users'));
-                let approved = [];
-                Object.values(userSnap.val() || {}).forEach(u => { if(u.activeTour === tourName && u.status === 'approved') approved.push(u); });
-                
-                if (approved.length >= maxPlayers) {
-                    startWorldCupDraw(approved, tourName, myUid);
-                } else {
-                    groupsDiv.innerHTML = `<h3 style="color:var(--ef-neon-yellow); font-size:14px;">ISHTIROKCHILAR (${approved.length}/${maxPlayers})</h3>`;
-                    approved.forEach((u, i) => { 
-                        groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName} (${u.firstname} ${u.lastname})</span></div>`; 
-                    });
-                }
-            }
+        onValue(ref(db, `tournament/groups/${tourId}`), (snap) => {
+            const groupsData = snap.val() || {};
+            onValue(ref(db, `tournament/results/${tourId}`), (resSnap) => {
+                const resultsData = resSnap.val() || {};
+                renderGroups(groupsData, resultsData, myUid);
+                renderMatches(groupsData, resultsData, tourId, myUid);
+            });
         });
     }
 
@@ -352,9 +342,7 @@
             groupsGrid.innerHTML += `<div class="mini-group-card" id="draw-g-${L}"><div class="mini-group-title">GURUH ${L}</div><div id="draw-body-${L}"></div></div>`;
         });
 
-        players.forEach(p => {
-            poolContainer.innerHTML += `<img src="${p.photo}" class="pool-player" id="pool-${p.id}">`;
-        });
+        players.forEach(p => { poolContainer.innerHTML += `<img src="${p.photo}" class="pool-player" id="pool-${p.id}">`; });
 
         let remaining = [...players];
         let currentGrpIdx = 0;
@@ -368,36 +356,22 @@
             document.getElementById('draw-card-img').src = player.photo;
             document.getElementById('draw-card-fullname').innerText = `${player.firstname} ${player.lastname}`;
             document.getElementById('draw-card-teamname').innerText = `${player.teamName}`;
-            
             activeCard.classList.remove('animate-player'); void activeCard.offsetWidth; activeCard.classList.add('animate-player');
             
             await new Promise(r => setTimeout(r, 1800));
-
             const groupEl = document.getElementById(`draw-g-${L}`);
             groupEl.classList.add('highlight');
-            document.getElementById(`draw-body-${L}`).innerHTML += `
-                <div class="mini-player-row">
-                    <img src="${player.photo}" class="mini-avatar">
-                    <span>${player.teamName} (${player.firstname})</span>
-                </div>
-            `;
-            
+            document.getElementById(`draw-body-${L}`).innerHTML += `<div class="mini-player-row"><img src="${player.photo}" class="mini-avatar"><span>${player.teamName} (${player.firstname})</span></div>`;
             groups[L].push(player);
             await new Promise(r => setTimeout(r, 600));
             groupEl.classList.remove('highlight');
-            
             currentGrpIdx = (currentGrpIdx + 1) % numGroups;
         }
 
         for (const L of groupLetters) {
             document.getElementById('reveal-group-name').innerText = `Guruh ${L}`;
             let playersHtml = "";
-            groups[L].forEach(p => {
-                playersHtml += `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)">
-                    <img src="${p.photo}" style="width:30px; height:30px; object-fit:cover; border-radius:2px;">
-                    ${p.teamName} (${p.firstname} ${p.lastname})
-                </div>`;
-            });
+            groups[L].forEach(p => { playersHtml += `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; object-fit:cover; border-radius:2px;">${p.teamName} (${p.firstname} ${p.lastname})</div>`; });
             document.getElementById('reveal-players-list').innerHTML = playersHtml;
             revealModal.classList.remove('animate-reveal'); void revealModal.offsetWidth; revealModal.classList.add('animate-reveal');
             await new Promise(r => setTimeout(r, 3600));
@@ -408,75 +382,72 @@
         overlay.style.display = 'none';
     }
 
-    function renderGroups(groups, myUid) {
+    function renderGroups(groups, results, myUid) {
         const groupsDiv = document.getElementById('groups-container');
-        groupsDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-bottom:15px;">GURUHLAR</h2>';
-        Object.keys(groups).sort().forEach(L => {
-            let html = `<div class="group-card"><div class="group-title">GURUH ${L}</div>`;
-            groups[L].forEach(p => {
-                html += `<div class="player-list-row ${p.id === myUid ? 'my-team-highlight' : ''}">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${p.photo}" style="width:25px; height:25px; border-radius:3px; object-fit:cover;">
-                        <span>${p.teamName} (${p.firstname} ${p.lastname})</span>
-                    </div>
-                </div>`;
-            });
-            html += `</div>`;
-            groupsDiv.innerHTML += html;
-        });
-    }
-
-    function renderMatches(groups, tourId, myUid) {
-        const matchesDiv = document.getElementById('matches-container');
+        groupsDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-bottom:15px;">GURUHLAR JADVALI</h2>';
         
-        onValue(ref(db, `tournament/results/${tourId}`), (snap) => {
-            const results = snap.val() || {};
-            matchesDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-top:30px; margin-bottom:15px;">O\'YINLAR JADVALI</h2>';
+        Object.keys(groups).sort().forEach(L => {
+            const players = groups[L];
+            const stats = {};
+            players.forEach(p => { stats[p.id] = { id: p.id, name: p.firstname, team: p.teamName, photo: p.photo, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }; });
 
-            Object.keys(groups).sort().forEach(L => {
-                const p = groups[L];
-                const groupMatches = [
-                    { t1: p[0], t2: p[1], id: `G_${L}_M_0` }, { t1: p[2], t2: p[3], id: `G_${L}_M_1` },
-                    { t1: p[0], t2: p[2], id: `G_${L}_M_2` }, { t1: p[1], t2: p[3], id: `G_${L}_M_3` },
-                    { t1: p[0], t2: p[3], id: `G_${L}_M_4` }, { t1: p[1], t2: p[2], id: `G_${L}_M_5` }
-                ];
+            // Natijalarni hisoblash
+            Object.keys(results).forEach(mId => {
+                if (!mId.startsWith(`G_${L}`)) return;
+                const m = results[mId];
+                if (!m.score || !m.score.includes('-')) return;
                 
-                matchesDiv.innerHTML += `<div style="color:var(--ef-bonus); font-weight:900; margin: 15px 0 10px 0; font-size:12px;">GURUH ${L} O'YINLARI</div>`;
-                groupMatches.forEach((m) => {
-                    const matchRes = results[m.id] || {};
-                    let statusText = 'VS';
-                    let isWinner1 = false;
-                    let isWinner2 = false;
+                const matchParts = mId.split('_'); // G_A_M_0
+                const mIdx = parseInt(matchParts[3]);
+                const pairs = [[players[0],players[1]], [players[2],players[3]], [players[0],players[2]], [players[1],players[3]], [players[0],players[3]], [players[1],players[2]]];
+                const t1 = pairs[mIdx][0]; const t2 = pairs[mIdx][1];
+                const scores = m.score.split('-').map(Number);
 
-                    if(matchRes.score) {
-                        statusText = matchRes.score;
-                        isWinner1 = matchRes.winner === m.t1.id;
-                        isWinner2 = matchRes.winner === m.t2.id;
-                    } else if(matchRes.admin_pending) {
-                        statusText = '<span class="pending-badge">TASDIQLANMOQDA</span>';
-                    }
+                stats[t1.id].p++; stats[t2.id].p++;
+                stats[t1.id].gf += scores[0]; stats[t1.id].ga += scores[1];
+                stats[t2.id].gf += scores[1]; stats[t2.id].ga += scores[0];
 
-                    let actionHtml = "";
-                    if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score && !matchRes.admin_pending) {
-                        actionHtml = `<button class="btn btn-small" onclick="triggerResultUpload('${tourId}', '${m.id}')">NATIJANI YUBORISH</button>`;
-                    }
+                if (scores[0] > scores[1]) { stats[t1.id].w++; stats[t1.id].pts += 3; stats[t2.id].l++; }
+                else if (scores[0] < scores[1]) { stats[t2.id].w++; stats[t2.id].pts += 3; stats[t1.id].l++; }
+                else { stats[t1.id].d++; stats[t2.id].d++; stats[t1.id].pts += 1; stats[t2.id].pts += 1; }
+            });
 
-                    matchesDiv.innerHTML += `
-                        <div class="schedule-card">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b style="flex:1; text-align:right; ${isWinner1 ? 'color:var(--ef-success)' : ''}">${m.t1.teamName} (${m.t1.firstname})</b>
-                                <span class="vs-badge">${statusText}</span>
-                                <b style="flex:1; text-align:left; ${isWinner2 ? 'color:var(--ef-success)' : ''}">${m.t2.teamName} (${m.t2.firstname})</b>
-                            </div>
-                            ${actionHtml}
-                        </div>
-                    `;
-                });
+            const sorted = Object.values(stats).sort((a,b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+
+            let tableHtml = `<div class="group-card"><div class="group-title">GURUH ${L}</div><table class="group-table"><thead><tr><th>#</th><th>Jamoa</th><th>O'</th><th>G'</th><th>D</th><th>M</th><th>T-F</th><th>O</th></tr></thead><tbody>`;
+            sorted.forEach((s, i) => {
+                tableHtml += `<tr class="${s.id === myUid ? 'my-team-highlight' : ''}"><td>${i+1}</td><td style="display:flex;align-items:center;gap:4px;"><img src="${s.photo}" style="width:15px;height:15px;border-radius:2px;">${s.team}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}-${s.ga}</td><td>${s.pts}</td></tr>`;
+            });
+            tableHtml += `</tbody></table></div>`;
+            groupsDiv.innerHTML += tableHtml;
+        });
+    }
+
+    function renderMatches(groups, results, tourId, myUid) {
+        const matchesDiv = document.getElementById('matches-container');
+        matchesDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-top:30px; margin-bottom:15px;">O\'YINLAR JADVALI</h2>';
+
+        Object.keys(groups).sort().forEach(L => {
+            const p = groups[L];
+            const groupMatches = [{ t1: p[0], t2: p[1], id: `G_${L}_M_0` }, { t1: p[2], t2: p[3], id: `G_${L}_M_1` }, { t1: p[0], t2: p[2], id: `G_${L}_M_2` }, { t1: p[1], t2: p[3], id: `G_${L}_M_3` }, { t1: p[0], t2: p[3], id: `G_${L}_M_4` }, { t1: p[1], t2: p[2], id: `G_${L}_M_5` }];
+            matchesDiv.innerHTML += `<div style="color:var(--ef-bonus); font-weight:900; margin: 15px 0 10px 0; font-size:12px;">GURUH ${L} O'YINLARI</div>`;
+            groupMatches.forEach((m) => {
+                const matchRes = results[m.id] || {};
+                let statusText = 'VS';
+                if(matchRes.score) statusText = matchRes.score;
+                else if(matchRes.admin_pending) statusText = '<span class="pending-badge">TASDIQLANMOQDA</span>';
+
+                let actionHtml = "";
+                if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score && !matchRes.admin_pending) {
+                    actionHtml = `<button class="btn btn-small" onclick="triggerResultUpload('${tourId}', '${m.id}', '${m.t1.teamName} (${m.t1.firstname})', '${m.t2.teamName} (${m.t2.firstname})')">NATIJANI YUBORISH</button>`;
+                }
+
+                matchesDiv.innerHTML += `<div class="schedule-card"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="flex:1; text-align:right;">${m.t1.teamName} (${m.t1.firstname})</b><span class="vs-badge">${statusText}</span><b style="flex:1; text-align:left;">${m.t2.teamName} (${m.t2.firstname})</b></div>${actionHtml}</div>`;
             });
         });
     }
 
-    window.triggerResultUpload = (tourId, matchId) => {
+    window.triggerResultUpload = (tourId, matchId, team1, team2) => {
         const fileInput = document.getElementById('match-result-file');
         fileInput.onchange = async (e) => {
             if (!e.target.files[0]) return;
@@ -485,7 +456,10 @@
                 await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
                     admin_pending: true,
                     screenshot: ev.target.result,
-                    sent_by: myUid
+                    sender_name: `${myUser.firstname} ${myUser.lastname}`,
+                    sender_team: myUser.teamName,
+                    match_details: `${team1} VS ${team2}`,
+                    sent_at: Date.now()
                 });
                 alert("Natija adminga yuborildi!");
             };

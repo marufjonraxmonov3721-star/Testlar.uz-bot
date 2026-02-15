@@ -6,7 +6,7 @@
     <title>eFootball Pro League</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --accent: #2563eb; --text: white; --success: #22c55e; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 70px; overflow-x: hidden; }
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
         
@@ -16,6 +16,16 @@
 
         .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; text-align: center; }
         h2 { color: var(--primary); font-size: 22px; margin-top: 0; }
+
+        /* Modal (Katta tabrik oynasi) */
+        #welcome-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 2000; padding: 20px; text-align: center; box-sizing: border-box;
+        }
+        .modal-content { animation: scaleUp 0.4s; }
+        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .navbar {
             position: fixed; bottom: 0; left: 0; right: 0;
@@ -29,14 +39,23 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .t-btn { background: var(--bg); border: 1px solid var(--primary); color: white; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; }
-        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--primary); }
+        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-main:active { transform: scale(0.95); }
         .logout-btn { background: #ef4444; margin-top: 20px; }
-        
-        .welcome-box { color: #22c55e; font-weight: bold; font-size: 18px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
+
+<div id="welcome-modal">
+    <div class="modal-content">
+        <h1 style="font-size: 60px; margin: 0;">🏆</h1>
+        <h2 id="modal-title" style="color: var(--success); font-size: 28px;">Omad yor bo'lsin!</h2>
+        <p id="modal-desc" style="font-size: 18px; margin-bottom: 30px;"></p>
+        <button class="btn-main" onclick="closeModal()">Davom etish</button>
+    </div>
+</div>
 
 <div class="container">
     
@@ -45,16 +64,13 @@
             <h2>🏆 Ro'yxatdan o'tish</h2>
             <input type="text" id="fname" placeholder="Ism">
             <input type="text" id="lname" placeholder="Familiya">
-            <input type="text" id="pes_name" placeholder="eFootball Akkaunt (Jamoa nomi)">
-            <button class="btn-main" id="start-btn" onclick="handleRegistration()">Kirish va Madhiyani Tinglash</button>
-            <p style="font-size: 11px; color: #94a3b8; margin-top: 10px;">Tugmani bosganda jamoangiz madhiyasi va fon musiqasi ishga tushadi.</p>
+            <input type="text" id="pes_name" placeholder="eFootball Akkaunt Nomi">
+            <button class="btn-main" onclick="handleRegistration()">Kirish</button>
         </div>
     </div>
 
     <div id="screen-tournaments" class="screen">
-        <div id="welcome-msg" class="welcome-box"></div>
-        <div class="card" id="user-info-banner" style="background: linear-gradient(45deg, #1e293b, #0f172a); border: 1px solid #38bdf8;">
-            </div>
+        <div class="card" id="user-info-banner" style="background: linear-gradient(45deg, #1e293b, #0f172a); border: 1px solid #38bdf8;"></div>
         <h2>🎮 Turnirlar</h2>
         <div class="grid">
             <button class="t-btn">8 Kishilik</button>
@@ -66,7 +82,7 @@
 
     <div id="screen-rating" class="screen">
         <h2>📊 Reyting</h2>
-        <div class="card">Hozircha hech kim yo'q.</div>
+        <div class="card">Hozircha ma'lumot yo'q.</div>
     </div>
 
     <div id="screen-profile" class="screen">
@@ -77,7 +93,7 @@
     <div id="screen-settings" class="screen">
         <h2>⚙️ Sozlamalar</h2>
         <div class="card">
-            <p>Versiya: 1.0.5</p>
+            <p>Versiya: 1.1.0</p>
             <button class="btn-main logout-btn" onclick="handleLogout()">Tizimdan chiqish</button>
         </div>
     </div>
@@ -117,30 +133,28 @@
         if(navEl) navEl.classList.add('active');
     };
 
-    // Musiqa ijro etish (Fon va Madhiya)
-    async function startAudioSystem(teamKey) {
-        try {
-            // 1. Umumiy fon musiqasini yuklash
-            const bgSnap = await get(ref(db, 'musiqalar/background'));
-            if(bgSnap.exists()) {
-                bgMusic = new Audio(bgSnap.val());
-                bgMusic.loop = true;
-                bgMusic.volume = 0.2; // Fon musiqasi pastroq
-                bgMusic.play();
-            }
+    // Musiqa: Faqat fon musiqasini yoqish
+    async function playBackgroundOnly() {
+        if(bgMusic) return;
+        const bgSnap = await get(ref(db, 'musiqalar/background'));
+        if(bgSnap.exists()) {
+            bgMusic = new Audio(bgSnap.val());
+            bgMusic.loop = true;
+            bgMusic.volume = 0.3;
+            bgMusic.play();
+        }
+    }
 
-            // 2. Jamoa madhiyasini yuklash
-            if(teamKey) {
-                const teamSnap = await get(ref(db, 'musiqalar/' + teamKey));
-                if(teamSnap.exists()) {
-                    let anthem = new Audio(teamSnap.val());
-                    anthem.volume = 1.0;
-                    anthem.play();
-                    // Madhiya yangrayotganda fonni pasaytirib turish mumkin
-                    setTimeout(() => { if(bgMusic) bgMusic.volume = 0.2; }, 15000);
-                }
+    // Musiqa: Fon + Madhiya (faqat ro'yxatdan o'tganda)
+    async function playRegistrationAudio(teamKey) {
+        await playBackgroundOnly();
+        if(teamKey) {
+            const teamSnap = await get(ref(db, 'musiqalar/' + teamKey));
+            if(teamSnap.exists()) {
+                let anthem = new Audio(teamSnap.val());
+                anthem.play();
             }
-        } catch (e) { console.log("Audio xatosi:", e); }
+        }
     }
 
     window.handleRegistration = async function() {
@@ -148,7 +162,7 @@
         const l = document.getElementById('lname').value.trim();
         const p = document.getElementById('pes_name').value.trim();
 
-        if(!f || !l || !p) return alert("Hamma joyni to'ldiring!");
+        if(!f || !l || !p) return alert("Iltimos, ma'lumotlarni to'ldiring!");
 
         let teamKey = p.toLowerCase().includes("real") ? "realmadrid" : 
                       p.toLowerCase().includes("barca") ? "barcelona" : 
@@ -157,24 +171,24 @@
         const userData = { full_name: f + " " + l, account: p, team_type: teamKey };
         await set(ref(db, 'players/' + userId), userData);
         
-        // Musiqalarni yoqish
-        startAudioSystem(teamKey);
+        // Musiqa va Modalni chiqarish
+        playRegistrationAudio(teamKey);
+        document.getElementById('modal-desc').innerText = `${f}, eFootball turniriga xush kelibsiz!`;
+        document.getElementById('welcome-modal').style.display = 'flex';
         
         displayUser(userData);
+    };
+
+    window.closeModal = function() {
+        document.getElementById('welcome-modal').style.display = 'none';
         showMainUI();
     };
 
     function displayUser(data) {
-        const banner = document.getElementById('user-info-banner');
-        const welcome = document.getElementById('welcome-msg');
-        
-        welcome.innerText = `Omad yor bo'lsin, ${data.full_name.split(' ')[0]}! ⚽`;
-        banner.innerHTML = `
-            <p style="margin:5px 0;"><b>O'yinchi:</b> ${data.full_name}</p>
-            <p style="margin:5px 0;"><b>Jamoa:</b> ${data.account}</p>
-            <p style="font-size:12px; color:#38bdf8;">Ro'yxatdan o'tildi ✅</p>
+        document.getElementById('user-info-banner').innerHTML = `
+            <p><b>O'yinchi:</b> ${data.full_name}</p>
+            <p><b>Akkaunt:</b> ${data.account}</p>
         `;
-        
         document.getElementById('profile-details').innerHTML = `
             <p><b>FISH:</b> ${data.full_name}</p>
             <p><b>eFootball:</b> ${data.account}</p>
@@ -191,18 +205,15 @@
     async function checkUser() {
         const snap = await get(ref(db, 'players/' + userId));
         if (snap.exists()) {
-            const data = snap.val();
-            displayUser(data);
-            // Agar foydalanuvchi bor bo'lsa, musiqani foydalanuvchi bir marta ekranga tekkanda yoqamiz
-            document.body.addEventListener('click', () => {
-                if(!bgMusic) startAudioSystem(data.team_type);
-            }, { once: true });
+            displayUser(snap.val());
             showMainUI();
+            // Qayta kirganda faqat fon musiqasi (birinchi klikda)
+            document.body.addEventListener('click', playBackgroundOnly, { once: true });
         }
     }
 
     window.handleLogout = async function() {
-        if(confirm("Ma'lumotlar o'chirilsinmi?")) {
+        if(confirm("Chiqishni xohlaysizmi? Ma'lumotlar o'chadi.")) {
             await remove(ref(db, 'players/' + userId));
             location.reload();
         }

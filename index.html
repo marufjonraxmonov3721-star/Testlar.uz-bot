@@ -115,6 +115,12 @@
         .player-team { font-weight: 900; color: var(--ef-neon); font-size: 9px; line-height: 1; }
         .player-name { font-weight: 400; color: #fff; font-size: 10px; }
 
+        .prize-pool { margin-top: 5px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; display: none; }
+        .prize-pool.show { display: block; }
+        .prize-row { display: flex; justify-content: space-between; font-size: 10px; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .prize-row:last-child { border: none; }
+        .prize-row span:first-child { color: var(--ef-neon); font-weight: 700; }
+
         .match-card { background: rgba(0,255,255,0.1); border-left: 3px solid cyan; padding: 6px; margin-bottom: 5px; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
 
         .screen { display: none; }
@@ -218,7 +224,6 @@
     const db = getDatabase(app);
     const tg = window.Telegram.WebApp;
     
-    // Foydalanuvchi ma'lumotlarini olish
     const user_id = tg.initDataUnsafe?.user?.id || "DEBUG_USER";
     const tg_username = tg.initDataUnsafe?.user?.username ? "@" + tg.initDataUnsafe?.user?.username : "";
     const tg_full_name = (tg.initDataUnsafe?.user?.first_name || "") + " " + (tg.initDataUnsafe?.user?.last_name || "");
@@ -230,7 +235,19 @@
     const closeOverlay = (id) => document.getElementById(id).style.display = 'none';
     window.closeOverlay = closeOverlay;
 
-    onValue(ref(db, 'tournaments_config'), (s) => { if(s.exists()){ prices = s.val(); }});
+    // Mukofotlarni hisoblash funksiyasi
+    function calculatePrizes(format, pricePerUser) {
+        const total = format * pricePerUser;
+        let dist = [];
+        if(format === 8) dist = [0.4, 0.3, 0.2, 0.1]; // 1-4 o'rin
+        else if(format === 16) dist = [0.35, 0.25, 0.15, 0.1, 0.08, 0.07]; // 1-6 o'rin
+        else if(format === 32) dist = [0.3, 0.2, 0.12, 0.1, 0.08, 0.06, 0.05, 0.04, 0.03, 0.02]; // 1-10 o'rin
+        else dist = [0.4, 0.3, 0.2, 0.1]; // 48 talik uchun default 4 o'rin
+        
+        return dist.map((pct, i) => ({ rank: i + 1, amount: Math.floor(total * pct) }));
+    }
+
+    onValue(ref(db, 'tournaments_config'), (s) => { if(s.exists()){ prices = s.val(); renderTournaments(); }});
     onValue(ref(db, 'announcement'), (s) => { const n = document.getElementById('broadcast-notice'); if(s.exists() && s.val().active){ n.innerText = s.val().text; n.style.display = 'block'; } else n.style.display = 'none'; });
     
     onValue(ref(db, 'music_control'), (s) => {
@@ -260,6 +277,8 @@
         [8, 16, 32, 48].forEach(format => {
             const approvedCount = usersArr.filter(u => u.currentTournament === format + " Talik" && u.paymentStatus === 'approved').length;
             const price = prices['f' + format];
+            const prizeDist = calculatePrizes(format, price);
+            
             let btnText = "QATNASHISH", btnDisabled = false, btnClass = "btn btn-join";
 
             if(userData?.paymentStatus === 'approved') {
@@ -269,7 +288,23 @@
             else if(userData?.currentTournament) { btnDisabled = true; btnText = "KUTILMOQDA"; }
             else if(approvedCount >= format) { btnDisabled = true; btnText = "TURNIR TO'LGAN"; }
 
-            container.innerHTML += `<div class="ef-card"><div style="display:flex; justify-content:space-between; align-items:center;"><h3>${format} TALIK FORMAT</h3><span style="font-weight:900; color:var(--ef-neon); font-size:12px;">${approvedCount}/${format}</span></div><p>Kirish: ${price.toLocaleString()} so'm</p><button class="${btnClass}" ${btnDisabled ? 'disabled' : ''} onclick="showPay(${format}, ${price})">${btnText}</button></div>`;
+            let prizesHtml = `<div class="prize-pool show">`;
+            prizeDist.forEach(p => {
+                prizesHtml += `<div class="prize-row"><span>${p.rank}-o'rin</span><span>${p.amount.toLocaleString()} so'm</span></div>`;
+            });
+            prizesHtml += `</div>`;
+
+            container.innerHTML += `
+                <div class="ef-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>${format} TALIK FORMAT</h3>
+                        <span style="font-weight:900; color:var(--ef-neon); font-size:12px;">${approvedCount}/${format}</span>
+                    </div>
+                    <p style="margin-bottom:2px;">Kirish: ${price.toLocaleString()} so'm</p>
+                    <p style="font-size:9px; color:var(--ef-neon); font-weight:900; margin:0 0 5px 0;">MUKOFOTLAR:</p>
+                    ${prizesHtml}
+                    <button class="${btnClass}" style="margin-top:10px;" ${btnDisabled ? 'disabled' : ''} onclick="showPay(${format}, ${price})">${btnText}</button>
+                </div>`;
         });
     };
 
@@ -287,16 +322,18 @@
         const groups = {};
         groupKeys.forEach(k => { groups[k] = []; grid.innerHTML += `<div class="group-container"><div class="group-title">GROUP ${k}</div><div id="list-${k}"></div></div>`; });
         const dp = document.getElementById('display-player-name');
+        const dt = document.getElementById('display-team-name');
         for(let i = 0; i < shuffled.length; i++) {
             const player = shuffled[i];
             const gk = groupKeys[i % groupCount];
+            dt.innerText = player.teamName;
             dp.innerText = player.name;
             await new Promise(r => setTimeout(r, 1500));
             document.getElementById(`list-${gk}`).innerHTML += `<div class="group-row"><img src="${player.teamLogo}"><div class="player-info"><span class="player-team">${player.teamName}</span><span class="player-name">${player.name}</span></div></div>`;
             groups[gk].push(player);
             await new Promise(r => setTimeout(r, 800));
         }
-        dp.innerText = "YAKUNLANDI"; matchSec.style.display = 'block'; document.getElementById('close-draw-btn').style.display = 'block';
+        dt.innerText = "YAKUNLANDI"; dp.innerText = "OMAD!"; matchSec.style.display = 'block'; document.getElementById('close-draw-btn').style.display = 'block';
         Object.keys(groups).forEach(key => {
             const gUsers = groups[key];
             if(gUsers.length >= 2) {
@@ -353,17 +390,7 @@
     window.handleRegistration = async () => {
         if(!window.selectedTeam) return alert("Jamoa tanlang!");
         toggleLoader(true);
-        const user = { 
-            id: user_id, 
-            name: document.getElementById('reg-username').value.trim(), 
-            fullName: tg_full_name,
-            teamId: window.selectedTeam.id, 
-            teamName: window.selectedTeam.name, 
-            teamLogo: window.selectedTeam.logo, 
-            currentTournament: null, 
-            paymentStatus: null, 
-            status: 'active' 
-        };
+        const user = { id: user_id, name: document.getElementById('reg-username').value.trim(), fullName: tg_full_name, teamId: window.selectedTeam.id, teamName: window.selectedTeam.name, teamLogo: window.selectedTeam.logo, currentTournament: null, paymentStatus: null, status: 'active' };
         await set(ref(db, 'users/' + user_id), user);
         location.reload();
     };
@@ -402,7 +429,6 @@
         const snap = await get(ref(db, 'users/' + user_id));
         if(!snap.exists()) {
             document.getElementById('screen-reg').classList.add('active');
-            // Agar username bo'lsa avtomatik to'ldirish
             if(tg_username) {
                 document.getElementById('reg-username').value = tg_username;
                 document.getElementById('reg-msg').innerText = "Telegram foydalanuvchi nomingiz avtomatik aniqlandi!";

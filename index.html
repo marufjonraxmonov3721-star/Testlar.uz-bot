@@ -28,7 +28,6 @@
         }
 
         .container { padding: 10px; max-width: 420px; margin: auto; }
-        
         h1 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); margin: 5px 0 10px; text-align: left; font-size: 18px; letter-spacing: 0.5px; }
 
         #broadcast-notice {
@@ -58,11 +57,6 @@
             padding: 10px 12px; border-radius: 2px; margin-bottom: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.4);
         }
-
-        .reg-card { padding: 25px 15px; border-left-width: 5px; }
-        .reg-card label { font-size: 11px; margin-bottom: 6px; }
-        .reg-card .input-box { padding: 14px; font-size: 15px; margin-bottom: 15px; }
-        .reg-card .btn { padding: 16px; font-size: 14px; }
 
         label { display: block; font-size: 9px; color: var(--ef-neon); font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
         .input-box {
@@ -107,8 +101,13 @@
         #screen-block, #screen-draw-live { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; z-index: 9999; display: none;
-            text-align: center; padding-top: 30%; 
+            overflow-y: auto; padding: 20px; box-sizing: border-box;
         }
+
+        .group-container { background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 15px; border: 1px solid var(--ef-neon); border-radius: 4px; }
+        .group-title { color: var(--ef-neon); font-family: 'Oswald'; font-size: 14px; border-bottom: 1px solid #333; margin-bottom: 8px; }
+        .group-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; font-size: 12px; }
+        .group-row img { width: 20px; background: #fff; border-radius: 2px; }
 
         .screen { display: none; }
         .screen.active { display: block; }
@@ -120,21 +119,22 @@
 <div id="loader"><div class="spinner"></div><p style="color:var(--ef-neon); font-size:10px; margin-top:10px; font-weight:900; text-transform: uppercase;">eFootball Tournament</p></div>
 
 <div id="screen-block">
-    <h1 style="color:var(--ef-danger)">BLOKLANDINGIZ</h1>
-    <p style="font-size:14px; opacity:0.7; padding: 0 20px;">Sizning hisobingiz admin tomonidan bloklangan.</p>
+    <h1 style="color:var(--ef-danger); text-align: center;">BLOKLANDINGIZ</h1>
+    <p style="font-size:14px; opacity:0.7; padding: 0 20px; text-align: center;">Sizning hisobingiz admin tomonidan bloklangan.</p>
 </div>
 
 <div id="screen-draw-live">
-    <h1 style="color:var(--ef-neon); font-family:'Oswald';">🔴 LIVE QURA</h1>
-    <div class="spinner" style="margin: 20px auto; width: 60px; height: 60px;"></div>
-    <p style="font-weight:900; text-transform:uppercase; letter-spacing:1px;">Qura tashlash marosimi ketyapti...</p>
-    <p style="font-size:12px; opacity:0.6;">Iltimos, kutib turing!</p>
+    <h1 style="color:var(--ef-neon); font-family:'Oswald'; text-align: center;">🔴 LIVE QURA NATIJALARI</h1>
+    <div id="draw-results-list">
+        <p style="text-align: center;">Guruhlar aniqlanmoqda...</p>
+    </div>
+    <button class="btn" style="margin-top: 20px;" onclick="document.getElementById('screen-draw-live').style.display='none'">YOPISH</button>
 </div>
 
 <div class="container">
     <div id="screen-reg" class="screen">
-        <h1 style="text-align:center;">RO'YXATDAN O'TISH</h1>
-        <div class="ef-card reg-card">
+        <h1 style="text-align:center; font-size:22px;">RO'YXATDAN O'TISH</h1>
+        <div class="ef-card" style="padding: 25px 15px;">
             <label>ISM</label><input type="text" id="reg-name" class="input-box" oninput="validateReg()">
             <label>FAMILIYA</label><input type="text" id="reg-surname" class="input-box" oninput="validateReg()">
             <label>TUG'ILGAN SANA</label><input type="date" id="reg-bday" class="input-box" oninput="validateReg()">
@@ -144,7 +144,7 @@
 
     <div id="screen-tournaments" class="screen">
         <h1>TURNIRLAR</h1>
-        <div id="tournament-options"><p style="text-align:center; opacity:0.5;">Narxlar yuklanmoqda...</p></div>
+        <div id="tournament-options"></div>
     </div>
 
     <div id="screen-ranking" class="screen"><h1>REYTING</h1><div id="ranking-list"></div></div>
@@ -205,55 +205,92 @@
     const tg = window.Telegram.WebApp;
     const user_id = tg.initDataUnsafe?.user?.id || "DEBUG_USER";
 
-    let userData = null, selectedTeam = null, prices = {};
+    let userData = null, selectedTeam = null, prices = {}, allUsers = {};
     const audio = document.getElementById('ef-audio');
 
     const toggleLoader = (show) => document.getElementById('loader').style.display = show ? 'flex' : 'none';
     const closeOverlay = (id) => document.getElementById(id).style.display = 'none';
     window.closeOverlay = closeOverlay;
 
-    // 1. JONLI INTEGRATSIYA (Narx, Xabarnoma, Qura, Musiqa)
-    onValue(ref(db, 'tournaments_config'), (s) => { if(s.exists()){ prices = s.val(); renderTournaments(); }});
+    // JONLI MONITORING
+    onValue(ref(db, 'tournaments_config'), (s) => { if(s.exists()){ prices = s.val(); }});
     onValue(ref(db, 'announcement'), (s) => { const n = document.getElementById('broadcast-notice'); if(s.exists() && s.val().active){ n.innerText = s.val().text; n.style.display = 'block'; } else n.style.display = 'none'; });
     
-    // QURA VA MUSIQA NAZORATI
-    onValue(ref(db, 'draw_status'), (s) => { document.getElementById('screen-draw-live').style.display = (s.exists() && s.val().live) ? 'block' : 'none'; });
+    // MUSIQA
     onValue(ref(db, 'music_control'), (s) => {
         if(s.exists()) {
             const data = s.val();
-            if(data.playing) {
-                if(audio.src !== data.data) audio.src = data.data;
-                audio.play().catch(e => console.log("Audio play blocked"));
-            } else { audio.pause(); }
+            if(data.playing) { audio.src = data.data; audio.play().catch(e => {}); } else audio.pause();
         }
     });
 
-    const startUserListener = () => {
-        onValue(ref(db, 'users/' + user_id), (snap) => {
-            if(snap.exists()) {
-                userData = snap.val();
-                if(userData.status === 'blocked') {
-                    document.getElementById('screen-block').style.display = 'block';
-                    document.querySelector('.container').style.display = 'none';
-                    document.getElementById('main-nav').style.display = 'none';
-                } else {
-                    document.getElementById('screen-block').style.display = 'none';
-                    document.querySelector('.container').style.display = 'block';
-                    loadProfile(); renderTournaments();
-                }
-            }
-        });
-    };
+    // QURA VA TURNIR ISHTIROKCHILARI
+    onValue(ref(db, 'users'), (snap) => {
+        if(snap.exists()) {
+            allUsers = snap.val();
+            renderTournaments();
+            if(id_in_ranking) loadRanking();
+        }
+    });
+
+    onValue(ref(db, 'draw_status'), (snap) => {
+        const screen = document.getElementById('screen-draw-live');
+        if(snap.exists() && snap.val().live) {
+            screen.style.display = 'block';
+            performLiveDraw();
+        } else {
+            screen.style.display = 'none';
+        }
+    });
 
     const renderTournaments = () => {
         const container = document.getElementById('tournament-options');
         if(!prices.f8) return;
+        const usersArr = Object.values(allUsers);
+        
         container.innerHTML = "";
-        [{f:8,p:prices.f8},{f:16,p:prices.f16},{f:32,p:prices.f32},{f:48,p:prices.f48}].forEach(i => {
-            container.innerHTML += `<div class="ef-card"><h3>${i.f} TALIK FORMAT</h3><p>Kirish: ${i.p.toLocaleString()} so'm</p><button class="btn btn-join" onclick="showPay(${i.f}, ${i.p})">QATNASHISH</button></div>`;
+        [8, 16, 32, 48].forEach(format => {
+            const count = usersArr.filter(u => u.currentTournament === format + " Talik" && u.paymentStatus === 'approved').length;
+            const price = prices['f' + format];
+            container.innerHTML += `
+                <div class="ef-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>${format} TALIK FORMAT</h3>
+                        <span style="font-weight:900; color:var(--ef-neon); font-size:12px;">${count}/${format}</span>
+                    </div>
+                    <p>Kirish: ${price.toLocaleString()} so'm</p>
+                    <button class="btn btn-join" onclick="showPay(${format}, ${price})">${count >= format ? 'TO\'LGAN' : 'QATNASHISH'}</button>
+                </div>`;
         });
         if(userData?.currentTournament) document.querySelectorAll('.btn-join').forEach(b => b.disabled = true);
     };
+
+    // RANDOM QURA TASHASH FUNKSIYASI
+    function performLiveDraw() {
+        const approvedUsers = Object.values(allUsers).filter(u => u.paymentStatus === 'approved');
+        if(approvedUsers.length === 0) return;
+
+        // Tasodifiy aralashtirish (Fisher-Yates)
+        for (let i = approvedUsers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [approvedUsers[i], approvedUsers[j]] = [approvedUsers[j], approvedUsers[i]];
+        }
+
+        const listDiv = document.getElementById('draw-results-list');
+        listDiv.innerHTML = "";
+        
+        // 4 kishidan guruhlarga bo'lish
+        for(let i = 0; i < approvedUsers.length; i += 4) {
+            const group = approvedUsers.slice(i, i + 4);
+            const groupLetter = String.fromCharCode(65 + i/4);
+            let groupHTML = `<div class="group-container"><div class="group-title">GURUH ${groupLetter}</div>`;
+            group.forEach(u => {
+                groupHTML += `<div class="group-row"><img src="${u.teamLogo}"> <span><b>${u.name}</b> (${u.teamName})</span></div>`;
+            });
+            groupHTML += `</div>`;
+            listDiv.innerHTML += groupHTML;
+        }
+    }
 
     window.validateReg = () => {
         const n = document.getElementById('reg-name').value, s = document.getElementById('reg-surname').value, b = document.getElementById('reg-bday').value;
@@ -269,18 +306,20 @@
         window.tempJoin = { f, p };
     };
 
+    let id_in_ranking = false;
     window.nav = (id, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-' + id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
-        if(id === 'ranking') loadRanking();
+        id_in_ranking = (id === 'ranking');
+        if(id_in_ranking) loadRanking();
     };
 
     window.loadTeams = async (type) => {
         toggleLoader(true);
-        const [teamsSnap, usersSnap] = await Promise.all([get(ref(db, 'available_teams')), get(ref(db, 'users'))]);
-        const taken = usersSnap.exists() ? Object.values(usersSnap.val()).map(u => u.teamId) : [];
+        const teamsSnap = await get(ref(db, 'available_teams'));
+        const taken = Object.values(allUsers).map(u => u.teamId);
         const teams = teamsSnap.val() ? Object.values(teamsSnap.val()) : [];
         const container = document.getElementById('team-selector');
         container.innerHTML = "";
@@ -310,13 +349,28 @@
     };
 
     function loadRanking() {
-        onValue(ref(db, 'users'), (snap) => {
-            const list = document.getElementById('ranking-list'); list.innerHTML = "";
-            if(snap.exists()) Object.values(snap.val()).forEach(u => {
-                if(u.paymentStatus === 'approved') list.innerHTML += `<div class="ef-card" style="display:flex; align-items:center; gap:10px; padding:8px;"><img src="${u.teamLogo}" style="width:25px; background:white; border-radius:2px; padding:1px;"><div><div style="font-weight:900; font-size:12px;">${u.name} ${u.surname}</div><div style="font-size:9px; opacity:0.6;">${u.teamName}</div></div></div>`;
-            });
+        const list = document.getElementById('ranking-list'); list.innerHTML = "";
+        Object.values(allUsers).forEach(u => {
+            if(u.paymentStatus === 'approved') list.innerHTML += `<div class="ef-card" style="display:flex; align-items:center; gap:10px; padding:8px;"><img src="${u.teamLogo}" style="width:25px; background:white; border-radius:2px; padding:1px;"><div><div style="font-weight:900; font-size:12px;">${u.name} ${u.surname}</div><div style="font-size:9px; opacity:0.6;">${u.teamName}</div></div></div>`;
         });
     }
+
+    const startUserListener = () => {
+        onValue(ref(db, 'users/' + user_id), (snap) => {
+            if(snap.exists()) {
+                userData = snap.val();
+                if(userData.status === 'blocked') {
+                    document.getElementById('screen-block').style.display = 'block';
+                    document.querySelector('.container').style.display = 'none';
+                    document.getElementById('main-nav').style.display = 'none';
+                } else {
+                    document.getElementById('screen-block').style.display = 'none';
+                    document.querySelector('.container').style.display = 'block';
+                    loadProfile();
+                }
+            }
+        });
+    };
 
     function loadProfile() {
         if(!userData) return;

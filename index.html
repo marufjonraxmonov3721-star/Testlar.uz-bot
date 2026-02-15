@@ -105,11 +105,25 @@
             overflow-y: auto; padding: 15px; box-sizing: border-box;
         }
 
+        /* Qura Animatsiya dizayni */
+        .draw-status-box {
+            background: var(--ef-card); border: 2px solid var(--ef-neon);
+            padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px;
+        }
+        .current-pick { font-family: 'Oswald'; font-size: 24px; color: var(--ef-neon); text-shadow: 0 0 10px rgba(223,255,0,0.5); min-height: 40px; margin-top: 10px; }
+        .current-team { font-size: 14px; text-transform: uppercase; font-weight: 900; color: #fff; letter-spacing: 1px; }
+
         .group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .group-container { background: rgba(0,0,0,0.6); padding: 8px; border: 1px solid var(--ef-neon); border-radius: 4px; }
+        .group-container { background: rgba(0,0,0,0.6); padding: 8px; border: 1px solid var(--ef-neon); border-radius: 4px; transition: 0.3s; }
         .group-title { color: var(--ef-neon); font-family: 'Oswald'; font-size: 13px; text-align: center; border-bottom: 1px solid #333; margin-bottom: 6px; }
-        .group-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 10px; font-weight: 700; }
+        
+        .group-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 10px; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
         .group-row img { width: 18px; background: #fff; border-radius: 2px; }
+        .player-info { display: flex; flex-direction: column; }
+        .player-team { font-weight: 900; color: var(--ef-neon); font-size: 9px; line-height: 1; }
+        .player-name { font-weight: 400; color: #fff; font-size: 10px; }
 
         .match-card { background: rgba(0,255,255,0.1); border-left: 3px solid cyan; padding: 6px; margin-bottom: 5px; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
 
@@ -128,11 +142,22 @@
 </div>
 
 <div id="screen-draw-live">
-    <h1 style="color:var(--ef-neon); font-family:'Oswald'; text-align: center; font-size: 24px;">TOURNEY CENTER</h1>
-    <div class="group-grid" id="final-groups"></div>
-    <h2 style="color:cyan; font-family:'Oswald'; margin-top:20px; text-align:center;">O'YINLAR JADVALI</h2>
-    <div id="match-schedule"></div>
-    <button class="btn" style="margin: 20px 0; background: var(--ef-danger); color: white;" onclick="document.getElementById('screen-draw-live').style.display='none'">YOPISH</button>
+    <h1 style="color:var(--ef-neon); font-family:'Oswald'; text-align: center; font-size: 24px;">DRAW CEREMONY</h1>
+    
+    <div id="draw-live-status" class="draw-status-box">
+        <div id="draw-label" style="font-size: 10px; opacity: 0.7;">TANLANAYOTGAN ISHTIROKCHI:</div>
+        <div id="display-team-name" class="current-team">---</div>
+        <div id="display-player-name" class="current-pick">KUTIB TURİNG...</div>
+    </div>
+
+    <div class="group-grid" id="live-draw-grid"></div>
+    
+    <div id="matches-section" style="display:none; margin-top:20px;">
+        <h2 style="color:cyan; font-family:'Oswald'; text-align:center; font-size: 18px;">O'YINLAR JADVALI</h2>
+        <div id="match-schedule"></div>
+    </div>
+
+    <button id="close-draw-btn" class="btn" style="margin: 20px 0; background: var(--ef-danger); color: white; display:none;" onclick="document.getElementById('screen-draw-live').style.display='none'">YOPISH</button>
 </div>
 
 <div class="container">
@@ -222,7 +247,7 @@
     onValue(ref(db, 'music_control'), (s) => {
         if(s.exists()) {
             const data = s.val();
-            if(data.playing) { audio.src = data.data; audio.play().catch(e => {}); } else audio.pause();
+            if(data.playing) { if(audio.src !== data.data) audio.src = data.data; audio.play().catch(e => {}); } else audio.pause();
         }
     });
 
@@ -233,11 +258,12 @@
         }
     });
 
+    // QURA STATUSINI JONLI KUZATISH
     onValue(ref(db, 'draw_status'), (snap) => {
         const screen = document.getElementById('screen-draw-live');
         if(snap.exists() && snap.val().live) { 
             screen.style.display = 'block'; 
-            showTournamentData(); 
+            startLiveSequentialDraw(); 
         } else { 
             screen.style.display = 'none'; 
         }
@@ -257,26 +283,14 @@
             let btnDisabled = false;
             let action = `showPay(${format}, ${price})`;
 
-            // AGAR FOYDALANUVCHI TASDIQLANGAN BO'LSA
             if(userData?.paymentStatus === 'approved') {
                 if(userData?.currentTournament === format + " Talik") {
                     btnText = "KIRISH";
-                    action = `document.getElementById('screen-draw-live').style.display='block'; showTournamentData();`;
-                } else {
-                    btnText = "YOPILGAN";
-                    btnDisabled = true;
-                }
+                    action = `document.getElementById('screen-draw-live').style.display='block'; startLiveSequentialDraw();`;
+                } else { btnText = "YOPILGAN"; btnDisabled = true; }
             } 
-            // AGAR KUTILAYOTGAN BO'LSA
-            else if(userData?.currentTournament) {
-                btnDisabled = true;
-                btnText = "KUTILMOQDA";
-            }
-            // AGAR TURNIR TO'LGAN BO'LSA (va foydalanuvchi qatnashmayotgan bo'lsa)
-            else if(approvedCount >= format) {
-                btnDisabled = true;
-                btnText = "TURNIR TO'LGAN";
-            }
+            else if(userData?.currentTournament) { btnDisabled = true; btnText = "KUTILMOQDA"; }
+            else if(approvedCount >= format) { btnDisabled = true; btnText = "TURNIR TO'LGAN"; }
 
             container.innerHTML += `
                 <div class="ef-card">
@@ -290,33 +304,75 @@
         });
     };
 
-    function showTournamentData() {
+    // BITTA-BITTA QURA TASHASH FUNKSIYASI
+    async function startLiveSequentialDraw() {
         const approvedUsers = Object.values(allUsers).filter(u => u.paymentStatus === 'approved');
         if(approvedUsers.length === 0) return;
 
-        const shuffled = [...approvedUsers].sort((a, b) => (a.id > b.id ? 1 : -1)); // Test uchun doimiy tartib
-        const finalGroups = document.getElementById('final-groups');
-        const matchSchedule = document.getElementById('match-schedule');
-        finalGroups.innerHTML = ""; matchSchedule.innerHTML = "";
+        // Reset UI
+        const grid = document.getElementById('live-draw-grid');
+        const matchSched = document.getElementById('match-schedule');
+        const matchSec = document.getElementById('matches-section');
+        const closeBtn = document.getElementById('close-draw-btn');
+        grid.innerHTML = ""; matchSched.innerHTML = ""; matchSec.style.display = 'none'; closeBtn.style.display = 'none';
 
+        const shuffled = [...approvedUsers].sort(() => Math.random() - 0.5);
         const groupCount = Math.ceil(shuffled.length / 4);
         const groupKeys = ["A", "B", "C", "D", "E", "F", "G", "H"].slice(0, groupCount);
+        const groups = {};
         
-        groupKeys.forEach((key, idx) => {
-            const users = shuffled.slice(idx * 4, (idx + 1) * 4);
-            let gHtml = `<div class="group-container"><div class="group-title">GROUP ${key}</div>`;
-            users.forEach(u => gHtml += `<div class="group-row"><img src="${u.teamLogo}"> ${u.name}</div>`);
-            finalGroups.innerHTML += gHtml + `</div>`;
+        // Bo'sh guruhlarni tayyorlash
+        groupKeys.forEach(k => {
+            groups[k] = [];
+            grid.innerHTML += `<div class="group-container" id="group-box-${k}"><div class="group-title">GROUP ${k}</div><div id="group-list-${k}"></div></div>`;
+        });
 
-            if(users.length >= 2) {
-                matchSchedule.innerHTML += `<div style="color:var(--ef-neon); font-size:12px; margin:10px 0;">GROUP ${key} O'YINLARI</div>`;
-                for(let i = 0; i < users.length; i++) {
-                    for(let j = i + 1; j < users.length; j++) {
-                        matchSchedule.innerHTML += `
+        const displayTeam = document.getElementById('display-team-name');
+        const displayPlayer = document.getElementById('display-player-name');
+
+        // Bitta-bitta joylashtirish
+        for(let i = 0; i < shuffled.length; i++) {
+            const player = shuffled[i];
+            const groupKey = groupKeys[i % groupCount];
+
+            // Animatsiya: Savatchadan chiqish
+            displayTeam.innerText = "TANLANDI:";
+            displayPlayer.innerText = player.name;
+            await new Promise(r => setTimeout(r, 1500)); // 1.5 soniya kutish
+
+            // Guruhga tushish
+            const groupList = document.getElementById(`group-list-${groupKey}`);
+            groupList.innerHTML += `
+                <div class="group-row">
+                    <img src="${player.teamLogo}">
+                    <div class="player-info">
+                        <span class="player-team">${player.teamName}</span>
+                        <span class="player-name">${player.name} ${player.surname}</span>
+                    </div>
+                </div>`;
+            
+            groups[groupKey].push(player);
+            await new Promise(r => setTimeout(r, 800)); // 0.8 soniya kutish
+        }
+
+        displayTeam.innerText = "QURA TAYYOR";
+        displayPlayer.innerText = "YAKUNLANDI";
+        
+        // O'yinlar jadvalini chiqarish
+        matchSec.style.display = 'block';
+        closeBtn.style.display = 'block';
+        
+        Object.keys(groups).forEach(key => {
+            const gUsers = groups[key];
+            if(gUsers.length >= 2) {
+                matchSched.innerHTML += `<div style="color:var(--ef-neon); font-size:11px; margin:10px 0 5px; font-weight:900;">GROUP ${key} MATCHES</div>`;
+                for(let i = 0; i < gUsers.length; i++) {
+                    for(let j = i + 1; j < gUsers.length; j++) {
+                        matchSched.innerHTML += `
                             <div class="match-card">
-                                <span>${users[i].name}</span>
-                                <span style="color:var(--ef-neon); font-weight:900;">VS</span>
-                                <span>${users[j].name}</span>
+                                <span>${gUsers[i].name}</span>
+                                <span style="font-weight:900; color:var(--ef-neon);">VS</span>
+                                <span>${gUsers[j].name}</span>
                             </div>`;
                     }
                 }

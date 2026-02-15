@@ -235,69 +235,11 @@
     const db = getDatabase(app);
     let currentSelectedTour = null;
 
-    // AUDIO ENGINE
-    let audioData = {};
-    let currentAudio = null;
-    let isInitialPlay = false;
-
-    onValue(ref(db, 'tournament/assets/audio'), (snap) => {
-        audioData = snap.val() || {};
-        if (audioData.main && !isInitialPlay && !document.getElementById('reg-screen').classList.contains('active')) {
-            playSound('main', true);
-            isInitialPlay = true;
-        }
-    });
-
-    // YANGILANGAN PLAY SOUND: Base64 qo'llab-quvvatlaydi
-    function playSound(type, loop = false) {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.src = "";
-            currentAudio = null;
-        }
-        
-        // Bazada saqlangan base64 formatidagi musiqa (data:audio/mpeg;base64,...)
-        const audioSource = audioData[type];
-        
-        if (audioSource) {
-            currentAudio = new Audio(audioSource);
-            currentAudio.loop = loop;
-            
-            if (type === 'anthem') {
-                currentAudio.loop = false;
-                currentAudio.onended = () => playSound('main', true);
-            }
-            
-            currentAudio.play().catch(e => console.log("Audio play blocked."));
-        }
-    }
-
-    function stopSounds() {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.src = "";
-            currentAudio = null;
-        }
-    }
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) {
-            if (currentAudio) currentAudio.pause();
-        } else {
-            if (currentAudio) currentAudio.play();
-        }
-    });
-
     window.showScreen = (name, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         const target = document.getElementById(name + '-screen');
         if(target) target.classList.add('active');
         if(el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
-        
-        if (name === 'tournaments' && (!currentAudio || currentAudio.paused)) {
-            playSound('main', true);
-        }
-        
         if(name === 'tournaments') checkUserStatus();
     };
 
@@ -313,7 +255,6 @@
             const uid = "EF_" + Date.now();
             await set(ref(db, 'tournament/users/' + uid), { id: uid, firstname: fn, lastname: ln, teamName: tn, photo: photoData, status: 'normal', activeTour: "YO'Q" });
             localStorage.setItem('tournament_uid', uid);
-            playSound('main', true);
             initApp();
         };
         reader.readAsDataURL(photoInput.files[0]);
@@ -377,13 +318,13 @@
             if (snap.exists()) Object.values(snap.val()).forEach(u => { if (u.activeTour === tourName && u.status === 'approved') approvedPlayers.push(u); });
             const groupsRef = ref(db, 'tournament/groups/' + tourName.replace(/\s+/g, '_'));
             const groupsSnap = await get(groupsRef);
-            const groupsDiv = document.getElementById('groups-container');
             
             if (approvedPlayers.length >= maxPlayers && !groupsSnap.exists()) {
                 startWorldCupDraw(approvedPlayers, groupsRef, myUid);
             } else if (groupsSnap.exists()) {
                 renderGroups(groupsSnap.val(), myUid);
             } else {
+                const groupsDiv = document.getElementById('groups-container');
                 groupsDiv.innerHTML = `<h3 style="color:var(--ef-neon-yellow); font-size:14px;">ISHTIROKCHILAR (${approvedPlayers.length}/${maxPlayers})</h3>`;
                 approvedPlayers.forEach((u, i) => { 
                     groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName}</span></div>`; 
@@ -402,16 +343,7 @@
         overlay.style.display = 'flex';
         intro.style.display = 'flex';
         
-        // 1-bosqich: Ishtirokchilarni birma-bir tanishtirish
         for (const p of players) {
-            // Tanlangan jamoaga qarab maxsus madhiya yoki standart intro
-            const specialTeams = ["O'zbekiston", "Real Madrid", "Barcelona"];
-            if (specialTeams.includes(p.teamName)) {
-                playSound(p.teamName, true);
-            } else {
-                playSound('intro', true);
-            }
-
             document.getElementById('intro-name').innerText = p.firstname;
             document.getElementById('intro-lastname').innerText = p.lastname;
             document.getElementById('intro-team').innerText = p.teamName;
@@ -419,17 +351,15 @@
             const els = ['intro-name', 'intro-lastname', 'intro-team', 'intro-photo'];
             
             for(let i=0; i<els.length; i++){
-                await new Promise(r => setTimeout(r, 600));
+                await new Promise(r => setTimeout(r, 400));
                 document.getElementById(els[i]).classList.add('show');
             }
             
-            await new Promise(r => setTimeout(r, 2200)); // Musiqa yangrashi uchun kutish
+            await new Promise(r => setTimeout(r, 1200));
             els.forEach(id => document.getElementById(id).classList.remove('show'));
-            await new Promise(r => setTimeout(r, 400));
+            await new Promise(r => setTimeout(r, 200));
         }
         
-        // 2-bosqich: Qur'a jarayoni boshlanishi
-        playSound('process', true);
         intro.style.display = 'none';
         processPanel.style.display = 'block';
         document.getElementById('mini-groups-grid').innerHTML = "";
@@ -455,19 +385,17 @@
             document.getElementById('active-draw-team').innerText = p.teamName;
             document.getElementById('active-draw-player').innerText = p.firstname + " " + p.lastname;
             
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 800));
             document.getElementById('active-draw-group').innerText = `GURUH ${groupLetter}`;
             const miniG = document.getElementById(`mini-g-${groupLetter}`);
             document.querySelectorAll('.mini-group-card').forEach(g => g.classList.remove('highlight-focus'));
             miniG.classList.add('highlight-focus'); 
             
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 600));
             document.getElementById(`mini-body-${groupLetter}`).innerHTML += `<div class="mini-player-row"><img src="${p.photo}" class="mini-avatar"><span>${p.teamName}</span></div>`;
             currentGroupIdx = (currentGroupIdx + 1) % numGroups;
         }
 
-        // 3-bosqich: Yakuniy guruhlarni ko'rsatish
-        playSound('anthem', false); 
         processPanel.style.display = 'none';
         
         for (const letter of groupLetters) {
@@ -477,7 +405,7 @@
                 document.getElementById('reveal-players-list').innerHTML += `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; border-radius:2px; object-fit:cover;"> ${p.teamName}</div>`;
             });
             finalReveal.classList.remove('animate-reveal'); void finalReveal.offsetWidth; finalReveal.classList.add('animate-reveal');
-            await new Promise(r => setTimeout(r, 4100));
+            await new Promise(r => setTimeout(r, 3000));
         }
 
         await set(groupsRef, groups); overlay.style.display = 'none'; renderGroups(groups, myUid);

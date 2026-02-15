@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball Turniri</title>
+    <title>eFootball Turniri - Ro'yxatdan o'tish</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -17,34 +17,43 @@
         .container { max-width: 500px; margin: 0 auto; }
         .card {
             background: #1e293b;
-            padding: 20px;
-            border-radius: 15px;
+            padding: 25px;
+            border-radius: 20px;
             margin-bottom: 20px;
             border: 1px solid #334155;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        h1 { color: #38bdf8; }
-        select {
+        h1 { color: #38bdf8; margin-bottom: 25px; }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
+        input, select {
             width: 100%;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #0f172a;
             color: white;
-            border: 1px solid #38bdf8;
-            margin: 15px 0;
+            border: 1px solid #334155;
+            box-sizing: border-box;
+            outline: none;
         }
+        input:focus, select:focus { border-color: #38bdf8; }
         .btn {
             background: #2563eb;
             color: white;
             border: none;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 15px;
+            border-radius: 12px;
             cursor: pointer;
             width: 100%;
             font-size: 16px;
             font-weight: bold;
+            margin-top: 10px;
+            transition: 0.3s;
         }
-        .btn:disabled { background: #475569; }
-        #status { margin-top: 10px; color: #22c55e; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background: #475569; cursor: not-allowed; }
+        #status { margin-top: 15px; color: #22c55e; font-weight: 500; }
+        .success-card { display: none; }
     </style>
 </head>
 <body>
@@ -53,24 +62,44 @@
     <h1>🏆 eFootball Turniri</h1>
     
     <div class="card" id="auth-section">
-        <h3>Xush kelibsiz!</h3>
-        <p>Turnirda qatnashish uchun jamoangizni tanlang va ro'yxatdan o'ting.</p>
+        <h3>Ro'yxatdan o'tish</h3>
         
-        <label for="team-select">Jamoangizni tanlang:</label>
-        <select id="team-select">
-            <option value="uzbekistan">O'zbekiston</option>
-            <option value="realmadrid">Real Madrid</option>
-            <option value="barcelona">Barcelona</option>
-        </select>
+        <div class="input-group">
+            <label>Ismingiz</label>
+            <input type="text" id="first_name" placeholder="Masalan: Maruf">
+        </div>
 
-        <button class="btn" id="reg-btn" onclick="register()">Ro'yxatdan o'tish</button>
+        <div class="input-group">
+            <label>Familiyangiz</label>
+            <input type="text" id="last_name" placeholder="Masalan: Karimov">
+        </div>
+
+        <div class="input-group">
+            <label>eFootball Akkaunt Nomi</label>
+            <input type="text" id="pes_name" placeholder="O'yindagi taxallusingiz">
+        </div>
+
+        <div class="input-group">
+            <label>Madhiya uchun jamoani tanlang</label>
+            <select id="team-select">
+                <option value="uzbekistan">O'zbekiston</option>
+                <option value="realmadrid">Real Madrid</option>
+                <option value="barcelona">Barcelona</option>
+            </select>
+        </div>
+
+        <button class="btn" id="reg-btn" onclick="register()">Tasdiqlash va Kirish</button>
         <div id="status"></div>
     </div>
 
-    <div class="card" id="player-card" style="display: none;">
+    <div class="card success-card" id="player-card">
         <h2 id="welcome-msg"></h2>
-        <p>Sizning jamoangiz: <b id="user-team"></b></p>
-        <p>Musiqa yangramoqda... (15 sek)</p>
+        <div style="text-align: left; background: #0f172a; padding: 15px; border-radius: 10px;">
+            <p>👤 <b>Foydalanuvchi:</b> <span id="display-name"></span></p>
+            <p>🎮 <b>Akkaunt:</b> <span id="display-pes"></span></p>
+            <p>⚽ <b>Jamoa:</b> <span id="display-team"></span></p>
+        </div>
+        <p style="margin-top: 20px; color: #38bdf8; font-style: italic;">Madhiya yangramoqda...</p>
     </div>
 </div>
 
@@ -92,80 +121,76 @@
 
     let currentAudio = null;
 
-    // Musiqani ijro etish funksiyasi
+    // Madhiya ijro etish
     async function playAnthem(teamKey) {
-        const musicRef = ref(db, 'musiqalar/' + teamKey);
-        const snapshot = await get(musicRef);
-        
-        if (snapshot.exists()) {
-            const base64Data = snapshot.val();
-            currentAudio = new Audio(base64Data);
-            currentAudio.play();
+        try {
+            const musicRef = ref(db, 'musiqalar/' + teamKey);
+            const snapshot = await get(musicRef);
+            
+            if (snapshot.exists()) {
+                const base64Data = snapshot.val();
+                currentAudio = new Audio(base64Data);
+                currentAudio.play();
 
-            // 15 sekunddan keyin to'xtatish
-            setTimeout(() => {
-                if (currentAudio) {
-                    currentAudio.pause();
-                    currentAudio = null;
-                }
-            }, 15000);
-        }
+                setTimeout(() => {
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+                }, 15000);
+            }
+        } catch (e) { console.error("Musiqa xatosi:", e); }
     }
 
-    // Umumiy fon musiqasini qo'yish
-    async function playBackground() {
-        const bgRef = ref(db, 'musiqalar/background');
-        const snapshot = await get(bgRef);
-        if (snapshot.exists()) {
-            let bgAudio = new Audio(snapshot.val());
-            bgAudio.loop = true;
-            bgAudio.volume = 0.3; // Fon musiqasi pastroq ovozda
-            bgAudio.play();
-        }
-    }
-
+    // Ro'yxatdan o'tish funksiyasi
     window.register = async function() {
+        const fname = document.getElementById('first_name').value.trim();
+        const lname = document.getElementById('last_name').value.trim();
+        const pesName = document.getElementById('pes_name').value.trim();
         const team = document.getElementById('team-select').value;
+        
         const user = tg.initDataUnsafe.user;
 
-        if (!user) {
-            alert("Iltimos, Telegram orqali kiring!");
+        if (!fname || !lname || !pesName) {
+            alert("Iltimos, barcha maydonlarni to'ldiring!");
             return;
         }
 
         const btn = document.getElementById('reg-btn');
         btn.disabled = true;
-        document.getElementById('status').innerText = "Saqlanmoqda...";
+        document.getElementById('status').innerText = "Ma'lumotlar saqlanmoqda...";
 
         try {
-            // Foydalanuvchini bazaga saqlash
-            await set(ref(db, 'players/' + user.id), {
-                username: user.username || user.first_name,
+            const userId = user ? user.id : "test_user_" + Date.now();
+            
+            // Realtime Database-ga kengaytirilgan ma'lumotlarni saqlash
+            await set(ref(db, 'players/' + userId), {
+                first_name: fname,
+                last_name: lname,
+                pes_account_name: pesName,
                 team: team,
-                points: 0
+                points: 0,
+                registered_at: new Date().toISOString()
             });
 
-            // Interfeysni yangilash
+            // UI yangilash
             document.getElementById('auth-section').style.display = 'none';
             document.getElementById('player-card').style.display = 'block';
-            document.getElementById('welcome-msg').innerText = "Omad, " + user.first_name + "!";
-            document.getElementById('user-team').innerText = team.toUpperCase();
+            
+            document.getElementById('welcome-msg').innerText = "Omad yor bo'lsin!";
+            document.getElementById('display-name').innerText = fname + " " + lname;
+            document.getElementById('display-pes').innerText = pesName;
+            document.getElementById('display-team').innerText = team.toUpperCase();
 
-            // Madhiyani ijro etish
+            // Madhiyani boshlash
             playAnthem(team);
             
         } catch (e) {
-            alert("Xato: " + e.message);
+            alert("Xato yuz berdi: " + e.message);
             btn.disabled = false;
+            document.getElementById('status').innerText = "";
         }
     };
-
-    // Sahifa yuklanganda fon musiqasini ishga tushirish (agar yuklangan bo'lsa)
-    // Izoh: Brauzerlar avtomatik ijro etishni taqiqlashi mumkin, foydalanuvchi bir marta bossa keyin ishlaydi.
-    document.body.onclick = () => {
-        if (!currentAudio) playBackground();
-    };
-
 </script>
 </body>
 </html>

@@ -105,30 +105,10 @@
             overflow-y: auto; padding: 15px; box-sizing: border-box;
         }
 
-        /* Live Draw Animation Styles */
-        .current-pick-display {
-            background: var(--ef-neon); color: #000; padding: 15px;
-            border-radius: 8px; text-align: center; margin: 20px 0;
-            font-weight: 900; text-transform: uppercase;
-            box-shadow: 0 0 20px var(--ef-neon);
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        .draw-participants-pool {
-            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-            background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;
-            border: 1px dashed var(--ef-neon); min-height: 50px;
-        }
-        .pool-item { display: flex; flex-direction: column; align-items: center; font-size: 9px; width: 45px; transition: 0.5s; }
-        .pool-item.picked { opacity: 0; transform: scale(0); }
-        .pool-item img { width: 25px; height: 25px; background: #fff; border-radius: 50%; padding: 2px; }
-
         .group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .group-container { background: rgba(0,0,0,0.6); padding: 8px; border: 1px solid var(--ef-neon); border-radius: 4px; }
         .group-title { color: var(--ef-neon); font-family: 'Oswald'; font-size: 13px; text-align: center; border-bottom: 1px solid #333; margin-bottom: 6px; }
-        .group-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 10px; font-weight: 700; opacity: 0; transform: translateX(-10px); animation: fadeInRow 0.5s forwards; }
-        @keyframes fadeInRow { to { opacity: 1; transform: translateX(0); } }
+        .group-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 10px; font-weight: 700; }
         .group-row img { width: 18px; background: #fff; border-radius: 2px; }
 
         .match-card { background: rgba(0,255,255,0.1); border-left: 3px solid cyan; padding: 6px; margin-bottom: 5px; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -143,27 +123,16 @@
 <div id="loader"><div class="spinner"></div><p style="color:var(--ef-neon); font-size:10px; margin-top:10px; font-weight:900; text-transform: uppercase;">eFootball Tournament</p></div>
 
 <div id="screen-block">
-    <h1 style="color:var(--ef-danger); text-align: center; margin-top: 40%;">BLOKLANDINGIZ</h1>
+    <h1 style="color:var(--ef-danger); text-align: center;">BLOKLANDINGIZ</h1>
     <p style="font-size:14px; opacity:0.7; padding: 0 20px; text-align: center;">Sizning hisobingiz admin tomonidan bloklangan.</p>
 </div>
 
 <div id="screen-draw-live">
-    <h1 style="color:var(--ef-neon); font-family:'Oswald'; text-align: center; font-size: 24px;">DRAW CEREMONY</h1>
-    
-    <div id="draw-stage-active">
-        <div class="draw-participants-pool" id="pool-list"></div>
-        <div id="current-draw-box" class="current-pick-display" style="display:none;"></div>
-        <div class="group-grid" id="draw-results-list"></div>
-    </div>
-
-    <div id="draw-stage-finished" style="display:none;">
-        <h2 style="color:var(--ef-neon); font-family:'Oswald';">Guruhlar Yakunlandi</h2>
-        <div class="group-grid" id="final-groups"></div>
-        <h2 style="color:cyan; font-family:'Oswald'; margin-top:20px;">O'yinlar Jadvali</h2>
-        <div id="match-schedule"></div>
-    </div>
-    
-    <button id="close-draw-btn" class="btn" style="margin: 20px 0; background: var(--ef-danger); color: white; display:none;" onclick="document.getElementById('screen-draw-live').style.display='none'">YOPISH</button>
+    <h1 style="color:var(--ef-neon); font-family:'Oswald'; text-align: center; font-size: 24px;">TOURNEY CENTER</h1>
+    <div class="group-grid" id="final-groups"></div>
+    <h2 style="color:cyan; font-family:'Oswald'; margin-top:20px; text-align:center;">O'YINLAR JADVALI</h2>
+    <div id="match-schedule"></div>
+    <button class="btn" style="margin: 20px 0; background: var(--ef-danger); color: white;" onclick="document.getElementById('screen-draw-live').style.display='none'">YOPISH</button>
 </div>
 
 <div class="container">
@@ -253,7 +222,7 @@
     onValue(ref(db, 'music_control'), (s) => {
         if(s.exists()) {
             const data = s.val();
-            if(data.playing) { if(audio.src !== data.data) audio.src = data.data; audio.play().catch(e => {}); } else audio.pause();
+            if(data.playing) { audio.src = data.data; audio.play().catch(e => {}); } else audio.pause();
         }
     });
 
@@ -261,7 +230,6 @@
         if(snap.exists()) {
             allUsers = snap.val();
             renderTournaments();
-            if(id_in_ranking) loadRanking();
         }
     });
 
@@ -269,7 +237,7 @@
         const screen = document.getElementById('screen-draw-live');
         if(snap.exists() && snap.val().live) { 
             screen.style.display = 'block'; 
-            startSequentialDraw(); 
+            showTournamentData(); 
         } else { 
             screen.style.display = 'none'; 
         }
@@ -279,98 +247,76 @@
         const container = document.getElementById('tournament-options');
         if(!prices.f8) return;
         const usersArr = Object.values(allUsers);
+        
         container.innerHTML = "";
         [8, 16, 32, 48].forEach(format => {
             const approvedCount = usersArr.filter(u => u.currentTournament === format + " Talik" && u.paymentStatus === 'approved').length;
             const price = prices['f' + format];
-            let btnText = "QATNASHISH", btnDisabled = false, btnClass = "btn btn-join";
+            
+            let btnText = "QATNASHISH";
+            let btnDisabled = false;
+            let action = `showPay(${format}, ${price})`;
 
-            if(userData?.currentTournament === format + " Talik" && userData?.paymentStatus === 'approved') { btnText = "KIRISH"; } 
-            else if(userData?.paymentStatus === 'approved') { btnDisabled = true; btnText = "YOPILGAN"; }
-            else if(userData?.currentTournament) { btnDisabled = true; btnText = "KUTILMOQDA"; }
-            else if(approvedCount >= format) { btnDisabled = true; btnText = "TURNIR TO'LGAN"; }
+            // AGAR FOYDALANUVCHI TASDIQLANGAN BO'LSA
+            if(userData?.paymentStatus === 'approved') {
+                if(userData?.currentTournament === format + " Talik") {
+                    btnText = "KIRISH";
+                    action = `document.getElementById('screen-draw-live').style.display='block'; showTournamentData();`;
+                } else {
+                    btnText = "YOPILGAN";
+                    btnDisabled = true;
+                }
+            } 
+            // AGAR KUTILAYOTGAN BO'LSA
+            else if(userData?.currentTournament) {
+                btnDisabled = true;
+                btnText = "KUTILMOQDA";
+            }
+            // AGAR TURNIR TO'LGAN BO'LSA (va foydalanuvchi qatnashmayotgan bo'lsa)
+            else if(approvedCount >= format) {
+                btnDisabled = true;
+                btnText = "TURNIR TO'LGAN";
+            }
 
-            container.innerHTML += `<div class="ef-card"><div style="display:flex; justify-content:space-between; align-items:center;"><h3>${format} TALIK FORMAT</h3><span style="font-weight:900; color:var(--ef-neon); font-size:12px;">${approvedCount}/${format}</span></div><p>Kirish: ${price.toLocaleString()} so'm</p><button class="${btnClass}" ${btnDisabled ? 'disabled' : ''} onclick="showPay(${format}, ${price})">${btnText}</button></div>`;
+            container.innerHTML += `
+                <div class="ef-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>${format} TALIK FORMAT</h3>
+                        <span style="font-weight:900; color:var(--ef-neon); font-size:12px;">${approvedCount}/${format}</span>
+                    </div>
+                    <p>Kirish: ${price.toLocaleString()} so'm</p>
+                    <button class="btn" ${btnDisabled ? 'disabled' : ''} onclick="${action}">${btnText}</button>
+                </div>`;
         });
     };
 
-    // SEQUENTIAL RANDOM DRAW LOGIC
-    async function startSequentialDraw() {
+    function showTournamentData() {
         const approvedUsers = Object.values(allUsers).filter(u => u.paymentStatus === 'approved');
         if(approvedUsers.length === 0) return;
 
-        // Reset UI
-        document.getElementById('draw-stage-active').style.display = 'block';
-        document.getElementById('draw-stage-finished').style.display = 'none';
-        document.getElementById('close-draw-btn').style.display = 'none';
-        document.getElementById('draw-results-list').innerHTML = "";
-        
-        const poolDiv = document.getElementById('pool-list');
-        poolDiv.innerHTML = approvedUsers.map(u => `<div class="pool-item" id="p-${u.id}"><img src="${u.teamLogo}"><span>${u.name}</span></div>`).join('');
-
-        const shuffled = [...approvedUsers].sort(() => Math.random() - 0.5);
-        const groups = { A: [], B: [], C: [], D: [], E: [], F: [], G: [], H: [] };
-        const groupNames = Object.keys(groups);
-        const groupCount = Math.ceil(shuffled.length / 4);
-
-        // Pre-create group containers
-        for(let i = 0; i < groupCount; i++) {
-            document.getElementById('draw-results-list').innerHTML += `<div class="group-container" id="g-box-${groupNames[i]}"><div class="group-title">GROUP ${groupNames[i]}</div><div id="g-list-${groupNames[i]}"></div></div>`;
-        }
-
-        const currentDrawBox = document.getElementById('current-draw-box');
-        currentDrawBox.style.display = 'block';
-
-        for(let i = 0; i < shuffled.length; i++) {
-            const user = shuffled[i];
-            const targetGroup = groupNames[i % groupCount];
-            
-            // Animation: Show current pick
-            currentDrawBox.innerHTML = `PICKING: ${user.name}...`;
-            await new Promise(r => setTimeout(r, 1500));
-
-            // Move from pool to group
-            document.getElementById(`p-${user.id}`).classList.add('picked');
-            const gList = document.getElementById(`g-list-${targetGroup}`);
-            gList.innerHTML += `<div class="group-row"><img src="${user.teamLogo}"> <span>${user.name}</span></div>`;
-            
-            groups[targetGroup].push(user);
-            await new Promise(r => setTimeout(r, 800));
-        }
-
-        currentDrawBox.style.display = 'none';
-        generateMatches(groups, groupCount);
-    }
-
-    function generateMatches(groups, groupCount) {
-        document.getElementById('draw-stage-active').style.display = 'none';
-        const finishedStage = document.getElementById('draw-stage-finished');
-        finishedStage.style.display = 'block';
-        document.getElementById('close-draw-btn').style.display = 'block';
-
+        const shuffled = [...approvedUsers].sort((a, b) => (a.id > b.id ? 1 : -1)); // Test uchun doimiy tartib
         const finalGroups = document.getElementById('final-groups');
         const matchSchedule = document.getElementById('match-schedule');
         finalGroups.innerHTML = ""; matchSchedule.innerHTML = "";
 
-        const groupKeys = Object.keys(groups).slice(0, groupCount);
+        const groupCount = Math.ceil(shuffled.length / 4);
+        const groupKeys = ["A", "B", "C", "D", "E", "F", "G", "H"].slice(0, groupCount);
         
-        groupKeys.forEach(key => {
-            const users = groups[key];
-            // Render Final Group
+        groupKeys.forEach((key, idx) => {
+            const users = shuffled.slice(idx * 4, (idx + 1) * 4);
             let gHtml = `<div class="group-container"><div class="group-title">GROUP ${key}</div>`;
-            users.forEach(u => gHtml += `<div class="group-row" style="opacity:1; transform:none;"><img src="${u.teamLogo}"> ${u.name}</div>`);
+            users.forEach(u => gHtml += `<div class="group-row"><img src="${u.teamLogo}"> ${u.name}</div>`);
             finalGroups.innerHTML += gHtml + `</div>`;
 
-            // Generate Matches (Round Robin for 4 users)
             if(users.length >= 2) {
-                matchSchedule.innerHTML += `<h3 style="color:var(--ef-neon); font-size:12px; margin:10px 0 5px;">Group ${key} Matches:</h3>`;
+                matchSchedule.innerHTML += `<div style="color:var(--ef-neon); font-size:12px; margin:10px 0;">GROUP ${key} O'YINLARI</div>`;
                 for(let i = 0; i < users.length; i++) {
                     for(let j = i + 1; j < users.length; j++) {
                         matchSchedule.innerHTML += `
                             <div class="match-card">
-                                <div style="width:40%; text-align:right;">${users[i].name} <img src="${users[i].teamLogo}" style="width:12px; vertical-align:middle;"></div>
-                                <div style="color:var(--ef-neon); font-weight:900;">VS</div>
-                                <div style="width:40%; text-align:left;"><img src="${users[j].teamLogo}" style="width:12px; vertical-align:middle;"> ${users[j].name}</div>
+                                <span>${users[i].name}</span>
+                                <span style="color:var(--ef-neon); font-weight:900;">VS</span>
+                                <span>${users[j].name}</span>
                             </div>`;
                     }
                 }
@@ -386,20 +332,17 @@
     window.openTeams = () => { document.getElementById('team-overlay').style.display = 'block'; loadTeams('nation'); };
 
     window.showPay = (f, p) => {
-        if(userData.currentTournament) return alert("Sizda faol turnir bor!");
+        if(userData?.currentTournament) return alert("Sizda faol turnir bor!");
         document.getElementById('pay-amount').innerText = p.toLocaleString();
         document.getElementById('pay-overlay').style.display = 'block';
         window.tempJoin = { f, p };
     };
 
-    let id_in_ranking = false;
     window.nav = (id, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-' + id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
-        id_in_ranking = (id === 'ranking');
-        if(id_in_ranking) loadRanking();
     };
 
     window.loadTeams = async (type) => {
@@ -433,13 +376,6 @@
         await update(ref(db, 'users/' + user_id), { currentTournament: window.tempJoin.f + " Talik", paymentStatus: 'pending' });
         toggleLoader(false); closeOverlay('pay-overlay');
     };
-
-    function loadRanking() {
-        const list = document.getElementById('ranking-list'); list.innerHTML = "";
-        Object.values(allUsers).forEach(u => {
-            if(u.paymentStatus === 'approved') list.innerHTML += `<div class="ef-card" style="display:flex; align-items:center; gap:10px; padding:8px;"><img src="${u.teamLogo}" style="width:25px; background:white; border-radius:2px; padding:1px;"><div><div style="font-weight:900; font-size:12px;">${u.name} ${u.surname}</div><div style="font-size:9px; opacity:0.6;">${u.teamName}</div></div></div>`;
-        });
-    }
 
     const startUserListener = () => {
         onValue(ref(db, 'users/' + user_id), (snap) => {

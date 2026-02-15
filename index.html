@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eFootball Tournament Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --ef-dark-blue: #000a2d; 
@@ -122,7 +123,7 @@
         label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
         input { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid #1a3a8a; color: white; font-size: 14px; box-sizing: border-box; border-left: 4px solid var(--ef-neon-yellow); }
         .btn { width: 100%; padding: 18px; background: var(--ef-neon-yellow); color: #000; border: none; font-size: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%); }
-        .btn-small { padding: 8px; font-size: 10px; margin-top: 10px; }
+        .btn-small { padding: 8px; font-size: 10px; margin-top: 10px; width: 100%; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #00051a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 3px solid var(--ef-neon-yellow); z-index: 1000; }
         .nav-item { text-align: center; font-size: 9px; font-weight: 900; cursor: pointer; opacity: 0.4; color: #fff; text-decoration: none; }
         .nav-item.active { opacity: 1; color: var(--ef-neon-yellow); }
@@ -197,7 +198,7 @@
 
     <div id="tour-info-screen" class="screen"><div class="container"><div class="header"><h1 id="info-tour-title">-</h1></div><div id="groups-container"></div><div id="matches-container"></div><button class="btn" onclick="showScreen('tournaments')">ORQAGA</button></div></div>
     <div id="payment-screen" class="screen"><div class="container"><div class="header"><h1>To'lov</h1></div><div class="card"><p>Summa: <b id="pay-amount">-</b></p><div class="card-box" onclick="navigator.clipboard.writeText('4073420068165541'); alert('Nusxalandi!')" style="border: 2px dashed var(--ef-neon-yellow); padding: 15px; margin: 20px 0; text-align: center; cursor: pointer; background: rgba(223, 255, 0, 0.05);"><h2 style="color: var(--ef-neon-yellow); margin: 5px 0;">4073 4200 6816 5541</h2><p>Maruf Raxmonov</p></div><input type="file" id="receipt-file" accept="image/*" style="display:none" onchange="uploadReceipt(this)"><button class="btn" onclick="document.getElementById('receipt-file').click()">CHEKNI YUBORISH</button></div></div></div>
-    <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2>TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
+    <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2 id="checking-status">TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
     <div id="profile-screen" class="screen"><div class="container"><div class="header"><h1>Profil</h1></div><div class="card"><h2 id="prof-team">-</h2><p id="prof-user">-</p></div><button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="localStorage.clear(); location.reload();">Logout</button></div></div>
 
     <nav class="bottom-nav" id="main-nav" style="display:none">
@@ -223,6 +224,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let currentSelectedTour = null;
+    let myUid = localStorage.getItem('tournament_uid');
+    let myUser = null;
 
     window.showScreen = (name, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -244,14 +247,14 @@
             const uid = "EF_" + Date.now();
             await set(ref(db, 'tournament/users/' + uid), { id: uid, firstname: fn, lastname: ln, teamName: tn, photo: photoData, status: 'normal', activeTour: "YO'Q" });
             localStorage.setItem('tournament_uid', uid);
+            myUid = uid;
             initApp();
         };
         reader.readAsDataURL(photoInput.files[0]);
     };
 
     window.handleTourAction = async (id, name, max, price) => {
-        const uid = localStorage.getItem('tournament_uid');
-        const userSnap = await get(ref(db, 'tournament/users/' + uid));
+        const userSnap = await get(ref(db, 'tournament/users/' + myUid));
         const u = userSnap.val();
         if (u.status === 'approved' && u.activeTour === name) {
             openTourInfo(name, max);
@@ -264,11 +267,10 @@
 
     window.uploadReceipt = async (input) => {
         if (input.files && input.files[0]) {
-            const uid = localStorage.getItem('tournament_uid');
             const reader = new FileReader();
             reader.onload = async (e) => {
-                await set(ref(db, 'tournament/payments/' + uid), { userId: uid, tourName: currentSelectedTour.name, receipt: e.target.result, status: 'pending', time: new Date().toLocaleString() });
-                await update(ref(db, 'tournament/users/' + uid), { status: 'checking', activeTour: currentSelectedTour.name });
+                await set(ref(db, 'tournament/payments/' + myUid), { userId: myUid, tourName: currentSelectedTour.name, receipt: e.target.result, status: 'pending', time: new Date().toLocaleString() });
+                await update(ref(db, 'tournament/users/' + myUid), { status: 'checking', activeTour: currentSelectedTour.name });
                 showScreen('checking');
             };
             reader.readAsDataURL(input.files[0]);
@@ -276,11 +278,10 @@
     };
 
     function checkUserStatus() {
-        const uid = localStorage.getItem('tournament_uid');
-        if(!uid) return;
+        if(!myUid) return;
         onValue(ref(db, 'tournament/users'), (snap) => {
             const allUsers = snap.val() || {};
-            const me = allUsers[uid];
+            myUser = allUsers[myUid];
             const tourCounts = {};
             Object.values(allUsers).forEach(u => { if(u.activeTour !== "YO'Q" && u.status === 'approved') tourCounts[u.activeTour] = (tourCounts[u.activeTour] || 0) + 1; });
             document.querySelectorAll('.reg-tour-btn').forEach(btn => {
@@ -289,8 +290,8 @@
                 const current = tourCounts[tourName] || 0;
                 const slotLabel = document.getElementById('slots-' + btn.id.replace('btn-', ''));
                 if(slotLabel) slotLabel.innerText = `To'lgan: ${current}/${max}`;
-                if(me.activeTour !== "YO'Q") {
-                    if(me.activeTour === tourName) { btn.disabled = (me.status !== 'approved'); btn.innerText = (me.status === 'approved') ? "KIRISH ➡️" : "TEKSHIRILMOQDA..."; }
+                if(myUser.activeTour !== "YO'Q") {
+                    if(myUser.activeTour === tourName) { btn.disabled = (myUser.status !== 'approved'); btn.innerText = (myUser.status === 'approved') ? "KIRISH ➡️" : "TEKSHIRILMOQDA..."; }
                     else { btn.disabled = true; btn.innerText = "YOPILGAN 🔒"; }
                 } else if(current >= max) { btn.disabled = true; btn.innerText = "TURNIR TO'LGAN 🚫"; }
             });
@@ -299,7 +300,6 @@
 
     async function openTourInfo(tourName, maxPlayers) {
         document.getElementById('info-tour-title').innerText = tourName;
-        const myUid = localStorage.getItem('tournament_uid');
         const tourId = tourName.replace(/\s+/g, '_');
         showScreen('tour-info');
         
@@ -402,10 +402,7 @@
 
         const tourId = tourName.replace(/\s+/g, '_');
         await set(ref(db, `tournament/groups/${tourId}`), groups);
-        
-        // O'yin boshlanish vaqtini saqlash (hozirgi vaqt + 10 soniya qur'a tugashi uchun)
         await set(ref(db, `tournament/times/${tourId}`), { startTime: Date.now() });
-        
         overlay.style.display = 'none';
     }
 
@@ -429,8 +426,6 @@
 
     async function renderMatches(groups, tourId, myUid) {
         const matchesDiv = document.getElementById('matches-container');
-        matchesDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-top:30px; margin-bottom:15px;">O\'YINLAR JADVALI</h2>';
-        
         const timeSnap = await get(ref(db, `tournament/times/${tourId}`));
         const startTime = timeSnap.exists() ? timeSnap.val().startTime : Date.now();
 
@@ -449,24 +444,15 @@
                 matchesDiv.innerHTML += `<div style="color:var(--ef-bonus); font-weight:900; margin: 15px 0 10px 0; font-size:12px;">GURUH ${L} O'YINLARI</div>`;
                 groupMatches.forEach((m) => {
                     const matchRes = results[m.id] || {};
-                    const isWinner1 = matchRes.winner === m.t1.id;
-                    const isWinner2 = matchRes.winner === m.t2.id;
-                    
-                    let statusHtml = '<span class="vs-badge">VS</span>';
-                    if(matchRes.winner) {
-                        statusHtml = `<span style="color:var(--ef-success); font-weight:900;">${matchRes.score || 'G\'ALABA'}</span>`;
-                    }
+                    let scoreText = 'VS';
+                    if(matchRes.score) scoreText = matchRes.score;
 
                     let actionHtml = "";
-                    if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.winner) {
-                        const elapsed = (Date.now() - startTime) / 60000;
-                        const remaining = Math.max(0, Math.ceil(15 - elapsed)); // 15 daqiqa o'yin vaqti deb faraz qilaylik
-                        
+                    if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score) {
                         actionHtml = `
                             <div style="text-align:center;">
-                                <input type="file" id="file-${m.id}" accept="image/*" style="display:none" onchange="uploadResult('${tourId}', '${m.id}', '${myUid}')">
-                                <button class="btn btn-small" onclick="document.getElementById('file-${m.id}').click()">NATIJANI YUKLASH (SKRINSHOT)</button>
-                                <div class="timer-badge">Taymer: ${remaining} min</div>
+                                <input type="file" id="file-${m.id}" accept="image/*" style="display:none" onchange="processScreenshot('${tourId}', '${m.id}', '${myUid}')">
+                                <button class="btn btn-small" id="btn-${m.id}" onclick="document.getElementById('file-${m.id}').click()">NATIJANI YUKLASH (SKRINSHOT)</button>
                             </div>
                         `;
                     }
@@ -474,9 +460,9 @@
                     matchesDiv.innerHTML += `
                         <div class="schedule-card">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b style="${isWinner1 ? 'color:var(--ef-success)' : ''}">${m.t1.teamName}</b>
-                                ${statusHtml}
-                                <b style="${isWinner2 ? 'color:var(--ef-success)' : ''}">${m.t2.teamName}</b>
+                                <b style="flex:1; text-align:right;">${m.t1.teamName}</b>
+                                <span class="vs-badge">${scoreText}</span>
+                                <b style="flex:1; text-align:left;">${m.t2.teamName}</b>
                             </div>
                             ${actionHtml}
                         </div>
@@ -486,50 +472,58 @@
         });
     }
 
-    window.uploadResult = async (tourId, matchId, uid) => {
+    // --- AVTOMATIK SKRINSHOT TAHLILI (OCR) ---
+    window.processScreenshot = async (tourId, matchId, uid) => {
         const fileInput = document.getElementById(`file-${matchId}`);
+        const btn = document.getElementById(`btn-${matchId}`);
         if (!fileInput.files[0]) return;
+
+        btn.innerText = "TAHLIL QILINMOQDA...";
+        btn.disabled = true;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const base64 = e.target.result;
-            // Tizim avtomatik tekshiruvini simulyatsiya qilish:
-            // Haqiqiy OCR (rasmdan matn o'qish) API orqali bo'ladi, 
-            // hozircha yuklangan rasm muvaffaqiyatli deb qabul qilinadi.
-            await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
-                [`upload_${uid}`]: base64,
-                [`time_${uid}`]: Date.now()
-            });
+            const imgData = e.target.result;
+            try {
+                // Tesseract.js orqali rasmdan matnni o'qish
+                const { data: { text } } = await Tesseract.recognize(imgData, 'eng');
+                console.log("OCR MATN:", text);
 
-            // Avtomatik tekshiruv mantiqi:
-            const snap = await get(ref(db, `tournament/results/${tourId}/${matchId}`));
-            const data = snap.val();
-            
-            // Agar ikkala o'yinchi ham yuklagan bo'lsa yoki 5 daqiqa o'tgan bo'lsa
-            checkMatchAutomatic(tourId, matchId);
-            alert("Natija yuborildi! Tizim tekshirmoqda...");
+                // Matn ichidan hisobni qidirish (Masalan: "3 - 0" yoki "3 0")
+                const scoreMatch = text.match(/(\d+)\s*[-:]\s*(\d+)/) || text.match(/(\d+)\s+(\d+)/);
+                
+                if (scoreMatch) {
+                    const s1 = scoreMatch[1];
+                    const s2 = scoreMatch[2];
+                    const finalScore = `${s1} - ${s2}`;
+
+                    // Bazaga natijani yozish
+                    await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
+                        score: finalScore,
+                        winner: (parseInt(s1) > parseInt(s2)) ? "Team1" : (parseInt(s1) < parseInt(s2) ? "Team2" : "Draw"),
+                        last_upload_by: uid,
+                        timestamp: Date.now()
+                    });
+                    alert(`Natija aniqlandi: ${finalScore}. Bazaga saqlandi!`);
+                } else {
+                    alert("Hisobni aniqlab bo'lmadi. Iltimos, aniqroq rasm yuklang!");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Tizimda xatolik yuz berdi.");
+            } finally {
+                btn.innerText = "NATIJANI YUKLASH (SKRINSHOT)";
+                btn.disabled = false;
+            }
         };
         reader.readAsDataURL(fileInput.files[0]);
     };
 
-    async function checkMatchAutomatic(tourId, matchId) {
-        const snap = await get(ref(db, `tournament/results/${tourId}/${matchId}`));
-        const data = snap.val();
-        if(!data) return;
-
-        // Bu erda OCR mantiqi bo'lishi kerak. Hozircha biz yuklovchini g'olib deb hisoblaymiz (Test uchun)
-        // Haqiqiy loyihada bu qism serverda yoki murakkabroq OCR orqali ishlaydi.
-        // 5 daqiqalik qoida uchun taymerni tekshirish:
-        const groupRef = ref(db, `tournament/groups/${tourId}`);
-        // Match g'olibini aniqlash va bazaga yozish...
-    }
-
     function initApp() {
-        const uid = localStorage.getItem('tournament_uid');
-        if(uid) {
+        if(myUid) {
             document.getElementById('reg-screen').classList.remove('active');
             document.getElementById('main-nav').style.display = 'flex';
-            onValue(ref(db, 'tournament/users/' + uid), (snap) => {
+            onValue(ref(db, 'tournament/users/' + myUid), (snap) => {
                 const u = snap.val();
                 if(u) { 
                     document.getElementById('prof-team').innerText = u.teamName; 

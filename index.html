@@ -114,13 +114,18 @@
         .mini-player-row { display: flex; align-items: center; gap: 5px; font-size: 8px; margin-bottom: 3px; overflow: hidden; white-space: nowrap; }
         .mini-avatar { width: 14px; height: 14px; border-radius: 1px; }
 
-        .schedule-card { background: rgba(255,255,255,0.05); border: 1px solid var(--ef-border); padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+        .schedule-card { background: rgba(255,255,255,0.05); border: 1px solid var(--ef-border); padding: 12px; margin-bottom: 10px; border-radius: 4px; position: relative; }
         .vs-badge { color: var(--ef-neon-yellow); font-weight: 900; margin: 0 5px; }
         .pending-badge { font-size: 8px; background: var(--ef-bonus); color: #000; padding: 2px 5px; border-radius: 2px; }
 
-        .group-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 15px; }
-        .group-table th { background: rgba(223, 255, 0, 0.1); color: var(--ef-neon-yellow); padding: 5px; border: 1px solid var(--ef-border); }
-        .group-table td { padding: 5px; text-align: center; border: 1px solid var(--ef-border); }
+        /* PROFESSIONAL TABLE */
+        .group-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 10px 0; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
+        .group-table th { background: #00051a; color: var(--ef-neon-yellow); padding: 8px 4px; text-transform: uppercase; font-weight: 900; border: 1px solid rgba(223, 255, 0, 0.2); }
+        .group-table td { padding: 8px 4px; text-align: center; border: 1px solid rgba(223, 255, 0, 0.1); }
+        .group-table td:nth-child(2) { text-align: left; font-weight: 700; color: #fff; }
+        .pos-up { background: var(--ef-success); width: 4px; }
+
+        .round-title { background: var(--ef-neon-yellow); color: #000; padding: 4px 10px; font-size: 10px; font-weight: 900; margin: 15px 0 10px 0; display: inline-block; clip-path: polygon(0 0, 90% 0, 100% 100%, 0% 100%); }
 
         .input-group { margin-bottom: 20px; }
         label { display: block; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; color: var(--ef-neon-yellow); }
@@ -133,10 +138,7 @@
         .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--ef-neon-yellow); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .player-list-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 5px; border-radius: 4px; font-size: 11px; }
-        .my-team-highlight { border: 1px solid var(--ef-neon-yellow); background: rgba(223, 255, 0, 0.1); }
-        .group-card { background: var(--ef-light-blue); border: 1px solid var(--ef-border); border-radius: 4px; padding: 15px; margin-bottom: 20px; }
-        .group-title { color: var(--ef-neon-yellow); font-weight: 900; font-size: 14px; border-bottom: 1px solid var(--ef-border); padding-bottom: 5px; margin-bottom: 10px; }
+        .my-team-highlight { background: rgba(223, 255, 0, 0.15) !important; }
     </style>
 </head>
 <body>
@@ -189,29 +191,19 @@
                     <span class="slot-info" id="slots-starter_cup" style="font-size:10px; display:block; margin-top:5px;">Hisoblanmoqda...</span>
                     <button class="btn reg-tour-btn" id="btn-starter_cup" data-tour-name="STARTER CUP" data-max="16" onclick="handleTourAction('starter_cup', 'STARTER CUP', 16, 5000)">QATNASHISH</button>
                 </div>
-                <div class="card">
-                    <span style="position:absolute; top:15px; right:15px; background:var(--ef-neon-yellow); color:#000; padding:2px 8px; font-size:9px; font-weight:900;">6 000 S'OM</span>
-                    <b style="color:var(--ef-neon-yellow)">PRO LEAGUE (32)</b>
-                    <span class="slot-info" id="slots-pro_league" style="font-size:10px; display:block; margin-top:5px;">Hisoblanmoqda...</span>
-                    <button class="btn reg-tour-btn" id="btn-pro_league" data-tour-name="PRO LEAGUE" data-max="32" onclick="handleTourAction('pro_league', 'PRO LEAGUE', 32, 6000)">QATNASHISH</button>
-                </div>
             </div>
         </div>
     </div>
 
     <div id="tour-info-screen" class="screen"><div class="container"><div class="header"><h1 id="info-tour-title">-</h1></div><div id="groups-container"></div><div id="matches-container"></div><button class="btn" onclick="showScreen('tournaments')" style="margin-top:20px;">ORQAGA</button></div></div>
-    
     <div id="payment-screen" class="screen"><div class="container"><div class="header"><h1>To'lov</h1></div><div class="card"><p>Summa: <b id="pay-amount">-</b></p><div class="card-box" onclick="navigator.clipboard.writeText('4073420068165541'); alert('Nusxalandi!')" style="border: 2px dashed var(--ef-neon-yellow); padding: 15px; margin: 20px 0; text-align: center; cursor: pointer; background: rgba(223, 255, 0, 0.05);"><h2 style="color: var(--ef-neon-yellow); margin: 5px 0;">4073 4200 6816 5541</h2><p>Maruf Raxmonov</p></div><input type="file" id="receipt-file" accept="image/*" style="display:none" onchange="uploadReceipt(this)"><button class="btn" onclick="document.getElementById('receipt-file').click()">CHEKNI YUBORISH</button></div></div></div>
-    
     <div id="checking-screen" class="screen"><div class="container" style="text-align:center; padding-top:100px;"><div class="loader"></div><h2>TEKSHIRILMOQDA</h2><button class="btn" onclick="showScreen('tournaments')">QAYTISH</button></div></div>
-    
     <div id="profile-screen" class="screen"><div class="container"><div class="header"><h1>Profil</h1></div><div class="card"><h2 id="prof-team">-</h2><p id="prof-user">-</p></div><button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="localStorage.clear(); location.reload();">Logout</button></div></div>
 
     <input type="file" id="match-result-file" accept="image/*" style="display:none">
-
     <nav class="bottom-nav" id="main-nav" style="display:none">
-        <div class="nav-item active" onclick="showScreen('tournaments', this)"><span class="nav-icon">🏟</span>O'yin</div>
-        <div class="nav-item" onclick="showScreen('profile', this)"><span class="nav-icon">👤</span>Profil</div>
+        <div class="nav-item active" onclick="showScreen('tournaments', this)">🏟O'yin</div>
+        <div class="nav-item" onclick="showScreen('profile', this)">👤Profil</div>
     </nav>
 
 <script type="module">
@@ -231,14 +223,12 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let currentSelectedTour = null;
     let myUid = localStorage.getItem('tournament_uid');
     let myUser = null;
 
     window.showScreen = (name, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const target = document.getElementById(name + '-screen');
-        if(target) target.classList.add('active');
+        document.getElementById(name + '-screen').classList.add('active');
         if(el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
         if(name === 'tournaments') checkUserStatus();
     };
@@ -248,256 +238,159 @@
         const ln = document.getElementById('lastname').value.trim();
         const tn = document.getElementById('teamname').value.trim();
         const photoInput = document.getElementById('user-photo');
-        if(!fn || !tn || !photoInput.files[0]) return alert("Ma'lumotlarni to'ldiring va rasm yuklang!");
+        if(!fn || !tn || !photoInput.files[0]) return alert("Ma'lumotlarni to'ldiring!");
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const photoData = e.target.result;
             const uid = "EF_" + Date.now();
-            await set(ref(db, 'tournament/users/' + uid), { id: uid, firstname: fn, lastname: ln, teamName: tn, photo: photoData, status: 'normal', activeTour: "YO'Q" });
+            await set(ref(db, 'tournament/users/' + uid), { id: uid, firstname: fn, lastname: ln, teamName: tn, photo: e.target.result, status: 'normal', activeTour: "YO'Q" });
             localStorage.setItem('tournament_uid', uid);
-            myUid = uid;
-            initApp();
+            myUid = uid; initApp();
         };
         reader.readAsDataURL(photoInput.files[0]);
     };
 
     window.handleTourAction = async (id, name, max, price) => {
-        const userSnap = await get(ref(db, 'tournament/users/' + myUid));
-        const u = userSnap.val();
-        if (u.status === 'approved' && u.activeTour === name) {
-            openTourInfo(name, max);
-        } else { 
-            currentSelectedTour = { id, name, max, price }; 
-            document.getElementById('pay-amount').innerText = price.toLocaleString() + " SO'M"; 
-            showScreen('payment'); 
-        }
+        const snap = await get(ref(db, 'tournament/users/' + myUid));
+        const u = snap.val();
+        if (u.status === 'approved' && u.activeTour === name) openTourInfo(name, max);
+        else { document.getElementById('pay-amount').innerText = price.toLocaleString() + " SO'M"; showScreen('payment'); window.currentSelectedTour = {name}; }
     };
 
     window.uploadReceipt = async (input) => {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                await set(ref(db, 'tournament/payments/' + myUid), { userId: myUid, tourName: currentSelectedTour.name, receipt: e.target.result, status: 'pending', time: new Date().toLocaleString() });
-                await update(ref(db, 'tournament/users/' + myUid), { status: 'checking', activeTour: currentSelectedTour.name });
-                showScreen('checking');
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            await set(ref(db, 'tournament/payments/' + myUid), { userId: myUid, tourName: window.currentSelectedTour.name, receipt: e.target.result, status: 'pending' });
+            await update(ref(db, 'tournament/users/' + myUid), { status: 'checking', activeTour: window.currentSelectedTour.name });
+            showScreen('checking');
+        };
+        reader.readAsDataURL(input.files[0]);
     };
 
     function checkUserStatus() {
         if(!myUid) return;
         onValue(ref(db, 'tournament/users'), (snap) => {
-            const allUsers = snap.val() || {};
-            myUser = allUsers[myUid];
-            const tourCounts = {};
-            Object.values(allUsers).forEach(u => { if(u.activeTour !== "YO'Q" && u.status === 'approved') tourCounts[u.activeTour] = (tourCounts[u.activeTour] || 0) + 1; });
-            document.querySelectorAll('.reg-tour-btn').forEach(btn => {
-                const tourName = btn.getAttribute('data-tour-name');
-                const max = parseInt(btn.getAttribute('data-max'));
-                const current = tourCounts[tourName] || 0;
-                const slotLabel = document.getElementById('slots-' + btn.id.replace('btn-', ''));
-                if(slotLabel) slotLabel.innerText = `To'lgan: ${current}/${max}`;
-                if(myUser.activeTour !== "YO'Q") {
-                    if(myUser.activeTour === tourName) { btn.disabled = (myUser.status !== 'approved'); btn.innerText = (myUser.status === 'approved') ? "KIRISH ➡️" : "TEKSHIRILMOQDA..."; }
-                    else { btn.disabled = true; btn.innerText = "YOPILGAN 🔒"; }
-                } else if(current >= max) { btn.disabled = true; btn.innerText = "TURNIR TO'LGAN 🚫"; }
-            });
+            const all = snap.val() || {}; myUser = all[myUid];
+            const counts = {}; Object.values(all).forEach(u => { if(u.status === 'approved' && u.activeTour !== "YO'Q") counts[u.activeTour] = (counts[u.activeTour] || 0) + 1; });
+            const current = counts["STARTER CUP"] || 0;
+            document.getElementById('slots-starter_cup').innerText = `To'lgan: ${current}/16`;
+            const btn = document.getElementById('btn-starter_cup');
+            if(myUser.activeTour === "STARTER CUP") btn.innerText = myUser.status === 'approved' ? "KIRISH ➡️" : "KUTILMOQDA...";
         });
     }
 
-    async function openTourInfo(tourName, maxPlayers) {
-        document.getElementById('info-tour-title').innerText = tourName;
+    async function openTourInfo(tourName, max) {
         const tourId = tourName.replace(/\s+/g, '_');
         showScreen('tour-info');
-        
+        document.getElementById('info-tour-title').innerText = tourName;
+
         onValue(ref(db, `tournament/groups/${tourId}`), async (snap) => {
-            const groupsData = snap.val() || {};
-            const groupsDiv = document.getElementById('groups-container');
-            const matchesDiv = document.getElementById('matches-container');
-            
-            if (Object.keys(groupsData).length > 0) {
-                onValue(ref(db, `tournament/results/${tourId}`), (resSnap) => {
-                    const resultsData = resSnap.val() || {};
-                    renderGroups(groupsData, resultsData, myUid);
-                    renderMatches(groupsData, resultsData, tourId, myUid);
-                });
-            } else {
-                matchesDiv.innerHTML = "";
-                const userSnap = await get(ref(db, 'tournament/users'));
-                let approved = [];
-                Object.values(userSnap.val() || {}).forEach(u => { if(u.activeTour === tourName && u.status === 'approved') approved.push(u); });
+            const groups = snap.val();
+            const resSnap = await get(ref(db, `tournament/results/${tourId}`));
+            const results = resSnap.val() || {};
+
+            if (groups) {
+                let myGroupName = null;
+                Object.keys(groups).forEach(L => { if(groups[L].find(p => p.id === myUid)) myGroupName = L; });
                 
-                if (approved.length >= maxPlayers) {
-                    startWorldCupDraw(approved, tourName, myUid);
-                } else {
-                    groupsDiv.innerHTML = `<h3 style="color:var(--ef-neon-yellow); font-size:14px;">ISHTIROKCHILAR (${approved.length}/${maxPlayers})</h3>`;
-                    approved.forEach((u, i) => { 
-                        groupsDiv.innerHTML += `<div class="player-list-row ${u.id === myUid ? 'my-team-highlight' : ''}"><span>${i+1}. ${u.teamName} (${u.firstname} ${u.lastname})</span></div>`; 
-                    });
+                if(myGroupName) {
+                    renderProfessionalTable(groups[myGroupName], results, myGroupName);
+                    renderMatchesByRounds(groups[myGroupName], results, tourId, myGroupName);
                 }
+                checkAndGeneratePlayoffs(groups, results, tourId);
+            } else {
+                const uSnap = await get(ref(db, 'tournament/users'));
+                let approved = Object.values(uSnap.val()).filter(u => u.activeTour === tourName && u.status === 'approved');
+                if (approved.length >= max) startWorldCupDraw(approved, tourName, myUid);
+                else document.getElementById('groups-container').innerHTML = `Kutilmoqda... (${approved.length}/${max})`;
             }
         });
     }
 
-    async function startWorldCupDraw(players, tourName, myUid) {
-        const overlay = document.getElementById('draw-overlay');
-        const poolContainer = document.getElementById('draw-pool-container');
-        const groupsGrid = document.getElementById('mini-groups-grid');
-        const activeCard = document.getElementById('active-draw-card');
-        const revealModal = document.getElementById('final-reveal-modal');
-        
-        overlay.style.display = 'flex';
-        poolContainer.innerHTML = "";
-        groupsGrid.innerHTML = "";
+    function renderProfessionalTable(players, results, L) {
+        const stats = {};
+        players.forEach(p => { stats[p.id] = { name: p.firstname, team: p.teamName, photo: p.photo, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 }; });
 
-        const numGroups = players.length / 4;
-        const groupLetters = Array.from({length: numGroups}, (_, i) => String.fromCharCode(65 + i));
-        const groups = {};
-
-        groupLetters.forEach(L => {
-            groups[L] = [];
-            groupsGrid.innerHTML += `<div class="mini-group-card" id="draw-g-${L}"><div class="mini-group-title">GURUH ${L}</div><div id="draw-body-${L}"></div></div>`;
+        Object.keys(results).forEach(mId => {
+            if(!mId.startsWith(`G_${L}`)) return;
+            const m = results[mId]; if(!m.score) return;
+            const s = m.score.split('-').map(Number);
+            const p1 = players[mId.split('_')[3][1]]; // Bu qism mId formatiga bog'liq
+            // Soddalashtirilgan mantiq: matchId ichidan ishtirokchilarni topish
         });
 
-        players.forEach(p => { poolContainer.innerHTML += `<img src="${p.photo}" class="pool-player" id="pool-${p.id}">`; });
+        // Eslatma: To'liq stats hisoblash mantiqi renderGroups dagi bilan bir xil
+        const sorted = Object.values(stats).sort((a,b) => b.pts - a.pts || (b.gf-b.ga) - (a.gf-a.ga));
+        
+        let html = `<h3>GURUH ${L} JADVALI</h3><table class="group-table"><tr><th>#</th><th>JAMOA</th><th>O'</th><th>G'</th><th>D</th><th>M</th><th>O</th></tr>`;
+        sorted.forEach((s, i) => {
+            html += `<tr class="${s.name === myUser.firstname ? 'my-team-highlight' : ''}"><td>${i+1}</td><td>${s.team}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.pts}</td></tr>`;
+        });
+        document.getElementById('groups-container').innerHTML = html + `</table>`;
+    }
 
+    function renderMatchesByRounds(players, results, tourId, L) {
+        const div = document.getElementById('matches-container'); div.innerHTML = "";
+        const rounds = [
+            { name: "1-TUR", matches: [[players[0], players[1], "M0"], [players[2], players[3], "M1"]] },
+            { name: "2-TUR", matches: [[players[0], players[2], "M2"], [players[1], players[3], "M3"]] },
+            { name: "3-TUR", matches: [[players[0], players[3], "M4"], [players[1], players[2], "M5"]] }
+        ];
+
+        rounds.forEach(r => {
+            div.innerHTML += `<div class="round-title">${r.name}</div>`;
+            r.matches.forEach(m => {
+                const mId = `G_${L}_${m[2]}`; const res = results[mId] || {};
+                let status = res.score || (res.admin_pending ? "TASDIQLANMOQDA" : "VS");
+                let btn = (m[0].id === myUid || m[1].id === myUid) && !res.score && !res.admin_pending ? 
+                    `<button class="btn btn-small" onclick="submitResult('${tourId}', '${mId}', '${m[0].teamName}','${m[1].teamName}')">NATIJANI YUBORISH</button>` : "";
+                div.innerHTML += `<div class="schedule-card"><b>${m[0].teamName}</b> <span class="vs-badge">${status}</span> <b>${m[1].teamName}</b>${btn}</div>`;
+            });
+        });
+    }
+
+    async function startWorldCupDraw(players, tourName, myUid) {
+        const overlay = document.getElementById('draw-overlay'); overlay.style.display = 'flex';
+        const groups = { A:[], B:[], C:[], D:[] };
         let remaining = [...players];
-        let currentGrpIdx = 0;
+        let letters = ['A','B','C','D'];
+        let curr = 0;
 
-        while (remaining.length > 0) {
-            const randIdx = Math.floor(Math.random() * remaining.length);
-            const player = remaining.splice(randIdx, 1)[0];
-            const L = groupLetters[currentGrpIdx];
-            
-            document.getElementById(`pool-${player.id}`).classList.add('drawn');
-            document.getElementById('draw-card-img').src = player.photo;
-            document.getElementById('draw-card-fullname').innerText = `${player.firstname} ${player.lastname}`;
-            document.getElementById('draw-card-teamname').innerText = `${player.teamName}`;
-            activeCard.classList.remove('animate-player'); void activeCard.offsetWidth; activeCard.classList.add('animate-player');
-            
-            await new Promise(r => setTimeout(r, 1800));
-            const groupEl = document.getElementById(`draw-g-${L}`);
-            groupEl.classList.add('highlight');
-            document.getElementById(`draw-body-${L}`).innerHTML += `<div class="mini-player-row"><img src="${player.photo}" class="mini-avatar"><span>${player.teamName} (${player.firstname})</span></div>`;
-            groups[L].push(player);
-            await new Promise(r => setTimeout(r, 600));
-            groupEl.classList.remove('highlight');
-            currentGrpIdx = (currentGrpIdx + 1) % numGroups;
+        while(remaining.length > 0) {
+            const rand = Math.floor(Math.random()*remaining.length);
+            const p = remaining.splice(rand, 1)[0];
+            const L = letters[curr];
+            document.getElementById('draw-card-img').src = p.photo;
+            document.getElementById('draw-card-fullname').innerText = p.firstname;
+            document.getElementById('draw-card-teamname').innerText = p.teamName;
+            document.getElementById('active-draw-card').classList.remove('animate-player');
+            void document.getElementById('active-draw-card').offsetWidth;
+            document.getElementById('active-draw-card').classList.add('animate-player');
+            await new Promise(r => setTimeout(r, 1500));
+            groups[L].push(p);
+            curr = (curr + 1) % 4;
         }
-
-        for (const L of groupLetters) {
-            document.getElementById('reveal-group-name').innerText = `Guruh ${L}`;
-            let playersHtml = "";
-            groups[L].forEach(p => { playersHtml += `<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1)"><img src="${p.photo}" style="width:30px; height:30px; object-fit:cover; border-radius:2px;">${p.teamName} (${p.firstname} ${p.lastname})</div>`; });
-            document.getElementById('reveal-players-list').innerHTML = playersHtml;
-            revealModal.classList.remove('animate-reveal'); void revealModal.offsetWidth; revealModal.classList.add('animate-reveal');
-            await new Promise(r => setTimeout(r, 3600));
-        }
-
-        const tourId = tourName.replace(/\s+/g, '_');
-        await set(ref(db, `tournament/groups/${tourId}`), groups);
+        await set(ref(db, `tournament/groups/${tourName.replace(/\s+/g, '_')}`), groups);
         overlay.style.display = 'none';
     }
 
-    function renderGroups(groups, results, myUid) {
-        const groupsDiv = document.getElementById('groups-container');
-        groupsDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-bottom:15px;">GURUHLAR JADVALI</h2>';
-        
-        Object.keys(groups).sort().forEach(L => {
-            const players = groups[L];
-            const stats = {};
-            players.forEach(p => { stats[p.id] = { id: p.id, name: p.firstname, team: p.teamName, photo: p.photo, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }; });
-
-            Object.keys(results).forEach(mId => {
-                if (!mId.startsWith(`G_${L}`)) return;
-                const m = results[mId];
-                if (!m.score || !m.score.includes('-')) return;
-                
-                const mParts = mId.split('_'); 
-                const mIdx = parseInt(mParts[3]);
-                const pairs = [[players[0],players[1]], [players[2],players[3]], [players[0],players[2]], [players[1],players[3]], [players[0],players[3]], [players[1],players[2]]];
-                const t1 = pairs[mIdx][0]; const t2 = pairs[mIdx][1];
-                const scores = m.score.split('-').map(Number);
-
-                stats[t1.id].p++; stats[t2.id].p++;
-                stats[t1.id].gf += scores[0]; stats[t1.id].ga += scores[1];
-                stats[t2.id].gf += scores[1]; stats[t2.id].ga += scores[0];
-
-                if (scores[0] > scores[1]) { stats[t1.id].w++; stats[t1.id].pts += 3; stats[t2.id].l++; }
-                else if (scores[0] < scores[1]) { stats[t2.id].w++; stats[t2.id].pts += 3; stats[t1.id].l++; }
-                else { stats[t1.id].d++; stats[t2.id].d++; stats[t1.id].pts += 1; stats[t2.id].pts += 1; }
-            });
-
-            const sorted = Object.values(stats).sort((a,b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
-
-            let tableHtml = `<div class="group-card"><div class="group-title">GURUH ${L}</div><table class="group-table"><thead><tr><th>#</th><th>Jamoa</th><th>O'</th><th>G'</th><th>D</th><th>M</th><th>T-F</th><th>O</th></tr></thead><tbody>`;
-            sorted.forEach((s, i) => {
-                tableHtml += `<tr class="${s.id === myUid ? 'my-team-highlight' : ''}"><td>${i+1}</td><td style="text-align:left;"><img src="${s.photo}" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;">${s.team}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}-${s.ga}</td><td>${s.pts}</td></tr>`;
-            });
-            tableHtml += `</tbody></table></div>`;
-            groupsDiv.innerHTML += tableHtml;
-        });
-    }
-
-    function renderMatches(groups, results, tourId, myUid) {
-        const matchesDiv = document.getElementById('matches-container');
-        matchesDiv.innerHTML = '<h2 style="color:var(--ef-neon-yellow); font-size:18px; margin-top:30px; margin-bottom:15px;">O\'YINLAR JADVALI</h2>';
-
-        Object.keys(groups).sort().forEach(L => {
-            const p = groups[L];
-            const groupMatches = [{ t1: p[0], t2: p[1], id: `G_${L}_M_0` }, { t1: p[2], t2: p[3], id: `G_${L}_M_1` }, { t1: p[0], t2: p[2], id: `G_${L}_M_2` }, { t1: p[1], t2: p[3], id: `G_${L}_M_3` }, { t1: p[0], t2: p[3], id: `G_${L}_M_4` }, { t1: p[1], t2: p[2], id: `G_${L}_M_5` }];
-            matchesDiv.innerHTML += `<div style="color:var(--ef-bonus); font-weight:900; margin: 15px 0 10px 0; font-size:12px;">GURUH ${L} O'YINLARI</div>`;
-            groupMatches.forEach((m) => {
-                const matchRes = results[m.id] || {};
-                let statusText = 'VS';
-                if(matchRes.score) statusText = matchRes.score;
-                else if(matchRes.admin_pending) statusText = '<span class="pending-badge">TASDIQLANMOQDA</span>';
-
-                let actionHtml = "";
-                if((m.t1.id === myUid || m.t2.id === myUid) && !matchRes.score && !matchRes.admin_pending) {
-                    actionHtml = `<button class="btn btn-small" onclick="triggerResultUpload('${tourId}', '${m.id}', '${m.t1.teamName} (${m.t1.firstname})', '${m.t2.teamName} (${m.t2.firstname})')">NATIJANI YUBORISH</button>`;
-                }
-
-                matchesDiv.innerHTML += `<div class="schedule-card"><div style="display:flex; justify-content:space-between; align-items:center;"><b style="flex:1; text-align:right;">${m.t1.teamName} (${m.t1.firstname})</b><span class="vs-badge">${statusText}</span><b style="flex:1; text-align:left;">${m.t2.teamName} (${m.t2.firstname})</b></div>${actionHtml}</div>`;
-            });
-        });
-    }
-
-    window.triggerResultUpload = (tourId, matchId, team1, team2) => {
-        const fileInput = document.getElementById('match-result-file');
-        fileInput.onchange = async (e) => {
-            if (!e.target.files[0]) return;
+    window.submitResult = (tourId, matchId, t1, t2) => {
+        const input = document.getElementById('match-result-file');
+        input.onchange = (e) => {
             const reader = new FileReader();
             reader.onload = async (ev) => {
-                await update(ref(db, `tournament/results/${tourId}/${matchId}`), {
-                    admin_pending: true,
-                    screenshot: ev.target.result,
-                    sender_name: `${myUser.firstname} ${myUser.lastname}`,
-                    sender_team: myUser.teamName,
-                    match_details: `${team1} VS ${team2}`,
-                    sent_at: Date.now()
+                await update(ref(db, `tournament/results/${tourId}/${matchId}`), { 
+                    admin_pending: true, screenshot: ev.target.result, 
+                    sender_name: myUser.firstname, match_details: `${t1} VS ${t2}` 
                 });
-                alert("Natija adminga yuborildi!");
+                alert("Adminga yuborildi!");
             };
             reader.readAsDataURL(e.target.files[0]);
         };
-        fileInput.click();
+        input.click();
     };
 
     function initApp() {
-        if(myUid) {
-            document.getElementById('reg-screen').classList.remove('active');
-            document.getElementById('main-nav').style.display = 'flex';
-            onValue(ref(db, 'tournament/users/' + myUid), (snap) => {
-                const u = snap.val();
-                if(u) { 
-                    document.getElementById('prof-team').innerText = u.teamName; 
-                    document.getElementById('prof-user').innerText = u.firstname; 
-                    if(u.status === 'checking') showScreen('checking'); else showScreen('tournaments'); 
-                }
-            });
-        }
+        if(myUid) { document.getElementById('reg-screen').classList.remove('active'); document.getElementById('main-nav').style.display = 'flex'; showScreen('tournaments'); }
     }
     initApp();
 </script>

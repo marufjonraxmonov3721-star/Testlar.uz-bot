@@ -12,7 +12,7 @@
             --ef-blue: #001e7a;
             --ef-neon: #dfff00;
             --ef-danger: #ff004c;
-            --ef-card: rgba(0, 21, 90, 0.9);
+            --ef-card: rgba(0, 21, 90, 0.95);
             --ef-text: #ffffff;
         }
 
@@ -21,58 +21,94 @@
             background: var(--ef-dark);
             color: var(--ef-text);
             margin: 0;
-            padding-bottom: 70px;
+            padding-bottom: 60px;
             background-image: radial-gradient(circle at 50% 50%, var(--ef-blue) 0%, var(--ef-dark) 100%);
             background-attachment: fixed;
+            overflow-x: hidden;
         }
 
-        .container { padding: 15px; max-width: 500px; margin: auto; }
+        .container { padding: 10px; max-width: 420px; margin: auto; }
         
-        /* Typography */
-        h1, h2, h3 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); letter-spacing: 1px; }
+        h1 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); margin: 5px 0 10px; text-align: left; font-size: 18px; letter-spacing: 0.5px; }
 
-        /* Inputs */
-        .input-box {
-            width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--ef-blue);
-            color: white; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box;
-        }
-
-        /* eFootball Cards */
-        .ef-card {
-            background: var(--ef-card); border-left: 5px solid var(--ef-neon);
-            padding: 15px; border-radius: 4px; margin-bottom: 15px;
+        #broadcast-notice {
+            position: fixed; top: 0; left: 0; width: 100%; 
+            background: var(--ef-neon); color: #000; padding: 10px;
+            font-weight: 800; font-size: 11px; text-transform: uppercase;
+            z-index: 5000; text-align: center; display: none;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ef-dark); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .spinner {
+            width: 35px; height: 35px; border: 3px solid rgba(223, 255, 0, 0.1);
+            border-top: 3px solid var(--ef-neon); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .ef-card {
+            background: var(--ef-card); border-left: 3px solid var(--ef-neon);
+            padding: 10px 12px; border-radius: 2px; margin-bottom: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
         }
 
-        /* Navigation */
+        .reg-card { padding: 25px 15px; border-left-width: 5px; }
+        .reg-card label { font-size: 11px; margin-bottom: 6px; }
+        .reg-card .input-box { padding: 14px; font-size: 15px; margin-bottom: 15px; }
+        .reg-card .btn { padding: 16px; font-size: 14px; }
+
+        label { display: block; font-size: 9px; color: var(--ef-neon); font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+        .input-box {
+            width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--ef-blue);
+            color: white; border-radius: 2px; margin-bottom: 8px; box-sizing: border-box; font-size: 12px;
+        }
+
+        .team-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+            max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 5px;
+        }
+        .team-item { text-align: center; font-size: 8px; padding: 3px; border-radius: 2px; position: relative; }
+        .team-item img { width: 28px; height: 28px; object-fit: contain; background: white; border-radius: 2px; padding: 1px; }
+        .team-item p { margin: 2px 0 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .team-item.taken::before {
+            content: "TANLANGAN"; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            background: var(--ef-danger); color: white; font-size: 6px; font-weight: 900;
+            padding: 2px 4px; z-index: 10; white-space: nowrap;
+        }
+        .team-item.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+        .team-item.selected { border: 1px solid var(--ef-neon); background: rgba(223,255,0,0.1); }
+
+        .btn {
+            width: 100%; padding: 10px; background: var(--ef-neon); color: #000;
+            border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px;
+            clip-path: polygon(0 0, 97% 0, 100% 25%, 100% 100%, 3% 100%, 0 75%);
+        }
+        .btn:disabled { background: #333; color: #666; opacity: 0.5; }
+
         .nav-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; border-top: 3px solid var(--ef-neon);
-            display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000;
+            background: #000; border-top: 1px solid rgba(223,255,0,0.3);
+            display: flex; justify-content: space-around; padding: 6px 0; z-index: 1000;
         }
-        .nav-item { text-align: center; font-size: 10px; font-weight: 900; color: #fff; opacity: 0.5; cursor: pointer; }
+        .nav-item { text-align: center; font-size: 8px; font-weight: 900; color: #fff; opacity: 0.4; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--ef-neon); }
 
-        /* Team Selector Grid */
-        .team-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-            max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px;
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--ef-dark); z-index: 2000; display: none; padding: 15px; box-sizing: border-box; overflow-y: auto; }
+        
+        #screen-block, #screen-draw-live { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; color: #fff; z-index: 9999; display: none;
+            text-align: center; padding-top: 30%; 
         }
-        .team-item {
-            text-align: center; font-size: 10px; padding: 5px; border: 1px solid transparent; opacity: 1;
-        }
-        .team-item.taken { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
-        .team-item.taken::after { content: "TANLANGAN"; display: block; color: red; font-size: 7px; font-weight: 900; }
-        .team-item.selected { border: 1px solid var(--ef-neon); background: rgba(223,255,0,0.1); }
-        .team-item img { width: 35px; height: 35px; object-fit: contain; background: white; border-radius: 4px; }
-
-        /* Buttons */
-        .btn {
-            width: 100%; padding: 15px; background: var(--ef-neon); color: #000;
-            border: none; font-weight: 900; text-transform: uppercase; cursor: pointer;
-            clip-path: polygon(0 0, 95% 0, 100% 25%, 100% 100%, 5% 100%, 0 75%);
-        }
-        .btn:disabled { background: #555; cursor: not-allowed; }
 
         .screen { display: none; }
         .screen.active { display: block; }
@@ -80,86 +116,75 @@
 </head>
 <body>
 
+<div id="broadcast-notice"></div>
+<div id="loader"><div class="spinner"></div><p style="color:var(--ef-neon); font-size:10px; margin-top:10px; font-weight:900; text-transform: uppercase;">eFootball Tournament</p></div>
+
+<div id="screen-block">
+    <h1 style="color:var(--ef-danger)">BLOKLANDINGIZ</h1>
+    <p style="font-size:14px; opacity:0.7; padding: 0 20px;">Sizning hisobingiz admin tomonidan bloklangan.</p>
+</div>
+
+<div id="screen-draw-live">
+    <h1 style="color:var(--ef-neon); font-family:'Oswald';">🔴 LIVE QURA</h1>
+    <div class="spinner" style="margin: 20px auto; width: 60px; height: 60px;"></div>
+    <p style="font-weight:900; text-transform:uppercase; letter-spacing:1px;">Qura tashlash marosimi ketyapti...</p>
+    <p style="font-size:12px; opacity:0.6;">Iltimos, kutib turing!</p>
+</div>
+
 <div class="container">
     <div id="screen-reg" class="screen">
-        <h1>Ro'yxatdan o'tish</h1>
-        <div class="ef-card">
-            <label>ISM</label>
-            <input type="text" id="reg-name" class="input-box" placeholder="Ismingizni kiriting">
-            <label>FAMILIYA</label>
-            <input type="text" id="reg-surname" class="input-box" placeholder="Familiyangizni kiriting">
-            <label>TUG'ILGAN SANA</label>
-            <input type="date" id="reg-bday" class="input-box">
-            
-            <p style="color:var(--ef-neon); font-weight:900; font-size:12px;">JAMOA TANLANG:</p>
-            <div style="display:flex; gap:5px; margin-bottom:10px;">
-                <button onclick="loadTeams('nation')" class="btn" style="padding:5px; font-size:10px;">DAVLATLAR</button>
-                <button onclick="loadTeams('club')" class="btn" style="padding:5px; font-size:10px;">KLUBLAR</button>
-            </div>
-            <div class="team-grid" id="team-selector">Baza yuklanmoqda...</div>
-            <button class="btn" style="margin-top:15px;" onclick="handleRegistration()">SAQLASH</button>
+        <h1 style="text-align:center;">RO'YXATDAN O'TISH</h1>
+        <div class="ef-card reg-card">
+            <label>ISM</label><input type="text" id="reg-name" class="input-box" oninput="validateReg()">
+            <label>FAMILIYA</label><input type="text" id="reg-surname" class="input-box" oninput="validateReg()">
+            <label>TUG'ILGAN SANA</label><input type="date" id="reg-bday" class="input-box" oninput="validateReg()">
+            <button id="next-btn" class="btn" onclick="openTeams()" style="display:none; margin-top:10px;">KEYINGI BOSQICH ➔</button>
         </div>
     </div>
 
-    <div id="screen-tournaments" class="screen active">
-        <h1>Turnirlar</h1>
-        <div id="tour-list">
-            <div class="ef-card">
-                <h3>8 TALIK FORMAT</h3>
-                <p>Kirish: 5 000 so'm</p>
-                <button class="btn btn-join" onclick="joinTournament(8, 5000)">QATNASHISH</button>
-            </div>
-            <div class="ef-card">
-                <h3>16 TALIK FORMAT</h3>
-                <p>Kirish: 10 000 so'm</p>
-                <button class="btn btn-join" onclick="joinTournament(16, 10000)">QATNASHISH</button>
-            </div>
-            <div class="ef-card">
-                <h3>32 TALIK FORMAT</h3>
-                <p>Kirish: 15 000 so'm</p>
-                <button class="btn btn-join" onclick="joinTournament(32, 15000)">QATNASHISH</button>
-            </div>
-            <div class="ef-card">
-                <h3>48 TALIK FORMAT</h3>
-                <p>Kirish: 20 000 so'm</p>
-                <button class="btn btn-join" onclick="joinTournament(48, 20000)">QATNASHISH</button>
-            </div>
-        </div>
-        
-        <div id="payment-modal" style="display:none;" class="ef-card">
-            <h2 style="color:red">TO'LOV QILING</h2>
-            <p>Karta: <b>4073 4200 6816 5541</b></p>
-            <p>Ega: <b>Maruf Raxmonov</b></p>
-            <p>Summa: <b id="pay-amount">0</b> so'm</p>
-            <button class="btn" onclick="confirmPayment()">TO'LOV QILDIM</button>
-        </div>
+    <div id="screen-tournaments" class="screen">
+        <h1>TURNIRLAR</h1>
+        <div id="tournament-options"><p style="text-align:center; opacity:0.5;">Narxlar yuklanmoqda...</p></div>
     </div>
 
-    <div id="screen-ranking" class="screen">
-        <h1>Reyting</h1>
-        <div id="ranking-list"></div>
-    </div>
+    <div id="screen-ranking" class="screen"><h1>REYTING</h1><div id="ranking-list"></div></div>
+    <div id="screen-profile" class="screen"><h1>PROFIL</h1><div id="profile-data"></div></div>
+    <div id="screen-settings" class="screen"><h1>SOZLAMALAR</h1><div class="ef-card"><button class="btn" style="background:var(--ef-danger); color:#fff; clip-path:none;" onclick="logout()">LOGOUT</button></div></div>
+</div>
 
-    <div id="screen-profile" class="screen">
-        <h1>Profil</h1>
-        <div class="ef-card" id="profile-data">
-            </div>
-    </div>
-
-    <div id="screen-settings" class="screen">
-        <h1>Sozlamalar</h1>
-        <div class="ef-card">
-            <button class="btn" style="background:var(--ef-danger); color:#fff;" onclick="logout()">LOGOUT</button>
+<div id="team-overlay" class="overlay">
+    <h1>JAMOA TANLASH</h1>
+    <div class="ef-card">
+        <div style="display:flex; gap:4px; margin-bottom:8px;">
+            <button onclick="loadTeams('nation')" class="btn" style="padding:6px; font-size:9px;">DAVLATLAR</button>
+            <button onclick="loadTeams('club')" class="btn" style="padding:6px; font-size:9px;">KLUBLAR</button>
         </div>
+        <div class="team-grid" id="team-selector"></div>
+        <button class="btn" style="margin-top:12px;" onclick="handleRegistration()">SAQLASH</button>
+        <button class="btn" style="margin-top:6px; background:transparent; color:white; border:1px solid #333;" onclick="closeOverlay('team-overlay')">ORTGA</button>
     </div>
 </div>
 
-<nav class="nav-bar">
+<div id="pay-overlay" class="overlay">
+    <h1>TO'LOV</h1>
+    <div class="ef-card">
+        <h3 style="color:var(--ef-danger)">TO'LOV MA'LUMOTLARI</h3>
+        <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:2px; margin:8px 0; font-size:12px;">
+            <p>Karta: <b style="color:var(--ef-neon)">4073 4200 6816 5541</b><br>Ega: Maruf Raxmonov<br>Summa: <b id="pay-amount">0</b> so'm</p>
+        </div>
+        <button class="btn" onclick="confirmPayment()">TO'LOV QILDIM</button>
+        <button class="btn" style="margin-top:6px; background:transparent; color:white; border:1px solid #333;" onclick="closeOverlay('pay-overlay')">BEKOR QILISH</button>
+    </div>
+</div>
+
+<nav class="nav-bar" id="main-nav" style="display:none;">
     <div class="nav-item active" onclick="nav('tournaments', this)">🏟 TURNIRLAR</div>
     <div class="nav-item" onclick="nav('ranking', this)">🏆 REYTING</div>
     <div class="nav-item" onclick="nav('profile', this)">👤 PROFIL</div>
     <div class="nav-item" onclick="nav('settings', this)">⚙️ SOZLAMALAR</div>
 </nav>
+
+<audio id="ef-audio" loop></audio>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -180,148 +205,142 @@
     const tg = window.Telegram.WebApp;
     const user_id = tg.initDataUnsafe?.user?.id || "DEBUG_USER";
 
-    let userData = null;
-    let selectedTeam = null;
-    let allTeams = [];
-    let takenTeams = [];
+    let userData = null, selectedTeam = null, prices = {};
+    const audio = document.getElementById('ef-audio');
 
-    // NAVIGATSIYA
+    const toggleLoader = (show) => document.getElementById('loader').style.display = show ? 'flex' : 'none';
+    const closeOverlay = (id) => document.getElementById(id).style.display = 'none';
+    window.closeOverlay = closeOverlay;
+
+    // 1. JONLI INTEGRATSIYA (Narx, Xabarnoma, Qura, Musiqa)
+    onValue(ref(db, 'tournaments_config'), (s) => { if(s.exists()){ prices = s.val(); renderTournaments(); }});
+    onValue(ref(db, 'announcement'), (s) => { const n = document.getElementById('broadcast-notice'); if(s.exists() && s.val().active){ n.innerText = s.val().text; n.style.display = 'block'; } else n.style.display = 'none'; });
+    
+    // QURA VA MUSIQA NAZORATI
+    onValue(ref(db, 'draw_status'), (s) => { document.getElementById('screen-draw-live').style.display = (s.exists() && s.val().live) ? 'block' : 'none'; });
+    onValue(ref(db, 'music_control'), (s) => {
+        if(s.exists()) {
+            const data = s.val();
+            if(data.playing) {
+                if(audio.src !== data.data) audio.src = data.data;
+                audio.play().catch(e => console.log("Audio play blocked"));
+            } else { audio.pause(); }
+        }
+    });
+
+    const startUserListener = () => {
+        onValue(ref(db, 'users/' + user_id), (snap) => {
+            if(snap.exists()) {
+                userData = snap.val();
+                if(userData.status === 'blocked') {
+                    document.getElementById('screen-block').style.display = 'block';
+                    document.querySelector('.container').style.display = 'none';
+                    document.getElementById('main-nav').style.display = 'none';
+                } else {
+                    document.getElementById('screen-block').style.display = 'none';
+                    document.querySelector('.container').style.display = 'block';
+                    loadProfile(); renderTournaments();
+                }
+            }
+        });
+    };
+
+    const renderTournaments = () => {
+        const container = document.getElementById('tournament-options');
+        if(!prices.f8) return;
+        container.innerHTML = "";
+        [{f:8,p:prices.f8},{f:16,p:prices.f16},{f:32,p:prices.f32},{f:48,p:prices.f48}].forEach(i => {
+            container.innerHTML += `<div class="ef-card"><h3>${i.f} TALIK FORMAT</h3><p>Kirish: ${i.p.toLocaleString()} so'm</p><button class="btn btn-join" onclick="showPay(${i.f}, ${i.p})">QATNASHISH</button></div>`;
+        });
+        if(userData?.currentTournament) document.querySelectorAll('.btn-join').forEach(b => b.disabled = true);
+    };
+
+    window.validateReg = () => {
+        const n = document.getElementById('reg-name').value, s = document.getElementById('reg-surname').value, b = document.getElementById('reg-bday').value;
+        document.getElementById('next-btn').style.display = (n && s && b) ? 'block' : 'none';
+    };
+
+    window.openTeams = () => { document.getElementById('team-overlay').style.display = 'block'; loadTeams('nation'); };
+
+    window.showPay = (f, p) => {
+        if(userData.currentTournament) return alert("Sizda faol turnir bor!");
+        document.getElementById('pay-amount').innerText = p.toLocaleString();
+        document.getElementById('pay-overlay').style.display = 'block';
+        window.tempJoin = { f, p };
+    };
+
     window.nav = (id, el) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-' + id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
         if(id === 'ranking') loadRanking();
-        if(id === 'profile') loadProfile();
     };
 
-    // YOSH VA TUG'ILGAN KUN HISOBI
-    function getBirthdayStats(bdayStr) {
-        const today = new Date();
-        const bday = new Date(bdayStr);
-        let age = today.getFullYear() - bday.getFullYear();
-        const m = today.getMonth() - bday.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < bday.getDate())) age--;
-
-        let nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
-        if (today > nextBday) nextBday.setFullYear(today.getFullYear() + 1);
-        const diff = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
-
-        return { age, daysLeft: diff, formatted: bday.toLocaleDateString('uz-UZ', {month:'long', year:'numeric'}) };
-    }
-
-    // REGISTRATION LOGIC
     window.loadTeams = async (type) => {
-        const snap = await get(ref(db, 'available_teams'));
-        const usersSnap = await get(ref(db, 'users'));
-        takenTeams = [];
-        if(usersSnap.exists()){
-            Object.values(usersSnap.val()).forEach(u => takenTeams.push(u.teamId));
-        }
-
-        allTeams = snap.val() ? Object.values(snap.val()) : [];
+        toggleLoader(true);
+        const [teamsSnap, usersSnap] = await Promise.all([get(ref(db, 'available_teams')), get(ref(db, 'users'))]);
+        const taken = usersSnap.exists() ? Object.values(usersSnap.val()).map(u => u.teamId) : [];
+        const teams = teamsSnap.val() ? Object.values(teamsSnap.val()) : [];
         const container = document.getElementById('team-selector');
         container.innerHTML = "";
-        
-        allTeams.filter(t => t.type === type).forEach(team => {
-            const isTaken = takenTeams.includes(team.id);
+        teams.filter(t => t.type === type).forEach(team => {
+            const isTaken = taken.includes(team.id);
             const div = document.createElement('div');
             div.className = `team-item ${isTaken ? 'taken' : ''}`;
-            div.onclick = () => {
-                document.querySelectorAll('.team-item').forEach(i => i.classList.remove('selected'));
-                div.classList.add('selected');
-                selectedTeam = team;
-            };
-            div.innerHTML = `<img src="${team.logo}"> <p>${team.name}</p>`;
+            div.onclick = () => { document.querySelectorAll('.team-item').forEach(i => i.classList.remove('selected')); div.classList.add('selected'); selectedTeam = team; };
+            div.innerHTML = `<img src="${team.logo}"><p>${team.name}</p>`;
             container.appendChild(div);
         });
+        toggleLoader(false);
     };
 
     window.handleRegistration = async () => {
-        const name = document.getElementById('reg-name').value;
-        const surname = document.getElementById('reg-surname').value;
-        const bday = document.getElementById('reg-bday').value;
-
-        if(!name || !surname || !bday || !selectedTeam) return alert("Barcha maydonlarni to'ldiring!");
-
-        const newUser = {
-            id: user_id, name, surname, bday,
-            teamId: selectedTeam.id, teamName: selectedTeam.name, teamLogo: selectedTeam.logo,
-            currentTournament: null
-        };
-
-        await set(ref(db, 'users/' + user_id), newUser);
+        if(!selectedTeam) return alert("Jamoa tanlang!");
+        toggleLoader(true);
+        const user = { id: user_id, name: document.getElementById('reg-name').value, surname: document.getElementById('reg-surname').value, bday: document.getElementById('reg-bday').value, teamId: selectedTeam.id, teamName: selectedTeam.name, teamLogo: selectedTeam.logo, currentTournament: null, paymentStatus: null, status: 'active' };
+        await set(ref(db, 'users/' + user_id), user);
         location.reload();
-    };
-
-    // TOURNAMENT LOGIC
-    window.joinTournament = async (format, price) => {
-        if(userData.currentTournament) return alert("Siz allaqachon turnirga qo'shilgansiz!");
-        document.getElementById('pay-amount').innerText = price;
-        document.getElementById('payment-modal').style.display = 'block';
-        window.currentJoinAttempt = { format, price };
     };
 
     window.confirmPayment = async () => {
-        await update(ref(db, 'users/' + user_id), { 
-            currentTournament: window.currentJoinAttempt.format + " Talik" 
-        });
-        alert("To'lov qabul qilindi! Admin tasdiqlashini kuting.");
-        location.reload();
+        toggleLoader(true);
+        await update(ref(db, 'users/' + user_id), { currentTournament: window.tempJoin.f + " Talik", paymentStatus: 'pending' });
+        toggleLoader(false); closeOverlay('pay-overlay');
     };
 
-    // RANKING & PROFILE
     function loadRanking() {
         onValue(ref(db, 'users'), (snap) => {
-            const list = document.getElementById('ranking-list');
-            list.innerHTML = "";
-            if(!snap.exists()) return;
-            Object.values(snap.val()).forEach(u => {
-                list.innerHTML += `
-                    <div class="ef-card" style="display:flex; align-items:center; gap:15px;">
-                        <img src="${u.teamLogo}" style="width:40px; background:white; border-radius:4px;">
-                        <div>
-                            <div style="font-weight:900;">${u.name} ${u.surname}</div>
-                            <div style="font-size:10px; opacity:0.7;">${u.teamName}</div>
-                        </div>
-                    </div>`;
+            const list = document.getElementById('ranking-list'); list.innerHTML = "";
+            if(snap.exists()) Object.values(snap.val()).forEach(u => {
+                if(u.paymentStatus === 'approved') list.innerHTML += `<div class="ef-card" style="display:flex; align-items:center; gap:10px; padding:8px;"><img src="${u.teamLogo}" style="width:25px; background:white; border-radius:2px; padding:1px;"><div><div style="font-weight:900; font-size:12px;">${u.name} ${u.surname}</div><div style="font-size:9px; opacity:0.6;">${u.teamName}</div></div></div>`;
             });
         });
     }
 
     function loadProfile() {
-        const stats = getBirthdayStats(userData.bday);
-        document.getElementById('profile-data').innerHTML = `
-            <div style="text-align:center; margin-bottom:15px;">
-                <img src="${userData.teamLogo}" style="width:80px; background:white; padding:5px; border-radius:8px;">
-                <h2 style="margin:5px 0;">${userData.name} ${userData.surname}</h2>
-            </div>
-            <p>🗓 Tug'ilgan sana: <b>${stats.formatted}</b></p>
-            <p>🎂 Yosh: <b>${stats.age} yosh</b></p>
-            <p>🎉 Tug'ilgan kunga: <b>${stats.daysLeft} kun qoldi</b></p>
-            <p>🏟 Turnir: <b style="color:var(--ef-neon)">${userData.currentTournament || "Qatnashmayapti"}</b></p>
-            <p>🛡 Jamoa: <b>${userData.teamName}</b></p>
-        `;
+        if(!userData) return;
+        const b = new Date(userData.bday), t = new Date();
+        let age = t.getFullYear() - b.getFullYear();
+        if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) age--;
+        const days = Math.ceil((new Date(t.getFullYear(), b.getMonth(), b.getDate()) - t) / 86400000);
+        let s = userData.paymentStatus === 'pending' ? " (Kutilmoqda)" : (userData.paymentStatus === 'approved' ? " (Tasdiqlangan)" : "");
+        document.getElementById('profile-data').innerHTML = `<div style="text-align:center; margin-bottom:8px;"><img src="${userData.teamLogo}" style="width:45px; background:white; padding:3px; border-radius:4px;"><h2 style="font-size:16px; margin:4px 0;">${userData.name} ${userData.surname}</h2></div><p style="font-size:11px;">🎂 Yosh: <b>${age}</b> | 🎉 Tug'ilgan kunga: <b>${days < 0 ? days + 365 : days} kun</b></p><p style="font-size:11px;">🏟 Turnir: <b style="color:var(--ef-neon)">${userData.currentTournament || "Yo'q"}${s}</b></p><p style="font-size:11px;">🛡 Jamoa: <b>${userData.teamName}</b></p>`;
     }
 
-    // CHECK AUTH
     async function checkAuth() {
+        toggleLoader(true);
         const snap = await get(ref(db, 'users/' + user_id));
         if(!snap.exists()) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen-reg').classList.add('active');
-            document.querySelector('.nav-bar').style.display = 'none';
-            loadTeams('nation');
         } else {
-            userData = snap.val();
-            if(userData.currentTournament) {
-                document.querySelectorAll('.btn-join').forEach(b => b.disabled = true);
-            }
+            startUserListener();
+            document.getElementById('main-nav').style.display = 'flex';
+            document.getElementById('screen-tournaments').classList.add('active');
         }
+        toggleLoader(false);
     }
-
     checkAuth();
 </script>
-
 </body>
 </html>

@@ -5,350 +5,319 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>eFootball Tournament</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --ef-dark: #00051a;
-            --ef-blue: #001e7a;
-            --ef-neon: #dfff00;
-            --ef-danger: #ff004c;
-            --ef-card: rgba(0, 21, 90, 0.95);
-            --ef-text: #ffffff;
+            --bg: #02040d; 
+            --card-bg: #0d111d;
+            --accent: #e1ff00; 
+            --konami-red: #e60012; 
+            --input-bg: #161b2e;
+            --text-white: #ffffff;
+            --text-gray: #8e92a4;
+            --border: #1e2436;
+            --nav-bg: #0a0e1a;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--ef-dark);
-            color: var(--ef-text);
-            margin: 0;
-            padding-bottom: 60px;
-            background-image: radial-gradient(circle at 50% 50%, var(--ef-blue) 0%, var(--ef-dark) 100%);
-            background-attachment: fixed;
-            overflow-x: hidden;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-white);
+            overflow: hidden;
         }
 
-        .container { padding: 10px; max-width: 420px; margin: auto; }
-        
-        h1 { font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--ef-neon); margin: 5px 0 10px; text-align: left; font-size: 18px; letter-spacing: 0.5px; }
-
-        #loader {
+        /* --- SPLASH SCREEN --- */
+        #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--ef-dark); display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 9999;
+            background-color: var(--konami-red);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
+            transition: opacity 0.5s ease;
         }
-        .spinner {
-            width: 35px; height: 35px; border: 3px solid rgba(223, 255, 0, 0.1);
-            border-top: 3px solid var(--ef-neon); border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+        .konami-text { font-size: 28px; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 30px; text-align: center; }
+        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .ef-card {
-            background: var(--ef-card); border-left: 3px solid var(--ef-neon);
-            padding: 10px 12px; border-radius: 2px; margin-bottom: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        /* --- REGISTRATION SCREEN --- */
+        #registration-screen {
+            display: none; height: 100vh; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
+            background-color: var(--bg);
         }
+        .reg-card { background-color: var(--card-bg); padding: 40px 30px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); width: 100%; max-width: 380px; z-index: 10; }
+        .reg-card h2 { margin: 0 0 30px 0; font-size: 20px; color: var(--accent); text-align: center; text-transform: uppercase; }
+        .field { margin-bottom: 20px; }
+        .field label { display: block; font-size: 11px; color: var(--text-gray); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
+        .field input { width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box; outline: none; }
+        .btn-submit { width: 100%; padding: 18px; background-color: var(--accent); color: #000; border: none; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
-        .reg-card { padding: 25px 15px; border-left-width: 5px; }
-        .reg-card label { font-size: 11px; margin-bottom: 6px; }
-        .reg-card .input-box { padding: 14px; font-size: 15px; margin-bottom: 15px; }
-        .reg-card .btn { padding: 16px; font-size: 14px; }
-
-        .ef-card h3 { font-family: 'Oswald', sans-serif; margin: 0; font-size: 14px; color: var(--ef-neon); }
-        .ef-card p { margin: 2px 0 8px; font-size: 11px; opacity: 0.8; }
-
-        label { display: block; font-size: 9px; color: var(--ef-neon); font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
-        .input-box {
-            width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--ef-blue);
-            color: white; border-radius: 2px; margin-bottom: 8px; box-sizing: border-box; font-size: 12px;
-        }
-
-        .team-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
-            max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 5px;
-        }
-        .team-item { text-align: center; font-size: 8px; padding: 3px; border-radius: 2px; position: relative; }
-        .team-item img { width: 28px; height: 28px; object-fit: contain; background: white; border-radius: 2px; padding: 1px; }
-        .team-item p { margin: 2px 0 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* --- MAIN APP --- */
+        #main-app { display: none; flex-direction: column; height: 100vh; }
+        header { padding: 15px; text-align: center; background: rgba(13, 17, 29, 0.9); border-bottom: 1px solid var(--border); position: relative; }
+        header h1 { margin: 0; font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+        .btn-back { position: absolute; left: 15px; top: 15px; background: none; border: 1px solid var(--accent); color: var(--accent); border-radius: 5px; padding: 5px 10px; font-size: 10px; cursor: pointer; display: none; }
         
-        .team-item.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
-        .team-item.taken::before {
-            content: "TANLANGAN";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-15deg);
-            background: var(--ef-danger);
-            color: white;
-            font-size: 6px;
-            font-weight: 900;
-            padding: 2px 4px;
-            z-index: 10;
-            white-space: nowrap;
-        }
+        #content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; }
 
-        .team-item.selected { border: 1px solid var(--ef-neon); background: rgba(223,255,0,0.1); }
+        /* --- NAVIGATION --- */
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-gray); text-decoration: none; font-size: 9px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
 
-        .btn {
-            width: 100%; padding: 10px; background: var(--ef-neon); color: #000;
-            border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px;
-            clip-path: polygon(0 0, 97% 0, 100% 25%, 100% 100%, 3% 100%, 0 75%);
-        }
-        .btn:disabled { background: #333; color: #666; opacity: 0.5; }
-
-        .nav-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #000; border-top: 1px solid rgba(223,255,0,0.3);
-            display: flex; justify-content: space-around; padding: 6px 0; z-index: 1000;
-        }
-        .nav-item { text-align: center; font-size: 8px; font-weight: 900; color: #fff; opacity: 0.4; cursor: pointer; }
-        .nav-item.active { opacity: 1; color: var(--ef-neon); }
-
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--ef-dark); z-index: 2000; display: none; padding: 15px; box-sizing: border-box; overflow-y: auto; }
+        /* --- STYLES --- */
+        .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; }
+        .tour-item:active, .team-item:active { transform: scale(0.96); }
         
-        .screen { display: none; }
-        .screen.active { display: block; }
+        .tour-img-container, .team-img-container { width: 100%; height: 110px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; }
+        .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
+        .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .btn-rules { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
+
+        /* Band qilingan jamoa stili */
+        .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
+
+        /* --- MODAL --- */
+        #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
+        .modal-header { color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 15px; text-align: center; }
+        .modal-body { font-size: 14px; line-height: 1.6; white-space: pre-line; color: #ccc; }
+        .btn-close-modal { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; margin-top: 20px; cursor: pointer; }
+
+        .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
+        .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><p style="color:var(--ef-neon); font-size:10px; margin-top:10px; font-weight:900; text-transform: uppercase;">eFootball Tournament</p></div>
+    <div id="splash-screen">
+        <div class="konami-text">eFootball Tournament</div>
+        <div class="spinner"></div>
+    </div>
 
-<div class="container">
-    <div id="screen-reg" class="screen">
-        <h1 style="text-align:center; font-size:22px; margin-bottom:20px;">RO'YXATDAN O'TISH</h1>
-        <div class="ef-card reg-card">
-            <label>ISM</label>
-            <input type="text" id="reg-name" class="input-box" placeholder="Ismingiz" oninput="validateReg()">
-            <label>FAMILIYA</label>
-            <input type="text" id="reg-surname" class="input-box" placeholder="Familiyangiz" oninput="validateReg()">
-            <label>TUG'ILGAN SANA</label>
-            <input type="date" id="reg-bday" class="input-box" oninput="validateReg()">
-            <button id="next-btn" class="btn" onclick="openTeams()" style="display:none; margin-top:10px;">KEYINGI BOSQICH ➔</button>
+    <div id="registration-screen">
+        <div class="reg-card">
+            <h2>RO'YXATDAN O'TISH</h2>
+            <div class="field"><label>Ism</label><input type="text" id="first-name" placeholder="Ism"></div>
+            <div class="field"><label>Familiya</label><input type="text" id="last-name" placeholder="Familiya"></div>
+            <div class="field"><label>Tug'ilgan sana</label><input type="date" id="birth-date"></div>
+            <button class="btn-submit" onclick="saveData()">Tasdiqlash</button>
         </div>
     </div>
 
-    <div id="screen-tournaments" class="screen">
-        <h1>TURNIRLAR</h1>
-        <div id="tournament-options">
-            <p style="text-align:center; opacity:0.5;">Narxlar yuklanmoqda...</p>
-        </div>
+    <div id="main-app">
+        <header>
+            <button class="btn-back" id="back-btn" onclick="goBack()">ORQAGA</button>
+            <h1 id="page-title">Turnirlar</h1>
+        </header>
+        <div id="content-area"></div>
+        <nav>
+            <div class="nav-item active" id="nav-tournaments" onclick="switchPage('tournaments', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/></svg>
+                <span>Turnirlar</span>
+            </div>
+            <div class="nav-item" id="nav-rating" onclick="switchPage('rating', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5H9L4.23,22.74L2.5,21.74L8.27,11.78H16Z"/></svg>
+                <span>Reyting</span>
+            </div>
+            <div class="nav-item" id="nav-profile" onclick="switchPage('profile', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>
+                <span>Profil</span>
+            </div>
+            <div class="nav-item" id="nav-settings" onclick="switchPage('settings', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.35 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.97 21.68,8.76L19.68,5.3C19.58,5.09 19.33,5 19.11,5.1L16.63,6.1C16.12,5.7 15.56,5.37 14.94,5.13L14.57,2.47C14.53,2.24 14.33,2.07 14.09,2.07H10.09C9.85,2.07 9.65,2.24 9.61,2.47L9.24,5.13C8.62,5.37 8.06,5.7 7.55,6.1L5.07,5.1C4.85,5 4.6,5.09 4.5,5.3L2.5,8.76C2.4,8.97 2.45,9.22 2.64,9.37L4.75,11.03C4.71,11.35 4.68,11.67 4.68,12C4.68,12.33 4.71,12.65 4.75,12.97L2.64,14.63C2.45,14.78 2.4,15.03 2.5,15.24L4.5,18.7C4.6,18.91 4.85,19 5.07,18.9L7.55,17.9C8.06,18.3 8.62,18.63 9.24,18.87L9.61,21.53C9.65,21.76 9.85,21.93 10.09,21.93H14.09C14.33,21.93 14.53,21.76 14.57,21.53L14.94,18.87C15.56,18.63 16.12,18.3 16.63,17.9L19.11,18.9C19.33,19 19.58,18.91 19.68,18.7L21.68,15.24C21.78,15.03 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+                <span>Sozlamalar</span>
+            </div>
+        </nav>
     </div>
 
-    <div id="screen-ranking" class="screen"><h1>REYTING</h1><div id="ranking-list"></div></div>
-    <div id="screen-profile" class="screen"><h1>PROFIL</h1><div id="profile-data"></div></div>
-    <div id="screen-settings" class="screen"><h1>SOZLAMALAR</h1><div class="ef-card"><button class="btn" style="background:var(--ef-danger); color:#fff; clip-path:none;" onclick="logout()">LOGOUT</button></div></div>
-</div>
+    <div id="rules-modal"><div class="modal-content"><div class="modal-header">Turnir Qoidalari</div><div class="modal-body" id="modal-text"></div><button class="btn-close-modal" onclick="closeRules()">Tushunarli</button></div></div>
 
-<div id="team-overlay" class="overlay">
-    <h1>JAMOA TANLASH</h1>
-    <div class="ef-card">
-        <div style="display:flex; gap:4px; margin-bottom:8px;">
-            <button onclick="loadTeams('nation')" class="btn" style="padding:6px; font-size:9px;">DAVLATLAR</button>
-            <button onclick="loadTeams('club')" class="btn" style="padding:6px; font-size:9px;">KLUBLAR</button>
-        </div>
-        <div class="team-grid" id="team-selector"></div>
-        <button class="btn" style="margin-top:12px;" onclick="handleRegistration()">SAQLASH</button>
-        <button class="btn" style="margin-top:6px; background:transparent; color:white; border:1px solid #333;" onclick="closeOverlay('team-overlay')">ORTGA</button>
-    </div>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-<div id="pay-overlay" class="overlay">
-    <h1>TO'LOV</h1>
-    <div class="ef-card">
-        <h3 style="color:var(--ef-danger)">TO'LOV MA'LUMOTLARI</h3>
-        <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:2px; margin:8px 0; font-size:12px;">
-            <p>Karta: <b style="color:var(--ef-neon)">4073 4200 6816 5541</b></p>
-            <p>Ega: <b>Maruf Raxmonov</b></p>
-            <p>Summa: <b id="pay-amount" style="color:var(--ef-neon)">0</b> so'm</p>
-        </div>
-        <button class="btn" onclick="confirmPayment()">TO'LOV QILDIM</button>
-        <button class="btn" style="margin-top:6px; background:transparent; color:white; border:1px solid #333;" onclick="closeOverlay('pay-overlay')">BEKOR QILISH</button>
-    </div>
-</div>
-
-<nav class="nav-bar" id="main-nav" style="display:none;">
-    <div class="nav-item active" onclick="nav('tournaments', this)">🏟 TURNIRLAR</div>
-    <div class="nav-item" onclick="nav('ranking', this)">🏆 REYTING</div>
-    <div class="nav-item" onclick="nav('profile', this)">👤 PROFIL</div>
-    <div class="nav-item" onclick="nav('settings', this)">⚙️ SOZLAMALAR</div>
-</nav>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAD1KOT_QH64DDWQ306H5L-xwnWH0k2kUg",
-        authDomain: "efootball-11be6.firebaseapp.com",
-        databaseURL: "https://efootball-11be6-default-rtdb.firebaseio.com",
-        projectId: "efootball-11be6",
-        storageBucket: "efootball-11be6.firebasestorage.app",
-        messagingSenderId: "989986946120",
-        appId: "1:989986946120:web:2c654ac8ca6412f0bbec7d"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const tg = window.Telegram.WebApp;
-    const user_id = tg.initDataUnsafe?.user?.id || "DEBUG_USER";
-
-    let userData = null, selectedTeam = null, allTeams = [], takenTeams = [], prices = {};
-
-    const toggleLoader = (show) => document.getElementById('loader').style.display = show ? 'flex' : 'none';
-    const closeOverlay = (id) => document.getElementById(id).style.display = 'none';
-    window.closeOverlay = closeOverlay;
-
-    // BAZADAN NARXLARNI OLISH
-    const fetchPrices = async () => {
-        const snap = await get(ref(db, 'tournaments_config'));
-        if(snap.exists()) {
-            prices = snap.val();
-            renderTournaments();
-        }
-    };
-
-    const renderTournaments = () => {
-        const container = document.getElementById('tournament-options');
-        const list = [
-            {f: 8, p: prices.f8}, {f: 16, p: prices.f16}, 
-            {f: 32, p: prices.f32}, {f: 48, p: prices.f48}
-        ];
-        container.innerHTML = "";
-        list.forEach(item => {
-            container.innerHTML += `
-                <div class="ef-card">
-                    <h3>${item.f} TALIK FORMAT</h3>
-                    <p>Kirish: ${item.p.toLocaleString()} so'm</p>
-                    <button class="btn btn-join" onclick="showPay(${item.f}, ${item.p})">QATNASHISH</button>
-                </div>
-            `;
-        });
-        if(userData?.currentTournament) document.querySelectorAll('.btn-join').forEach(b => b.disabled = true);
-    };
-
-    window.validateReg = () => {
-        const name = document.getElementById('reg-name').value;
-        const surname = document.getElementById('reg-surname').value;
-        const bday = document.getElementById('reg-bday').value;
-        document.getElementById('next-btn').style.display = (name && surname && bday) ? 'block' : 'none';
-    };
-
-    window.openTeams = () => {
-        document.getElementById('team-overlay').style.display = 'block';
-        loadTeams('nation');
-    };
-
-    window.showPay = (format, price) => {
-        if(userData.currentTournament) return alert("Sizda faol turnir bor!");
-        document.getElementById('pay-amount').innerText = price.toLocaleString();
-        document.getElementById('pay-overlay').style.display = 'block';
-        window.tempJoin = { format, price };
-    };
-
-    window.nav = (id, el) => {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('screen-' + id).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-        if(id === 'ranking') loadRanking();
-        if(id === 'profile') loadProfile();
-    };
-
-    window.loadTeams = async (type) => {
-        toggleLoader(true);
-        const snap = await get(ref(db, 'available_teams'));
-        const usersSnap = await get(ref(db, 'users'));
-        takenTeams = usersSnap.exists() ? Object.values(usersSnap.val()).map(u => u.teamId) : [];
-        allTeams = snap.val() ? Object.values(snap.val()) : [];
-        const container = document.getElementById('team-selector');
-        container.innerHTML = "";
-        allTeams.filter(t => t.type === type).forEach(team => {
-            const isTaken = takenTeams.includes(team.id);
-            const div = document.createElement('div');
-            div.className = `team-item ${isTaken ? 'taken' : ''}`;
-            div.onclick = () => {
-                document.querySelectorAll('.team-item').forEach(i => i.classList.remove('selected'));
-                div.classList.add('selected');
-                selectedTeam = team;
-            };
-            div.innerHTML = `<img src="${team.logo}"> <p>${team.name}</p>`;
-            container.appendChild(div);
-        });
-        toggleLoader(false);
-    };
-
-    window.handleRegistration = async () => {
-        if(!selectedTeam) return alert("Jamoa tanlang!");
-        toggleLoader(true);
-        const newUser = {
-            id: user_id, name: document.getElementById('reg-name').value, 
-            surname: document.getElementById('reg-surname').value, 
-            bday: document.getElementById('reg-bday').value,
-            teamId: selectedTeam.id, teamName: selectedTeam.name, teamLogo: selectedTeam.logo,
-            currentTournament: null, paymentStatus: null
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
+            authDomain: "efootball-d72ae.firebaseapp.com",
+            databaseURL: "https://efootball-d72ae-default-rtdb.firebaseio.com",
+            projectId: "efootball-d72ae",
+            appId: "1:945307600187:web:995dd8f014077d0b0b231e"
         };
-        await set(ref(db, 'users/' + user_id), newUser);
-        location.reload();
-    };
 
-    window.confirmPayment = async () => {
-        toggleLoader(true);
-        // TASDIQLASH UCHUN 'pending' STATUSINI YUBORISH
-        await update(ref(db, 'users/' + user_id), { 
-            currentTournament: window.tempJoin.format + " Talik",
-            paymentStatus: 'pending' 
-        });
-        location.reload();
-    };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-    function loadRanking() {
-        onValue(ref(db, 'users'), (snap) => {
-            const list = document.getElementById('ranking-list'); list.innerHTML = "";
-            if(snap.exists()) Object.values(snap.val()).forEach(u => {
-                // FAQAT TASDIQLANGANLARNI REYTINGGA CHIQARISH (IXTIYORIY)
-                if(u.paymentStatus === 'approved') {
-                    list.innerHTML += `<div class="ef-card" style="display:flex; align-items:center; gap:10px; padding:8px;"><img src="${u.teamLogo}" style="width:25px; background:white; border-radius:2px; padding:1px;"><div><div style="font-weight:900; font-size:12px;">${u.name} ${u.surname}</div><div style="font-size:9px; opacity:0.6;">${u.teamName}</div></div></div>`;
+        let userData = null;
+        let allTournaments = {};
+        const userId = tg.initDataUnsafe?.user?.id || "user_test";
+
+        async function startAppInit() {
+            try {
+                const [playerSnap, serverTimeSnap] = await Promise.all([
+                    get(ref(db, 'players/' + userId)),
+                    get(ref(db, 'last_update'))
+                ]);
+                if (playerSnap.exists()) { userData = playerSnap.val(); }
+                const serverUpdateTime = (serverTimeSnap.val() || 0).toString();
+                const localUpdateTime = localStorage.getItem('last_update_time') || "-1";
+                const localCache = localStorage.getItem('tournaments_cache');
+
+                if (localCache && localUpdateTime === serverUpdateTime) {
+                    allTournaments = JSON.parse(localCache);
+                } else {
+                    const tourSnapshot = await get(ref(db, 'tournaments'));
+                    allTournaments = tourSnapshot.val() || {};
+                    localStorage.setItem('tournaments_cache', JSON.stringify(allTournaments));
+                    localStorage.setItem('last_update_time', serverUpdateTime);
+                }
+                checkUserAndHideSplash();
+            } catch (e) {
+                const cache = localStorage.getItem('tournaments_cache');
+                if(cache) allTournaments = JSON.parse(cache);
+                checkUserAndHideSplash();
+            }
+        }
+
+        function checkUserAndHideSplash() {
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = '0';
+            setTimeout(() => {
+                splash.style.display = 'none';
+                if (userData) { showMainApp(); } 
+                else { document.getElementById('registration-screen').style.display = 'flex'; }
+            }, 500);
+        }
+
+        window.saveData = async function() {
+            const fName = document.getElementById('first-name').value.trim();
+            const lName = document.getElementById('last-name').value.trim();
+            const bDate = document.getElementById('birth-date').value;
+            if (!fName || !lName || !bDate) { tg.showAlert("Iltimos, barcha maydonlarni to'ldiring!"); return; }
+            userData = { firstName: fName, lastName: lName, birthDate: bDate, registeredAt: new Date().toISOString() };
+            set(ref(db, 'players/' + userId), userData);
+            document.getElementById('registration-screen').style.display = 'none';
+            showMainApp();
+        }
+
+        function showMainApp() {
+            document.getElementById('main-app').style.display = 'flex';
+            setTimeout(() => document.getElementById('main-app').style.opacity = '1', 50);
+            switchPage('tournaments', document.getElementById('nav-tournaments'));
+        }
+
+        window.switchPage = function(page, element) {
+            document.getElementById('back-btn').style.display = 'none';
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            const title = document.getElementById('page-title');
+
+            if (page === 'tournaments') {
+                title.innerText = "Turnirlar";
+                renderTournaments();
+            } else if (page === 'rating') {
+                title.innerText = "Reyting";
+                document.getElementById('content-area').innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
+            } else if (page === 'profile') {
+                title.innerText = "Profil";
+                document.getElementById('content-area').innerHTML = `
+                    <div class="profile-card">
+                        <div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div>
+                        <h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2>
+                        <p style="color:var(--text-gray); font-size:13px; margin:5px 0;">ID: ${userId}</p>
+                    </div>`;
+            } else if (page === 'settings') {
+                title.innerText = "Sozlamalar";
+                document.getElementById('content-area').innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Tez kunda...</div>';
+            }
+        }
+
+        function renderTournaments() {
+            const content = document.getElementById('content-area');
+            content.innerHTML = "";
+            const grid = document.createElement('div');
+            grid.className = 'tournament-grid';
+            Object.keys(allTournaments).forEach(id => {
+                const tour = allTournaments[id];
+                const item = document.createElement('div');
+                item.className = 'tour-item';
+                item.onclick = () => showTeams(id);
+                item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
+                    <div class="tour-info"><div class="tour-title">${id}</div></div>`;
+                grid.appendChild(item);
+            });
+            content.appendChild(grid);
+        }
+
+        window.showTeams = function(tourId) {
+            const tournament = allTournaments[tourId];
+            document.getElementById('page-title').innerText = tourId;
+            document.getElementById('back-btn').style.display = 'block';
+            const content = document.getElementById('content-area');
+            content.innerHTML = "";
+            
+            if (tournament.rules) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-rules';
+                btn.innerText = "Turnir Qoidalari";
+                btn.onclick = () => { document.getElementById('modal-text').innerText = tournament.rules; document.getElementById('rules-modal').style.display = 'flex'; };
+                content.appendChild(btn);
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'teams-grid';
+            (tournament.teams || []).forEach((team, index) => {
+                const isTaken = team.player_id && team.player_id !== "";
+                const item = document.createElement('div');
+                item.className = 'team-item' + (isTaken ? ' taken' : '');
+                
+                item.innerHTML = `
+                    ${isTaken ? '<div class="taken-label">BAND</div>' : ''}
+                    <div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div>
+                    <div class="team-info">
+                        <div class="team-title">${team.name}</div>
+                        <div style="font-size:8px; color:var(--text-gray)">${isTaken ? team.player_name : 'BO\'SH'}</div>
+                    </div>`;
+                
+                if (!isTaken) {
+                    item.onclick = () => selectTeam(tourId, index, team.name);
+                }
+                grid.appendChild(item);
+            });
+            content.appendChild(grid);
+        }
+
+        // --- JAMOA TANLASH FUNKSIYASI ---
+        window.selectTeam = async function(tourId, index, teamName) {
+            tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
+                if (ok) {
+                    try {
+                        const path = `tournaments/${tourId}/teams/${index}`;
+                        await update(ref(db, path), {
+                            player_id: userId,
+                            player_name: userData.firstName + ' ' + userData.lastName
+                        });
+                        
+                        // Keshni vaqtinchalik buzish (yangilanish uchun)
+                        localStorage.removeItem('last_update_time');
+                        tg.showAlert("Tabriklaymiz! Jamoa band qilindi.");
+                        location.reload(); 
+                    } catch (e) {
+                        tg.showAlert("Xatolik!");
+                    }
                 }
             });
-        });
-    }
-
-    function loadProfile() {
-        const b = new Date(userData.bday), t = new Date();
-        let age = t.getFullYear() - b.getFullYear();
-        if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) age--;
-        let next = new Date(t.getFullYear(), b.getMonth(), b.getDate());
-        if (t > next) next.setFullYear(t.getFullYear() + 1);
-        const days = Math.ceil((next - t) / 86400000);
-
-        let statusText = "";
-        if(userData.paymentStatus === 'pending') statusText = " (Kutilmoqda...)";
-        if(userData.paymentStatus === 'approved') statusText = " (Tasdiqlangan)";
-
-        document.getElementById('profile-data').innerHTML = `
-            <div style="text-align:center; margin-bottom:8px;"><img src="${userData.teamLogo}" style="width:45px; background:white; padding:3px; border-radius:4px;"><h2 style="font-size:16px; margin:4px 0;">${userData.name} ${userData.surname}</h2></div>
-            <p style="font-size:11px;">🎂 Yosh: <b>${age}</b> | 🎉 Tug'ilgan kunga: <b>${days} kun</b></p>
-            <p style="font-size:11px;">🏟 Turnir: <b style="color:var(--ef-neon)">${userData.currentTournament || "Yo'q"}${statusText}</b></p>
-            <p style="font-size:11px;">🛡 Jamoa: <b>${userData.teamName}</b></p>
-        `;
-    }
-
-    async function checkAuth() {
-        toggleLoader(true);
-        await fetchPrices(); // NARXLARNI YUKLASH
-        const snap = await get(ref(db, 'users/' + user_id));
-        if(!snap.exists()) {
-            document.getElementById('screen-reg').classList.add('active');
-        } else {
-            userData = snap.val();
-            document.getElementById('main-nav').style.display = 'flex';
-            document.getElementById('screen-tournaments').classList.add('active');
-            renderTournaments(); // BAZADAGI NARXLAR BILAN QAYTA CHIZISH
         }
-        toggleLoader(false);
-    }
-    checkAuth();
-</script>
+
+        window.closeRules = () => { document.getElementById('rules-modal').style.display = 'none'; };
+        window.goBack = () => switchPage('tournaments', document.getElementById('nav-tournaments'));
+
+        startAppInit();
+    </script>
 </body>
 </html>

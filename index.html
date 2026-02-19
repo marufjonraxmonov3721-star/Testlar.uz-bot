@@ -163,17 +163,16 @@
         let userTournamentId = null; 
         const userId = tg.initDataUnsafe?.user?.id || "user_test";
 
-        // --- APP INITIALIZATION (TEZKOR) ---
+        // --- APP INITIALIZATION ---
         async function startAppInit() {
-            // Splash ekranni keshga qarab boshqarish
+            // Splash ekran tezroq o'chishi uchun keshdan o'qish
             updateUserState();
             
-            // Keshda foydalanuvchi bo'lsa darhol ko'rsatish
             if (userData) {
                 showMainApp();
                 hideSplash();
             } else {
-                // Keshda bo'lmasa bazani tekshirish
+                // Kesh bo'sh bo'lsa darhol bazani fonda tekshirish
                 try {
                     const playerSnap = await get(ref(db, 'players/' + userId));
                     if (playerSnap.exists()) {
@@ -184,19 +183,20 @@
                         document.getElementById('registration-screen').style.display = 'flex';
                     }
                 } catch (e) {
-                    // Oflayn bo'lsa va kesh bo'lmasa ham reg-screen ko'rsatiladi
                     document.getElementById('registration-screen').style.display = 'flex';
                 }
                 hideSplash();
             }
 
-            // --- FONDA YANGILASH (ONLAYN REJIM) ---
+            // --- LOCALSTORAGE & FIREBASE SYNC (ONLAYN REJIM) ---
             onValue(ref(db, 'tournaments'), (snapshot) => {
                 if (snapshot.exists()) {
                     allTournaments = snapshot.val();
+                    // Turnirlarni localStorage'ga saqlash - tezlik uchun eng muhimi
                     localStorage.setItem('ef_tours', JSON.stringify(allTournaments));
                     updateUserState();
-                    // Agar turnirlar sahifasida bo'lsa yangilash
+                    
+                    // Faqat kerakli paytda UI yangilanadi (loading-siz)
                     if (document.getElementById('main-app').style.display === 'flex') {
                         refreshCurrentUI();
                     }
@@ -207,7 +207,7 @@
         function hideSplash() {
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 400);
+            setTimeout(() => splash.style.display = 'none', 300);
         }
 
         function saveUserToCache() {
@@ -224,6 +224,7 @@
 
         function refreshCurrentUI() {
             const title = document.getElementById('page-title').innerText;
+            // Foydalanuvchi qayerda bo'lsa o'sha joyni fonda yangilaymiz
             if (title === "Turnirlar") renderTournaments();
             else if (title === "Guruh Jadvali" || title === "Turnir Holati") switchPage('tournaments');
         }
@@ -294,6 +295,7 @@
             const content = document.getElementById('content-area');
             content.innerHTML = "";
             const tour = allTournaments[tourId];
+            if (!tour) return;
             const teams = tour.teams || [];
             let teamsPerGroup = 4;
             let groupCount = Math.ceil(teams.length / teamsPerGroup);
@@ -368,6 +370,7 @@
 
         window.showTeams = function(tourId) {
             const tournament = allTournaments[tourId];
+            if (!tournament) return;
             const teams = tournament.teams || [];
             const players = teams.filter(t => t.player_id);
             const isFull = players.length >= teams.length;
@@ -417,7 +420,6 @@
                         const updateData = { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName };
                         await update(ref(db, path), updateData);
                         tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
-                        // UI onValue orqali o'zi yangilanadi
                     } catch (e) { tg.showAlert("Xatolik yuz berdi!"); }
                 }
             });
@@ -426,7 +428,6 @@
         window.closeRules = () => { document.getElementById('rules-modal').style.display = 'none'; };
         window.goBack = () => switchPage('tournaments', document.getElementById('nav-tournaments'));
 
-        // Start
         startAppInit();
     </script>
 </body>

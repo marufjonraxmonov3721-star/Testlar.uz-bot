@@ -74,7 +74,6 @@
         .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
         .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .btn-rules { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; }
 
         .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
@@ -88,7 +87,7 @@
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
         .modal-header { color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 15px; text-align: center; }
-        .modal-body { font-size: 14px; line-height: 1.6; white-space: pre-line; color: #ccc; }
+        .modal-body { font-size: 14px; line-height: 1.6; white-space: pre-line; color: #ccc; max-height: 300px; overflow-y: auto; }
         .btn-close-modal { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; margin-top: 20px; cursor: pointer; }
 
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
@@ -141,7 +140,13 @@
         </nav>
     </div>
 
-    <div id="rules-modal"><div class="modal-content"><div class="modal-header">Turnir Qoidalari</div><div class="modal-body" id="modal-text"></div><button class="btn-close-modal" onclick="closeRules()">Tushunarli</button></div></div>
+    <div id="rules-modal">
+        <div class="modal-content">
+            <div class="modal-header">Turnir Qoidalari</div>
+            <div class="modal-body" id="modal-text"></div>
+            <button class="btn-close-modal" id="modal-confirm-btn" onclick="closeRules()">Tushunarli</button>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -230,7 +235,6 @@
                 title.innerText = "Turnirlar";
                 content.innerHTML = "";
                 
-                // 1. Agar foydalanuvchi turnirda bo'lsa, Kutish Zali chiqadi
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
                     const players = (tour.teams || []).filter(t => t.player_id);
@@ -240,8 +244,6 @@
                         renderWaitingRoom();
                     }
                 }
-                
-                // 2. Turnirlar ro'yxatini har doim ko'rsatamiz (Waiting room'dan keyin)
                 renderTournaments();
 
             } else if (page === 'rating') {
@@ -312,16 +314,32 @@
             Object.keys(allTournaments).forEach(id => {
                 const tour = allTournaments[id];
                 const item = document.createElement('div');
-                
-                // Agar boshqa turnirda bo'lsa, turnirlarni yopamiz
                 const isLocked = userTournamentId && userTournamentId !== id;
                 item.className = 'tour-item' + (isLocked ? ' tour-locked' : '');
                 
-                item.onclick = () => { if (!isLocked) showTeams(id); };
+                // Turnir bosilganda birinchi qoidalar chiqadi
+                item.onclick = () => { 
+                    if (!isLocked) showTournamentRules(id); 
+                };
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
+        }
+
+        // --- QOIDALARNI KO'RSATISH VA TUGMANI SOZLASH ---
+        window.showTournamentRules = function(tourId) {
+            const tournament = allTournaments[tourId];
+            document.getElementById('modal-text').innerText = tournament.rules || "Ushbu turnir uchun qoidalar belgilanmagan.";
+            
+            // "Tushunarli" tugmasi bosilganda jamoalarni ochish funksiyasi
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            confirmBtn.onclick = () => {
+                closeRules();
+                showTeams(tourId);
+            };
+            
+            document.getElementById('rules-modal').style.display = 'flex';
         }
 
         window.showTeams = function(tourId) {
@@ -329,10 +347,24 @@
             const teams = tournament.teams || [];
             const players = teams.filter(t => t.player_id);
             const isFull = players.length >= teams.length;
+            
             document.getElementById('page-title').innerText = tourId;
             document.getElementById('back-btn').style.display = 'block';
+            
             const content = document.getElementById('content-area');
-            content.innerHTML = isFull ? `<div class="full-notice">TURNIR TO'LGAN! 🔴</div>` : "";
+            content.innerHTML = isFull ? `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>` : "";
+            
+            // Turnir ichida ham qoidalarni ko'rish tugmasi
+            const rulesBtn = document.createElement('button');
+            rulesBtn.className = 'btn-rules';
+            rulesBtn.innerText = "Qoidalar bilan tanishish";
+            rulesBtn.onclick = () => {
+                document.getElementById('modal-text').innerText = tournament.rules;
+                document.getElementById('modal-confirm-btn').onclick = closeRules; // Bu erda jamoalar ochilmaydi, shunchaki modal yopiladi
+                document.getElementById('rules-modal').style.display = 'flex';
+            };
+            content.appendChild(rulesBtn);
+
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
             teams.forEach((team, index) => {
@@ -342,7 +374,10 @@
                 item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}
                     <div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div>
                     <div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
-                if (!isTaken && !isFull && !userTournamentId) item.onclick = () => selectTeam(tourId, index, team.name);
+                
+                if (!isTaken && !isFull && !userTournamentId) {
+                    item.onclick = () => selectTeam(tourId, index, team.name);
+                }
                 grid.appendChild(item);
             });
             content.appendChild(grid);

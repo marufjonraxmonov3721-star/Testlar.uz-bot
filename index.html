@@ -31,10 +31,10 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--konami-red);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
-            transition: opacity 0.3s ease-out;
+            transition: opacity 0.4s ease;
         }
         .konami-text { font-size: 28px; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 30px; text-align: center; }
-        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* --- REGISTRATION --- */
@@ -47,7 +47,7 @@
         .btn-submit { width: 100%; padding: 18px; background-color: var(--accent); color: #000; border: none; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
         /* --- MAIN APP --- */
-        #main-app { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.3s ease-in; }
+        #main-app { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.3s ease; }
         header { padding: 15px; text-align: center; background: rgba(13, 17, 29, 0.9); border-bottom: 1px solid var(--border); position: relative; }
         header h1 { margin: 0; font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
         .btn-back { position: absolute; left: 15px; top: 15px; background: none; border: 1px solid var(--accent); color: var(--accent); border-radius: 5px; padding: 5px 10px; font-size: 10px; cursor: pointer; display: none; }
@@ -140,55 +140,78 @@
 
     <div id="rules-modal"><div class="modal-content"><div class="modal-header">Turnir Qoidalari</div><div class="modal-body" id="modal-text"></div><button class="btn-close-modal" onclick="closeRules()">Tushunarli</button></div></div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
+            authDomain: "efootball-d72ae.firebaseapp.com",
+            databaseURL: "https://efootball-d72ae-default-rtdb.firebaseio.com",
+            projectId: "efootball-d72ae",
+            appId: "1:945307600187:web:995dd8f014077d0b0b231e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // --- OFLAYN MA'LUMOTLAR OMBORI (LOCALSTORAGE) ---
-        const DEFAULT_TOURNAMENTS = {
-            "O'zbekiston Viloyatlar Kubogi": {
-                official_logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Uzbekistan.svg/1200px-Flag_of_Uzbekistan.svg.png",
-                rules: "1. O'yin vaqti: 10 minut.\n2. Guruhdan 2 ta jamoa chiqadi.\n3. Internet aloqasi barqaror bo'lishi shart.",
-                teams: [
-                    { name: "Toshkent", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" },
-                    { name: "Andijon", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" },
-                    { name: "Samarqand", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" },
-                    { name: "Buxoro", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" }
-                ]
-            },
-            "Yevropa Chempionlar Ligasi": {
-                official_logo: "https://upload.wikimedia.org/wikipedia/en/thumb/b/bf/UEFA_Champions_League_logo_2.svg/1200px-UEFA_Champions_League_logo_2.svg.png",
-                rules: "1. Professional daraja.\n2. Jamoalar: Faqat 5 yulduzli.",
-                teams: [
-                    { name: "Real Madrid", flag: "https://flagcdn.com/w320/es.png", player_id: "", player_name: "" },
-                    { name: "Manchester City", flag: "https://flagcdn.com/w320/gb.png", player_id: "", player_name: "" },
-                    { name: "Bayern Munich", flag: "https://flagcdn.com/w320/de.png", player_id: "", player_name: "" },
-                    { name: "Liverpool", flag: "https://flagcdn.com/w320/gb.png", player_id: "", player_name: "" }
-                ]
-            }
-        };
-
-        let userData = JSON.parse(localStorage.getItem('user_cache'));
-        let allTournaments = JSON.parse(localStorage.getItem('tournaments_cache')) || DEFAULT_TOURNAMENTS;
-        let userTournamentId = null;
+        // --- KESH VA HOLATLAR ---
+        let userData = JSON.parse(localStorage.getItem('ef_user')) || null;
+        let allTournaments = JSON.parse(localStorage.getItem('ef_tours')) || {};
+        let userTournamentId = null; 
         const userId = tg.initDataUnsafe?.user?.id || "user_test";
 
-        function startAppInit() {
+        // --- APP INITIALIZATION (TEZKOR) ---
+        async function startAppInit() {
+            // Splash ekranni keshga qarab boshqarish
             updateUserState();
             
+            // Keshda foydalanuvchi bo'lsa darhol ko'rsatish
             if (userData) {
-                hideSplash();
                 showMainApp();
-            } else {
                 hideSplash();
-                document.getElementById('registration-screen').style.display = 'flex';
+            } else {
+                // Keshda bo'lmasa bazani tekshirish
+                try {
+                    const playerSnap = await get(ref(db, 'players/' + userId));
+                    if (playerSnap.exists()) {
+                        userData = playerSnap.val();
+                        saveUserToCache();
+                        showMainApp();
+                    } else {
+                        document.getElementById('registration-screen').style.display = 'flex';
+                    }
+                } catch (e) {
+                    // Oflayn bo'lsa va kesh bo'lmasa ham reg-screen ko'rsatiladi
+                    document.getElementById('registration-screen').style.display = 'flex';
+                }
+                hideSplash();
             }
+
+            // --- FONDA YANGILASH (ONLAYN REJIM) ---
+            onValue(ref(db, 'tournaments'), (snapshot) => {
+                if (snapshot.exists()) {
+                    allTournaments = snapshot.val();
+                    localStorage.setItem('ef_tours', JSON.stringify(allTournaments));
+                    updateUserState();
+                    // Agar turnirlar sahifasida bo'lsa yangilash
+                    if (document.getElementById('main-app').style.display === 'flex') {
+                        refreshCurrentUI();
+                    }
+                }
+            });
         }
 
         function hideSplash() {
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 300);
+            setTimeout(() => splash.style.display = 'none', 400);
+        }
+
+        function saveUserToCache() {
+            localStorage.setItem('ef_user', JSON.stringify(userData));
         }
 
         function updateUserState() {
@@ -199,30 +222,40 @@
             });
         }
 
-        window.saveData = function() {
+        function refreshCurrentUI() {
+            const title = document.getElementById('page-title').innerText;
+            if (title === "Turnirlar") renderTournaments();
+            else if (title === "Guruh Jadvali" || title === "Turnir Holati") switchPage('tournaments');
+        }
+
+        window.saveData = async function() {
+            if (!navigator.onLine) { tg.showAlert("Internetni yoqing!"); return; }
             const fName = document.getElementById('first-name').value.trim();
             const lName = document.getElementById('last-name').value.trim();
             const bDate = document.getElementById('birth-date').value;
             if (!fName || !lName || !bDate) { tg.showAlert("Iltimos, barcha maydonlarni to'ldiring!"); return; }
             
             userData = { firstName: fName, lastName: lName, birthDate: bDate, registeredAt: new Date().toISOString() };
-            localStorage.setItem('user_cache', JSON.stringify(userData));
+            saveUserToCache();
             
+            set(ref(db, 'players/' + userId), userData);
             document.getElementById('registration-screen').style.display = 'none';
             showMainApp();
         }
 
         function showMainApp() {
-            const main = document.getElementById('main-app');
-            main.style.display = 'flex';
-            setTimeout(() => main.style.opacity = '1', 50);
+            const appEl = document.getElementById('main-app');
+            appEl.style.display = 'flex';
+            setTimeout(() => appEl.style.opacity = '1', 50);
             switchPage('tournaments', document.getElementById('nav-tournaments'));
         }
 
         window.switchPage = function(page, element) {
             document.getElementById('back-btn').style.display = 'none';
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if (element) element.classList.add('active');
+            if (element) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                element.classList.add('active');
+            }
             
             const title = document.getElementById('page-title');
             const content = document.getElementById('content-area');
@@ -230,9 +263,11 @@
             if (page === 'tournaments') {
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
-                    const teams = tour.teams || [];
-                    const players = teams.filter(t => t.player_id);
-                    if (players.length >= teams.length && teams.length > 0) {
+                    if (!tour) { renderTournaments(); return; }
+                    const players = (tour.teams || []).filter(t => t.player_id);
+                    const totalNeeded = tour.teams ? tour.teams.length : 0;
+                    
+                    if (players.length >= totalNeeded && totalNeeded > 0) {
                         title.innerText = "Guruh Jadvali";
                         renderTournamentTables(userTournamentId);
                     } else {
@@ -245,13 +280,13 @@
                 }
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
-                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Oflayn rejimda reyting mavjud emas.</div>';
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
             } else if (page === 'profile') {
                 title.innerText = "Profil";
                 content.innerHTML = `<div class="profile-card"><div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div><h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2><p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p></div>`;
             } else if (page === 'settings') {
                 title.innerText = "Sozlamalar";
-                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Oflayn sozlamalar.</div>';
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Tez kunda...</div>';
             }
         }
 
@@ -262,6 +297,7 @@
             const teams = tour.teams || [];
             let teamsPerGroup = 4;
             let groupCount = Math.ceil(teams.length / teamsPerGroup);
+            if (tourId.includes("O'zbekiston Viloyatlar Kubogi")) groupCount = 3;
 
             for (let i = 0; i < groupCount; i++) {
                 const groupName = String.fromCharCode(65 + i);
@@ -305,6 +341,7 @@
         function renderWaitingRoom() {
             const content = document.getElementById('content-area');
             const tour = allTournaments[userTournamentId];
+            if (!tour) return;
             const teams = tour.teams || [];
             const players = teams.filter(t => t.player_id);
             const percent = (players.length / teams.length) * 100;
@@ -370,18 +407,18 @@
             content.appendChild(grid);
         }
 
-        window.selectTeam = function(tourId, index, teamName) {
+        window.selectTeam = async function(tourId, index, teamName) {
+            if (!navigator.onLine) { tg.showAlert("Internetni yoqing!"); return; }
             if (userTournamentId) return;
-            tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, (ok) => {
+            tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
                 if (ok) {
-                    // LocalStorage yangilash
-                    allTournaments[tourId].teams[index].player_id = userId;
-                    allTournaments[tourId].teams[index].player_name = userData.firstName + ' ' + userData.lastName;
-                    localStorage.setItem('tournaments_cache', JSON.stringify(allTournaments));
-                    
-                    userTournamentId = tourId;
-                    tg.showAlert("Tabriklaymiz! Oflayn turnirga qo'shildingiz.");
-                    switchPage('tournaments', document.getElementById('nav-tournaments'));
+                    try {
+                        const path = `tournaments/${tourId}/teams/${index}`;
+                        const updateData = { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName };
+                        await update(ref(db, path), updateData);
+                        tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
+                        // UI onValue orqali o'zi yangilanadi
+                    } catch (e) { tg.showAlert("Xatolik yuz berdi!"); }
                 }
             });
         }
@@ -389,7 +426,7 @@
         window.closeRules = () => { document.getElementById('rules-modal').style.display = 'none'; };
         window.goBack = () => switchPage('tournaments', document.getElementById('nav-tournaments'));
 
-        // Ilovani boshlash
+        // Start
         startAppInit();
     </script>
 </body>

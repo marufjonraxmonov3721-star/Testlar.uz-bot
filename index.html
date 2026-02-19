@@ -73,9 +73,16 @@
         
         .btn-rules { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
 
-        /* Band qilingan jamoa stili */
         .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
+
+        /* --- WAITING ROOM STYLES --- */
+        .waiting-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--accent); padding: 20px; margin-bottom: 20px; }
+        .progress-bar { height: 8px; background: #161b2e; border-radius: 10px; margin: 15px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.5s; }
+        .player-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .player-list-item:last-child { border: none; }
+        .player-list-item img { width: 24px; height: 24px; object-fit: contain; }
 
         /* --- MODAL --- */
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
@@ -86,8 +93,6 @@
 
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
-
-        .lock-notice { background: rgba(225, 255, 0, 0.1); border: 1px solid var(--accent); padding: 15px; border-radius: 12px; color: var(--accent); font-size: 11px; text-align: center; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -137,7 +142,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
@@ -154,26 +159,24 @@
 
         let userData = null;
         let allTournaments = {};
-        let userTournamentId = null; // Foydalanuvchi qatnashayotgan turnir nomi
+        let userTournamentId = null; 
         const userId = tg.initDataUnsafe?.user?.id || "user_test";
 
         async function startAppInit() {
             try {
-                const [playerSnap, serverTimeSnap, tournamentsSnap] = await Promise.all([
+                // Foydalanuvchi va turnirlarni parallel olish
+                const [playerSnap, tournamentsSnap] = await Promise.all([
                     get(ref(db, 'players/' + userId)),
-                    get(ref(db, 'last_update')),
-                    get(ref(db, 'tournaments')) // Turnirlarni har doim oxirgi holatini tekshiramiz
+                    get(ref(db, 'tournaments'))
                 ]);
 
                 if (playerSnap.exists()) { userData = playerSnap.val(); }
                 allTournaments = tournamentsSnap.val() || {};
 
-                // Foydalanuvchi allaqachon biror jamoani band qilganmi?
+                // Qatnashayotgan turnirni aniqlash
                 Object.keys(allTournaments).forEach(tId => {
                     const teams = allTournaments[tId].teams || [];
-                    if (teams.some(team => team.player_id == userId)) {
-                        userTournamentId = tId;
-                    }
+                    if (teams.some(team => team.player_id == userId)) { userTournamentId = tId; }
                 });
 
                 checkUserAndHideSplash();
@@ -217,8 +220,13 @@
             const title = document.getElementById('page-title');
 
             if (page === 'tournaments') {
-                title.innerText = "Turnirlar";
-                renderTournaments();
+                if (userTournamentId) {
+                    title.innerText = "Turnir Holati";
+                    renderWaitingRoom();
+                } else {
+                    title.innerText = "Turnirlar";
+                    renderTournaments();
+                }
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
                 document.getElementById('content-area').innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
@@ -228,9 +236,7 @@
                     <div class="profile-card">
                         <div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div>
                         <h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2>
-                        <div style="margin-top:15px; color:var(--text-gray); font-size:12px;">
-                            ${userTournamentId ? 'QATNASHYAPTI: <b style="color:var(--accent)">' + userTournamentId + '</b>' : 'HECH QAYSI TURNIRDA EMAS'}
-                        </div>
+                        <p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p>
                     </div>`;
             } else if (page === 'settings') {
                 title.innerText = "Sozlamalar";
@@ -241,34 +247,52 @@
         function renderTournaments() {
             const content = document.getElementById('content-area');
             content.innerHTML = "";
-
-            if (userTournamentId) {
-                const notice = document.createElement('div');
-                notice.className = 'lock-notice';
-                notice.innerText = "Siz turnirda qatnashyapsiz. Boshqa turnirlar va jamoalar yopiq.";
-                content.appendChild(notice);
-            }
-
             const grid = document.createElement('div');
             grid.className = 'tournament-grid';
-            
             Object.keys(allTournaments).forEach(id => {
                 const tour = allTournaments[id];
                 const item = document.createElement('div');
                 item.className = 'tour-item';
-                
-                // Agar foydalanuvchi boshqa turnirda bo'lsa, buni yopamiz
-                if (userTournamentId && userTournamentId !== id) {
-                    item.style.opacity = "0.3";
-                    item.style.pointerEvents = "none";
-                }
-
                 item.onclick = () => showTeams(id);
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
                     <div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
+        }
+
+        // --- TURNIR TO'LISHINI KUTISH OYNASI ---
+        function renderWaitingRoom() {
+            const content = document.getElementById('content-area');
+            const tour = allTournaments[userTournamentId];
+            const teams = tour.teams || [];
+            const players = teams.filter(t => t.player_id);
+            const percent = (players.length / teams.length) * 100;
+
+            content.innerHTML = `
+                <div class="waiting-card">
+                    <div style="font-weight:bold; color:var(--accent); text-align:center;">${userTournamentId}</div>
+                    <div style="font-size:12px; text-align:center; margin-top:5px; color:var(--text-gray);">Turnir startini kuting...</div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:${percent}%"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
+                        <span>ISHTIROKCHILAR: ${players.length}/${teams.length}</span>
+                        <span>${Math.round(percent)}%</span>
+                    </div>
+                </div>
+                <div style="font-size:11px; color:var(--text-gray); margin-bottom:10px; font-weight:bold; text-transform:uppercase;">Ro'yxatdan o'tganlar:</div>
+                <div id="waiting-list"></div>
+            `;
+
+            const list = document.getElementById('waiting-list');
+            players.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'player-list-item';
+                div.innerHTML = `<img src="${p.flag}"> <div><b>${p.player_name}</b> <br> <span style="font-size:10px; color:var(--text-gray)">${p.name}</span></div>`;
+                list.appendChild(div);
+            });
         }
 
         window.showTeams = function(tourId) {
@@ -292,32 +316,16 @@
                 const isTaken = team.player_id && team.player_id !== "";
                 const item = document.createElement('div');
                 item.className = 'team-item' + (isTaken ? ' taken' : '');
-                
-                item.innerHTML = `
-                    ${isTaken ? '<div class="taken-label">BAND</div>' : ''}
+                item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}
                     <div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div>
-                    <div class="team-info">
-                        <div class="team-title">${team.name}</div>
-                        <div style="font-size:8px; color:var(--text-gray)">${isTaken ? team.player_name : 'BO\'SH'}</div>
-                    </div>`;
-                
-                // Agar foydalanuvchi hali turnirda bo'lmasa va jamoa bo'sh bo'lsa tanlashi mumkin
-                if (!isTaken && !userTournamentId) {
-                    item.onclick = () => window.selectTeam(tourId, index, team.name);
-                } else if (userTournamentId) {
-                    item.style.pointerEvents = "none"; // Jamoa tanlagan bo'lsa, boshqa tugmalar ishlamaydi
-                }
+                    <div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px; color:var(--text-gray)">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
+                if (!isTaken) item.onclick = () => selectTeam(tourId, index, team.name);
                 grid.appendChild(item);
             });
             content.appendChild(grid);
         }
 
         window.selectTeam = async function(tourId, index, teamName) {
-            if (userTournamentId) {
-                tg.showAlert("Siz allaqachon bitta jamoa tanlagansiz!");
-                return;
-            }
-
             tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
                 if (ok) {
                     try {
@@ -326,12 +334,10 @@
                             player_id: userId,
                             player_name: userData.firstName + ' ' + userData.lastName
                         });
-                        
-                        tg.showAlert("Tabriklaymiz! Jamoa band qilindi. Turnir to'lishini kuting.");
+                        localStorage.removeItem('last_update_time');
+                        tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
                         location.reload(); 
-                    } catch (e) {
-                        tg.showAlert("Xatolik!");
-                    }
+                    } catch (e) { tg.showAlert("Xatolik!"); }
                 }
             });
         }

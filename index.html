@@ -37,12 +37,9 @@
         .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- REGISTRATION SCREEN --- */
-        #registration-screen {
-            display: none; height: 100vh; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
-            background-color: var(--bg);
-        }
-        .reg-card { background-color: var(--card-bg); padding: 40px 30px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); width: 100%; max-width: 380px; z-index: 10; }
+        /* --- REGISTRATION --- */
+        #registration-screen { display: none; height: 100vh; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .reg-card { background-color: var(--card-bg); padding: 40px 30px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); width: 100%; max-width: 380px; }
         .reg-card h2 { margin: 0 0 30px 0; font-size: 20px; color: var(--accent); text-align: center; text-transform: uppercase; }
         .field { margin-bottom: 20px; }
         .field label { display: block; font-size: 11px; color: var(--text-gray); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
@@ -89,6 +86,8 @@
 
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
+
+        .lock-notice { background: rgba(225, 255, 0, 0.1); border: 1px solid var(--accent); padding: 15px; border-radius: 12px; color: var(--accent); font-size: 11px; text-align: center; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -155,31 +154,31 @@
 
         let userData = null;
         let allTournaments = {};
+        let userTournamentId = null; // Foydalanuvchi qatnashayotgan turnir nomi
         const userId = tg.initDataUnsafe?.user?.id || "user_test";
 
         async function startAppInit() {
             try {
-                const [playerSnap, serverTimeSnap] = await Promise.all([
+                const [playerSnap, serverTimeSnap, tournamentsSnap] = await Promise.all([
                     get(ref(db, 'players/' + userId)),
-                    get(ref(db, 'last_update'))
+                    get(ref(db, 'last_update')),
+                    get(ref(db, 'tournaments')) // Turnirlarni har doim oxirgi holatini tekshiramiz
                 ]);
-                if (playerSnap.exists()) { userData = playerSnap.val(); }
-                const serverUpdateTime = (serverTimeSnap.val() || 0).toString();
-                const localUpdateTime = localStorage.getItem('last_update_time') || "-1";
-                const localCache = localStorage.getItem('tournaments_cache');
 
-                if (localCache && localUpdateTime === serverUpdateTime) {
-                    allTournaments = JSON.parse(localCache);
-                } else {
-                    const tourSnapshot = await get(ref(db, 'tournaments'));
-                    allTournaments = tourSnapshot.val() || {};
-                    localStorage.setItem('tournaments_cache', JSON.stringify(allTournaments));
-                    localStorage.setItem('last_update_time', serverUpdateTime);
-                }
+                if (playerSnap.exists()) { userData = playerSnap.val(); }
+                allTournaments = tournamentsSnap.val() || {};
+
+                // Foydalanuvchi allaqachon biror jamoani band qilganmi?
+                Object.keys(allTournaments).forEach(tId => {
+                    const teams = allTournaments[tId].teams || [];
+                    if (teams.some(team => team.player_id == userId)) {
+                        userTournamentId = tId;
+                    }
+                });
+
                 checkUserAndHideSplash();
             } catch (e) {
-                const cache = localStorage.getItem('tournaments_cache');
-                if(cache) allTournaments = JSON.parse(cache);
+                console.error(e);
                 checkUserAndHideSplash();
             }
         }
@@ -229,7 +228,9 @@
                     <div class="profile-card">
                         <div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div>
                         <h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2>
-                        <p style="color:var(--text-gray); font-size:13px; margin:5px 0;">ID: ${userId}</p>
+                        <div style="margin-top:15px; color:var(--text-gray); font-size:12px;">
+                            ${userTournamentId ? 'QATNASHYAPTI: <b style="color:var(--accent)">' + userTournamentId + '</b>' : 'HECH QAYSI TURNIRDA EMAS'}
+                        </div>
                     </div>`;
             } else if (page === 'settings') {
                 title.innerText = "Sozlamalar";
@@ -240,12 +241,28 @@
         function renderTournaments() {
             const content = document.getElementById('content-area');
             content.innerHTML = "";
+
+            if (userTournamentId) {
+                const notice = document.createElement('div');
+                notice.className = 'lock-notice';
+                notice.innerText = "Siz turnirda qatnashyapsiz. Boshqa turnirlar va jamoalar yopiq.";
+                content.appendChild(notice);
+            }
+
             const grid = document.createElement('div');
             grid.className = 'tournament-grid';
+            
             Object.keys(allTournaments).forEach(id => {
                 const tour = allTournaments[id];
                 const item = document.createElement('div');
                 item.className = 'tour-item';
+                
+                // Agar foydalanuvchi boshqa turnirda bo'lsa, buni yopamiz
+                if (userTournamentId && userTournamentId !== id) {
+                    item.style.opacity = "0.3";
+                    item.style.pointerEvents = "none";
+                }
+
                 item.onclick = () => showTeams(id);
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
                     <div class="tour-info"><div class="tour-title">${id}</div></div>`;
@@ -284,16 +301,23 @@
                         <div style="font-size:8px; color:var(--text-gray)">${isTaken ? team.player_name : 'BO\'SH'}</div>
                     </div>`;
                 
-                if (!isTaken) {
-                    item.onclick = () => selectTeam(tourId, index, team.name);
+                // Agar foydalanuvchi hali turnirda bo'lmasa va jamoa bo'sh bo'lsa tanlashi mumkin
+                if (!isTaken && !userTournamentId) {
+                    item.onclick = () => window.selectTeam(tourId, index, team.name);
+                } else if (userTournamentId) {
+                    item.style.pointerEvents = "none"; // Jamoa tanlagan bo'lsa, boshqa tugmalar ishlamaydi
                 }
                 grid.appendChild(item);
             });
             content.appendChild(grid);
         }
 
-        // --- JAMOA TANLASH FUNKSIYASI ---
         window.selectTeam = async function(tourId, index, teamName) {
+            if (userTournamentId) {
+                tg.showAlert("Siz allaqachon bitta jamoa tanlagansiz!");
+                return;
+            }
+
             tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
                 if (ok) {
                     try {
@@ -303,9 +327,7 @@
                             player_name: userData.firstName + ' ' + userData.lastName
                         });
                         
-                        // Keshni vaqtinchalik buzish (yangilanish uchun)
-                        localStorage.removeItem('last_update_time');
-                        tg.showAlert("Tabriklaymiz! Jamoa band qilindi.");
+                        tg.showAlert("Tabriklaymiz! Jamoa band qilindi. Turnir to'lishini kuting.");
                         location.reload(); 
                     } catch (e) {
                         tg.showAlert("Xatolik!");

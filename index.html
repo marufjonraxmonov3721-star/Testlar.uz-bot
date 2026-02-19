@@ -66,9 +66,8 @@
         .match-team-box { flex: 1; font-size: 12px; font-weight: bold; }
         .match-team-box img { width: 45px; height: 30px; object-fit: contain; display: block; margin: 0 auto 5px; }
         .vs-label { background: var(--accent); color: #000; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; margin: 0 10px; }
-        
-        .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; cursor: pointer; position: relative; }
-        #preview-img { width: 100%; max-height: 200px; object-fit: contain; margin-top: 10px; display: none; border-radius: 8px; }
+        .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; cursor: pointer; position: relative; margin-top: 10px; }
+        #preview-img { width: 100%; max-height: 180px; object-fit: contain; margin-top: 10px; display: none; border-radius: 8px; }
         #ai-status { font-size: 11px; color: var(--accent); margin-top: 10px; display: none; }
 
         /* --- TOURNAMENT TABLE STYLES --- */
@@ -257,90 +256,17 @@
                     }
                 }
                 renderTournaments();
+
             } else if (page === 'matches') {
                 title.innerText = "Mening O'yinlarim";
-                renderMatches();
+                renderMyMatches();
             } else if (page === 'profile') {
                 title.innerText = "Profil";
                 content.innerHTML = `<div class="profile-card"><div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div><h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2><p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p></div>`;
             }
         }
 
-        // --- MENING O'YINLARIM VA AI NATIJA ---
-        function renderMatches() {
-            const content = document.getElementById('content-area');
-            if(!userTournamentId) return;
-
-            const tour = allTournaments[userTournamentId];
-            // Misol tariqasida birinchi raqibni aniqlaymiz
-            const opponent = (tour.teams || []).find(t => t.player_id && t.player_id != userId) || {name: "Kutilmoqda", flag: ""};
-
-            content.innerHTML = `
-                <div class="match-card">
-                    <div style="font-size:10px; color:var(--text-gray); margin-bottom:10px;">${userTournamentId} | GRUPPA A</div>
-                    <div class="match-vs">
-                        <div class="match-team-box"><img src="${userTeam.flag}"> ${userTeam.name}</div>
-                        <div class="vs-label">VS</div>
-                        <div class="match-team-box"><img src="${opponent.flag}"> ${opponent.name}</div>
-                    </div>
-                    <div class="upload-area" onclick="document.getElementById('file-input').click()">
-                        <div id="upload-label">Natija skrinshotini bu yerga yuklang</div>
-                        <img id="preview-img">
-                        <input type="file" id="file-input" hidden accept="image/*" onchange="processScreenshot(this)">
-                        <div id="ai-status">AI rasmni tahlil qilmoqda...</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        window.processScreenshot = async function(input) {
-            const file = input.files[0];
-            if(!file) return;
-
-            const preview = document.getElementById('preview-img');
-            const status = document.getElementById('ai-status');
-            const label = document.getElementById('upload-label');
-            
-            preview.src = URL.createObjectURL(file);
-            preview.style.display = 'block';
-            label.style.display = 'none';
-            status.style.display = 'block';
-
-            try {
-                // AI OCR Tahlili (Tesseract.js)
-                const result = await Tesseract.recognize(file, 'eng');
-                const text = result.data.text;
-                
-                // Rasmdan hisobni qidiramiz (Masalan: 2 - 1)
-                const scoreMatch = text.match(/(\d)\s*-\s*(\d)/);
-                
-                if(scoreMatch) {
-                    const home = scoreMatch[1];
-                    const away = scoreMatch[2];
-                    
-                    tg.showConfirm(`AI natijani aniqladi: ${home} - ${away}. To'g'rimi?`, async (ok) => {
-                        if(ok) {
-                            // Bazaga yuklagan odamning ma'lumotlari bilan saqlaymiz
-                            const matchRef = `results/${userTournamentId}/${userId}`;
-                            await set(ref(db, matchRef), {
-                                name: userData.firstName,
-                                surname: userData.lastName,
-                                team: userTeam.name,
-                                score: `${home}-${away}`,
-                                time: new Date().toISOString()
-                            });
-                            tg.showAlert("Natija qabul qilindi va AI tomonidan tasdiqlandi!");
-                            status.innerText = "Natija tasdiqlandi ✓";
-                        }
-                    });
-                } else {
-                    status.innerHTML = "<span style='color:red'>Natija aniqlanmadi. Qayta urinib ko'ring.</span>";
-                }
-            } catch (e) {
-                tg.showAlert("AI xatoligi yuz berdi.");
-            }
-        }
-
+        // --- TURNIR JADVALINI GENERATSIYA QILISH ---
         function renderTournamentTables(tourId) {
             const content = document.getElementById('content-area');
             const tour = allTournaments[tourId];
@@ -377,7 +303,7 @@
                     <div style="font-weight:bold; color:var(--accent); text-align:center;">Sizning Turniringiz: ${userTournamentId}</div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
                     <div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div>
-                    <div id="waiting-list" style="max-height: 100px; overflow-y: auto;">
+                    <div id="waiting-list" style="max-height: 150px; overflow-y: auto;">
                         ${players.map(p => `
                             <div class="player-list-item">
                                 <img src="${p.flag}"> <span><b>${p.player_name}</b> - ${p.name}</span>
@@ -386,6 +312,82 @@
                     </div>
                 </div>`;
             content.innerHTML += waitingHtml;
+        }
+
+        // --- MENING O'YINLARIM VA AI SKRINSHOT TAHLILI ---
+        function renderMyMatches() {
+            const content = document.getElementById('content-area');
+            if(!userTournamentId || !userTeam) return;
+
+            const tour = allTournaments[userTournamentId];
+            // Misol uchun raqibni guruhdagi boshqa o'yinchi deb olamiz
+            const opponent = (tour.teams || []).find(t => t.player_id && t.player_id != userId) || {name: "Kutilmoqda", flag: ""};
+
+            content.innerHTML = `
+                <div class="match-card">
+                    <div style="font-size:10px; color:var(--accent); margin-bottom:10px;">${userTournamentId}</div>
+                    <div class="match-vs">
+                        <div class="match-team-box"><img src="${userTeam.flag}"> ${userTeam.name}</div>
+                        <div class="vs-label">VS</div>
+                        <div class="match-team-box"><img src="${opponent.flag}"> ${opponent.name}</div>
+                    </div>
+                    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                        <div id="upload-label">Natija skrinshotini yuklang</div>
+                        <img id="preview-img">
+                        <input type="file" id="file-input" hidden accept="image/*" onchange="processScreenshot(this)">
+                        <div id="ai-status">AI tahlil qilmoqda...</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.processScreenshot = async function(input) {
+            const file = input.files[0];
+            if(!file) return;
+
+            const preview = document.getElementById('preview-img');
+            const status = document.getElementById('ai-status');
+            const label = document.getElementById('upload-label');
+            
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+            label.style.display = 'none';
+            status.style.display = 'block';
+
+            try {
+                // AI Tahlil boshlandi
+                const result = await Tesseract.recognize(file, 'eng+uzb');
+                const text = result.data.text;
+                
+                // O'yinchini aniqlash (Ism Familiya bo'yicha)
+                const isCorrectPlayer = text.includes(userData.firstName) || text.includes(userData.lastName);
+                
+                // Hisobni aniqlash (1 0 yoki 2-1 formatida)
+                const scoreMatch = text.match(/(\d)\s*[-:\s]\s*(\d)/);
+                
+                if (scoreMatch) {
+                    const home = scoreMatch[1];
+                    const away = scoreMatch[2];
+                    
+                    tg.showConfirm(`Natija aniqlandi: ${home} - ${away}. Tasdiqlaysizmi?`, async (ok) => {
+                        if(ok) {
+                            const resultPath = `results/${userTournamentId}/${userId}`;
+                            await set(ref(db, resultPath), {
+                                player: userData.firstName + " " + userData.lastName,
+                                team: userTeam.name,
+                                score: home + "-" + away,
+                                timestamp: new Date().toISOString()
+                            });
+                            tg.showAlert("Rahmat! Natija bazaga muvaffaqiyatli saqlandi.");
+                            status.innerText = "Natija tasdiqlandi ✓";
+                        }
+                    });
+                } else {
+                    status.innerHTML = "<span style='color:red'>Natija o'qilmadi. Qayta urinib ko'ring.</span>";
+                }
+            } catch (e) {
+                tg.showAlert("Xatolik: Rasmni tahlil qilib bo'lmadi.");
+            }
         }
 
         function renderTournaments() {

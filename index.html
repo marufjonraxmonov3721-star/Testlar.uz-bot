@@ -37,7 +37,7 @@
         .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- REGISTRATION --- */
+        /* --- REGISTRATION SCREEN --- */
         #registration-screen { display: none; height: 100vh; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .reg-card { background-color: var(--card-bg); padding: 40px 30px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); width: 100%; max-width: 380px; }
         .reg-card h2 { margin: 0 0 30px 0; font-size: 20px; color: var(--accent); text-align: center; text-transform: uppercase; }
@@ -60,7 +60,7 @@
         .nav-item.active { color: var(--accent); }
         .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
 
-        /* --- STYLES --- */
+        /* --- GRID STYLES --- */
         .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; }
         .tour-item:active, .team-item:active { transform: scale(0.96); }
@@ -81,7 +81,6 @@
         .progress-bar { height: 8px; background: #161b2e; border-radius: 10px; margin: 15px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.5s; }
         .player-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        .player-list-item:last-child { border: none; }
         .player-list-item img { width: 24px; height: 24px; object-fit: contain; }
 
         /* --- MODAL --- */
@@ -142,7 +141,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
@@ -164,26 +163,37 @@
 
         async function startAppInit() {
             try {
-                // Foydalanuvchi va turnirlarni parallel olish
-                const [playerSnap, tournamentsSnap] = await Promise.all([
+                const [playerSnap, serverTimeSnap, tournamentsSnap] = await Promise.all([
                     get(ref(db, 'players/' + userId)),
+                    get(ref(db, 'last_update')),
                     get(ref(db, 'tournaments'))
                 ]);
 
                 if (playerSnap.exists()) { userData = playerSnap.val(); }
                 allTournaments = tournamentsSnap.val() || {};
 
-                // Qatnashayotgan turnirni aniqlash
-                Object.keys(allTournaments).forEach(tId => {
-                    const teams = allTournaments[tId].teams || [];
-                    if (teams.some(team => team.player_id == userId)) { userTournamentId = tId; }
-                });
+                updateUserState(); // Foydalanuvchi qatnashayotganini tekshirish
+
+                const serverUpdateTime = (serverTimeSnap.val() || 0).toString();
+                const localUpdateTime = localStorage.getItem('last_update_time') || "-1";
+                if (localUpdateTime !== serverUpdateTime) {
+                    localStorage.setItem('tournaments_cache', JSON.stringify(allTournaments));
+                    localStorage.setItem('last_update_time', serverUpdateTime);
+                }
 
                 checkUserAndHideSplash();
             } catch (e) {
                 console.error(e);
                 checkUserAndHideSplash();
             }
+        }
+
+        function updateUserState() {
+            userTournamentId = null;
+            Object.keys(allTournaments).forEach(tId => {
+                const teams = allTournaments[tId].teams || [];
+                if (teams.some(team => team.player_id == userId)) { userTournamentId = tId; }
+            });
         }
 
         function checkUserAndHideSplash() {
@@ -202,7 +212,7 @@
             const bDate = document.getElementById('birth-date').value;
             if (!fName || !lName || !bDate) { tg.showAlert("Iltimos, barcha maydonlarni to'ldiring!"); return; }
             userData = { firstName: fName, lastName: lName, birthDate: bDate, registeredAt: new Date().toISOString() };
-            set(ref(db, 'players/' + userId), userData);
+            await set(ref(db, 'players/' + userId), userData);
             document.getElementById('registration-screen').style.display = 'none';
             showMainApp();
         }
@@ -216,8 +226,10 @@
         window.switchPage = function(page, element) {
             document.getElementById('back-btn').style.display = 'none';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+            if (element) element.classList.add('active');
+            
             const title = document.getElementById('page-title');
+            const content = document.getElementById('content-area');
 
             if (page === 'tournaments') {
                 if (userTournamentId) {
@@ -229,18 +241,13 @@
                 }
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
-                document.getElementById('content-area').innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
             } else if (page === 'profile') {
                 title.innerText = "Profil";
-                document.getElementById('content-area').innerHTML = `
-                    <div class="profile-card">
-                        <div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div>
-                        <h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2>
-                        <p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p>
-                    </div>`;
+                content.innerHTML = `<div class="profile-card"><div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div><h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2><p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p></div>`;
             } else if (page === 'settings') {
                 title.innerText = "Sozlamalar";
-                document.getElementById('content-area').innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Tez kunda...</div>';
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Tez kunda...</div>';
             }
         }
 
@@ -254,14 +261,12 @@
                 const item = document.createElement('div');
                 item.className = 'tour-item';
                 item.onclick = () => showTeams(id);
-                item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
-                    <div class="tour-info"><div class="tour-title">${id}</div></div>`;
+                item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
         }
 
-        // --- TURNIR TO'LISHINI KUTISH OYNASI ---
         function renderWaitingRoom() {
             const content = document.getElementById('content-area');
             const tour = allTournaments[userTournamentId];
@@ -272,20 +277,14 @@
             content.innerHTML = `
                 <div class="waiting-card">
                     <div style="font-weight:bold; color:var(--accent); text-align:center;">${userTournamentId}</div>
-                    <div style="font-size:12px; text-align:center; margin-top:5px; color:var(--text-gray);">Turnir startini kuting...</div>
-                    
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width:${percent}%"></div>
-                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
                         <span>ISHTIROKCHILAR: ${players.length}/${teams.length}</span>
                         <span>${Math.round(percent)}%</span>
                     </div>
                 </div>
-                <div style="font-size:11px; color:var(--text-gray); margin-bottom:10px; font-weight:bold; text-transform:uppercase;">Ro'yxatdan o'tganlar:</div>
                 <div id="waiting-list"></div>
             `;
-
             const list = document.getElementById('waiting-list');
             players.forEach(p => {
                 const div = document.createElement('div');
@@ -330,13 +329,16 @@
                 if (ok) {
                     try {
                         const path = `tournaments/${tourId}/teams/${index}`;
-                        await update(ref(db, path), {
-                            player_id: userId,
-                            player_name: userData.firstName + ' ' + userData.lastName
-                        });
-                        localStorage.removeItem('last_update_time');
+                        const updateData = { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName };
+                        await update(ref(db, path), updateData);
+                        
+                        // Sahifani yangilamasdan holatni o'zgartiramiz
+                        allTournaments[tourId].teams[index].player_id = userId;
+                        allTournaments[tourId].teams[index].player_name = updateData.player_name;
+                        userTournamentId = tourId;
+                        
                         tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
-                        location.reload(); 
+                        switchPage('tournaments', document.getElementById('nav-tournaments'));
                     } catch (e) { tg.showAlert("Xatolik!"); }
                 }
             });

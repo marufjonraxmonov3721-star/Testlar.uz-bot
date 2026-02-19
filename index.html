@@ -31,10 +31,10 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--konami-red);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.3s ease-out; /* Tezroq o'chish */
         }
         .konami-text { font-size: 28px; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 30px; text-align: center; }
-        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* --- REGISTRATION --- */
@@ -47,7 +47,7 @@
         .btn-submit { width: 100%; padding: 18px; background-color: var(--accent); color: #000; border: none; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
         /* --- MAIN APP --- */
-        #main-app { display: none; flex-direction: column; height: 100vh; }
+        #main-app { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.3s ease-in; }
         header { padding: 15px; text-align: center; background: rgba(13, 17, 29, 0.9); border-bottom: 1px solid var(--border); position: relative; }
         header h1 { margin: 0; font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
         .btn-back { position: absolute; left: 15px; top: 15px; background: none; border: 1px solid var(--accent); color: var(--accent); border-radius: 5px; padding: 5px 10px; font-size: 10px; cursor: pointer; display: none; }
@@ -142,7 +142,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
@@ -157,26 +157,58 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let userData = null;
+        let userData = JSON.parse(localStorage.getItem('user_cache')); // Cache'dan olish
         let allTournaments = {};
         let userTournamentId = null; 
         const userId = tg.initDataUnsafe?.user?.id || "user_test";
 
         async function startAppInit() {
+            // 1. Splashni darhol o'chirishga tayyorlash (agar user keshda bo'lsa)
+            if (userData) {
+                hideSplash();
+                showMainApp();
+            }
+
             try {
-                const [playerSnap, tournamentsSnap] = await Promise.all([
-                    get(ref(db, 'players/' + userId)),
-                    get(ref(db, 'tournaments'))
-                ]);
+                // 2. Bazadan ma'lumotlarni fonda olish
+                const playerRef = ref(db, 'players/' + userId);
+                const tournamentRef = ref(db, 'tournaments');
 
-                if (playerSnap.exists()) { userData = playerSnap.val(); }
-                allTournaments = tournamentsSnap.val() || {};
+                // Real-time yangilanishni boshlash (Loading ko'rsatmasdan)
+                onValue(tournamentRef, (snapshot) => {
+                    allTournaments = snapshot.val() || {};
+                    updateUserState();
+                    // Faqat joriy sahifa turnirlar bo'lsa yangilaymiz
+                    if (document.getElementById('main-app').style.display === 'flex' && document.getElementById('page-title').innerText === "Turnirlar") {
+                        renderTournaments();
+                    }
+                });
 
-                updateUserState();
-                checkUserAndHideSplash();
+                const playerSnap = await get(playerRef);
+                if (playerSnap.exists()) {
+                    userData = playerSnap.val();
+                    localStorage.setItem('user_cache', JSON.stringify(userData)); // Keshni yangilash
+                }
+
+                if (!userData) {
+                    hideSplash();
+                    document.getElementById('registration-screen').style.display = 'flex';
+                } else {
+                    hideSplash();
+                    showMainApp();
+                }
+
             } catch (e) {
-                console.error(e);
-                checkUserAndHideSplash();
+                console.error("Yuklashda xatolik:", e);
+                hideSplash();
+            }
+        }
+
+        function hideSplash() {
+            const splash = document.getElementById('splash-screen');
+            if (splash.style.display !== 'none') {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 300);
             }
         }
 
@@ -188,30 +220,24 @@
             });
         }
 
-        function checkUserAndHideSplash() {
-            const splash = document.getElementById('splash-screen');
-            splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.display = 'none';
-                if (userData) { showMainApp(); } 
-                else { document.getElementById('registration-screen').style.display = 'flex'; }
-            }, 500);
-        }
-
         window.saveData = async function() {
             const fName = document.getElementById('first-name').value.trim();
             const lName = document.getElementById('last-name').value.trim();
             const bDate = document.getElementById('birth-date').value;
             if (!fName || !lName || !bDate) { tg.showAlert("Iltimos, barcha maydonlarni to'ldiring!"); return; }
+            
             userData = { firstName: fName, lastName: lName, birthDate: bDate, registeredAt: new Date().toISOString() };
-            set(ref(db, 'players/' + userId), userData);
+            localStorage.setItem('user_cache', JSON.stringify(userData));
+            
+            await set(ref(db, 'players/' + userId), userData);
             document.getElementById('registration-screen').style.display = 'none';
             showMainApp();
         }
 
         function showMainApp() {
-            document.getElementById('main-app').style.display = 'flex';
-            setTimeout(() => document.getElementById('main-app').style.opacity = '1', 50);
+            const main = document.getElementById('main-app');
+            main.style.display = 'flex';
+            setTimeout(() => main.style.opacity = '1', 50);
             switchPage('tournaments', document.getElementById('nav-tournaments'));
         }
 
@@ -226,11 +252,10 @@
             if (page === 'tournaments') {
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
-                    const players = (tour.teams || []).filter(t => t.player_id);
-                    // Turnir to'lganini tekshirish (rasmdagi sonlarga qarab)
-                    const totalNeeded = tour.teams ? tour.teams.length : 0;
-                    
-                    if (players.length >= totalNeeded && totalNeeded > 0) {
+                    if (!tour) { renderTournaments(); return; }
+                    const teams = tour.teams || [];
+                    const players = teams.filter(t => t.player_id);
+                    if (players.length >= teams.length && teams.length > 0) {
                         title.innerText = "Guruh Jadvali";
                         renderTournamentTables(userTournamentId);
                     } else {
@@ -253,30 +278,23 @@
             }
         }
 
-        // --- TURNIR JADVALINI GENERATSIYA QILISH ---
         function renderTournamentTables(tourId) {
             const content = document.getElementById('content-area');
             content.innerHTML = "";
             const tour = allTournaments[tourId];
+            if(!tour) return;
             const teams = tour.teams || [];
-            
-            // Rasmdagi qoidalarga asosan guruhlar sonini aniqlash
             let teamsPerGroup = 4;
             let groupCount = Math.ceil(teams.length / teamsPerGroup);
-            
-            // Maxsus holat: O'zbekiston Viloyatlar Kubogi (12 ta jamoa -> 3 ta guruh)
             if (tourId.includes("O'zbekiston Viloyatlar Kubogi")) groupCount = 3;
 
             for (let i = 0; i < groupCount; i++) {
-                const groupName = String.fromCharCode(65 + i); // A, B, C...
+                const groupName = String.fromCharCode(65 + i);
                 const groupTeams = teams.slice(i * teamsPerGroup, (i + 1) * teamsPerGroup);
-                
                 const groupHtml = `
                     <div class="group-card">
                         <div class="group-header">${groupName} GURUHI</div>
-                        <div class="table-row table-header">
-                            <span>#</span><span>JAMOA</span><span>O'</span><span>O</span>
-                        </div>
+                        <div class="table-row table-header"><span>#</span><span>JAMOA</span><span>O'</span><span>O</span></div>
                         ${groupTeams.map((t, idx) => `
                             <div class="table-row">
                                 <span>${idx + 1}</span>
@@ -288,12 +306,9 @@
                                 <span style="font-weight:bold; color:var(--accent)">0</span>
                             </div>
                         `).join('')}
-                    </div>
-                `;
+                    </div>`;
                 content.innerHTML += groupHtml;
             }
-            
-            content.innerHTML += `<div style="text-align:center; padding:10px; font-size:10px; color:var(--text-gray);">Pley-off bosqichi guruh o'yinlaridan so'ng ochiladi.</div>`;
         }
 
         function renderTournaments() {
@@ -315,6 +330,7 @@
         function renderWaitingRoom() {
             const content = document.getElementById('content-area');
             const tour = allTournaments[userTournamentId];
+            if(!tour) return;
             const teams = tour.teams || [];
             const players = teams.filter(t => t.player_id);
             const percent = (players.length / teams.length) * 100;
@@ -388,10 +404,11 @@
                         const path = `tournaments/${tourId}/teams/${index}`;
                         const updateData = { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName };
                         await update(ref(db, path), updateData);
+                        tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
+                        // Local update
                         allTournaments[tourId].teams[index].player_id = userId;
                         allTournaments[tourId].teams[index].player_name = updateData.player_name;
                         userTournamentId = tourId;
-                        tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
                         switchPage('tournaments', document.getElementById('nav-tournaments'));
                     } catch (e) { tg.showAlert("Xatolik!"); }
                 }

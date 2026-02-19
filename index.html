@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>eFootball Tournament AI</title>
+    <title>eFootball Tournament</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
@@ -60,38 +60,42 @@
         .nav-item.active { color: var(--accent); }
         .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
 
-        /* --- MATCH STYLES --- */
+        /* --- MATCH CARD STYLES --- */
         .match-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; margin-bottom: 15px; text-align: center; }
         .match-vs { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
         .match-team-box { flex: 1; font-size: 12px; font-weight: bold; }
-        .match-team-box img { width: 40px; height: 25px; object-fit: contain; display: block; margin: 0 auto 5px; }
-        .vs-circle { background: var(--accent); color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; }
+        .match-team-box img { width: 45px; height: 30px; object-fit: contain; display: block; margin: 0 auto 5px; }
+        .vs-label { background: var(--accent); color: #000; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; margin: 0 10px; }
+        
+        .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; cursor: pointer; position: relative; }
+        #preview-img { width: 100%; max-height: 200px; object-fit: contain; margin-top: 10px; display: none; border-radius: 8px; }
+        #ai-status { font-size: 11px; color: var(--accent); margin-top: 10px; display: none; }
 
-        .upload-section { border: 2px dashed var(--border); border-radius: 15px; padding: 20px; margin-top: 15px; position: relative; }
-        .upload-section.processing { opacity: 0.5; pointer-events: none; }
-        #ocr-status { font-size: 10px; color: var(--accent); margin-top: 10px; display: none; }
-        #preview-img { width: 100%; max-height: 150px; object-fit: contain; margin-top: 10px; border-radius: 8px; display: none; }
-
-        .btn-upload { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; width: 100%; margin-top: 10px; }
-
-        /* --- TABLE STYLES --- */
+        /* --- TOURNAMENT TABLE STYLES --- */
         .group-card { background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; overflow: hidden; }
         .group-header { background: #161b2e; padding: 10px; color: var(--accent); font-weight: bold; text-align: center; font-size: 12px; }
         .table-row { display: grid; grid-template-columns: 30px 1fr 30px 30px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; }
+        .table-row:last-child { border: none; }
+        .table-header { font-size: 10px; color: var(--text-gray); font-weight: bold; }
         .team-flag-mini { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
 
         .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; }
+        .tour-item:active, .team-item:active { transform: scale(0.96); }
         .tour-img-container, .team-img-container { width: 100%; height: 110px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; }
         .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
-        .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; }
+        .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .full-notice { background: var(--konami-red); color: white; padding: 15px; border-radius: 12px; text-align: center; font-weight: 900; font-size: 14px; margin-bottom: 20px; }
+        .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
+
         .waiting-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--accent); padding: 20px; margin-bottom: 20px; }
         .progress-bar { height: 8px; background: #161b2e; border-radius: 10px; margin: 15px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.5s; }
-        
+        .player-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .player-list-item img { width: 24px; height: 24px; object-fit: contain; }
+
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
         .modal-header { color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 15px; text-align: center; }
@@ -100,6 +104,7 @@
 
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
+
         .tour-locked { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
     </style>
 </head>
@@ -123,17 +128,17 @@
     <div id="main-app">
         <header>
             <button class="btn-back" id="back-btn" onclick="goBack()">ORQAGA</button>
-            <h1 id="page-title">Mening O'yinlarim</h1>
+            <h1 id="page-title">Turnirlar</h1>
         </header>
         <div id="content-area"></div>
         <nav>
-            <div class="nav-item active" id="nav-matches" onclick="switchPage('matches', this)">
+            <div class="nav-item active" id="nav-tournaments" onclick="switchPage('tournaments', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/></svg>
+                <span>Turnirlar</span>
+            </div>
+            <div class="nav-item" id="nav-matches" style="display:none;" onclick="switchPage('matches', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/></svg>
                 <span>O'yinlar</span>
-            </div>
-            <div class="nav-item" id="nav-tournaments" onclick="switchPage('tournaments', this)">
-                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19,5H5C3.89,5 3,5.89 3,7V17A2,2 0 0,0 5,19H19A2,2 0 0,0 21,17V7A2,2 0 0,0 19,5M19,17H5V7H19V17Z"/></svg>
-                <span>Turnirlar</span>
             </div>
             <div class="nav-item" id="nav-profile" onclick="switchPage('profile', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>
@@ -183,7 +188,7 @@
                 if (playerSnap.exists()) { userData = playerSnap.val(); }
                 allTournaments = tournamentsSnap.val() || {};
 
-                findUserTournament();
+                updateUserState();
                 checkUserAndHideSplash();
             } catch (e) {
                 console.error(e);
@@ -191,7 +196,7 @@
             }
         }
 
-        function findUserTournament() {
+        function updateUserState() {
             userTournamentId = null;
             userTeam = null;
             Object.keys(allTournaments).forEach(tId => {
@@ -199,6 +204,7 @@
                 if (team) { 
                     userTournamentId = tId; 
                     userTeam = team;
+                    document.getElementById('nav-matches').style.display = 'flex';
                 }
             });
         }
@@ -227,7 +233,7 @@
         function showMainApp() {
             document.getElementById('main-app').style.display = 'flex';
             setTimeout(() => document.getElementById('main-app').style.opacity = '1', 50);
-            switchPage(userTournamentId ? 'matches' : 'tournaments', document.getElementById(userTournamentId ? 'nav-matches' : 'nav-tournaments'));
+            switchPage('tournaments', document.getElementById('nav-tournaments'));
         }
 
         window.switchPage = function(page, element) {
@@ -239,112 +245,100 @@
             const content = document.getElementById('content-area');
             content.innerHTML = "";
 
-            if (page === 'matches') {
-                title.innerText = "Mening O'yinlarim";
-                renderMyMatches();
-            } else if (page === 'tournaments') {
+            if (page === 'tournaments') {
                 title.innerText = "Turnirlar";
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
                     const players = (tour.teams || []).filter(t => t.player_id);
-                    if (players.length >= (tour.teams?.length || 0)) {
+                    if (players.length >= (tour.teams ? tour.teams.length : 0)) {
                         renderTournamentTables(userTournamentId);
                     } else {
                         renderWaitingRoom();
                     }
                 }
                 renderTournaments();
+            } else if (page === 'matches') {
+                title.innerText = "Mening O'yinlarim";
+                renderMatches();
             } else if (page === 'profile') {
                 title.innerText = "Profil";
                 content.innerHTML = `<div class="profile-card"><div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div><h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2><p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p></div>`;
             }
         }
 
-        // --- MENING O'YINLARIM VA AI SKRINSHOT ---
-        function renderMyMatches() {
+        // --- MENING O'YINLARIM VA AI NATIJA ---
+        function renderMatches() {
             const content = document.getElementById('content-area');
-            if (!userTournamentId) {
-                content.innerHTML = `<div style="text-align:center; padding-top:50px; color:var(--text-gray)">Siz hali hech qanday turnirda ishtirok etmayapsiz.</div>`;
-                return;
-            }
+            if(!userTournamentId) return;
 
             const tour = allTournaments[userTournamentId];
-            // Oddiy mantiq: guruhdagi boshqa o'yinchi raqib sifatida ko'rsatiladi
-            const opponent = (tour.teams || []).find(t => t.player_id && t.player_id != userId) || {name: "Raqib kutilmoqda", flag: ""};
+            // Misol tariqasida birinchi raqibni aniqlaymiz
+            const opponent = (tour.teams || []).find(t => t.player_id && t.player_id != userId) || {name: "Kutilmoqda", flag: ""};
 
             content.innerHTML = `
                 <div class="match-card">
-                    <div style="font-size:10px; color:var(--accent); margin-bottom:10px;">${userTournamentId}</div>
+                    <div style="font-size:10px; color:var(--text-gray); margin-bottom:10px;">${userTournamentId} | GRUPPA A</div>
                     <div class="match-vs">
                         <div class="match-team-box"><img src="${userTeam.flag}"> ${userTeam.name}</div>
-                        <div class="vs-circle">VS</div>
+                        <div class="vs-label">VS</div>
                         <div class="match-team-box"><img src="${opponent.flag}"> ${opponent.name}</div>
                     </div>
-                    <div class="upload-section" id="upload-box">
-                        <span style="font-size:11px; color:var(--text-gray)">O'yin tugagach natija skrinshotini yuklang</span>
-                        <input type="file" id="match-screenshot" hidden accept="image/*" onchange="handleFile(this)">
-                        <button class="btn-upload" onclick="document.getElementById('match-screenshot').click()">SKRINSHOT TANLASH</button>
+                    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                        <div id="upload-label">Natija skrinshotini bu yerga yuklang</div>
                         <img id="preview-img">
-                        <div id="ocr-status">AI rasmni tahlil qilmoqda...</div>
+                        <input type="file" id="file-input" hidden accept="image/*" onchange="processScreenshot(this)">
+                        <div id="ai-status">AI rasmni tahlil qilmoqda...</div>
                     </div>
-                    <button class="btn-upload" style="background:#fff; margin-top:20px; display:none" id="submit-result-btn" onclick="submitAIResult()">NATIJANI TASDIQLASH</button>
                 </div>
             `;
         }
 
-        let detectedScore = null;
-
-        window.handleFile = async function(input) {
+        window.processScreenshot = async function(input) {
             const file = input.files[0];
-            if (!file) return;
+            if(!file) return;
 
             const preview = document.getElementById('preview-img');
-            const status = document.getElementById('ocr-status');
-            const box = document.getElementById('upload-box');
+            const status = document.getElementById('ai-status');
+            const label = document.getElementById('upload-label');
             
             preview.src = URL.createObjectURL(file);
             preview.style.display = 'block';
+            label.style.display = 'none';
             status.style.display = 'block';
-            box.classList.add('processing');
 
             try {
-                // AI OCR Tahlili
+                // AI OCR Tahlili (Tesseract.js)
                 const result = await Tesseract.recognize(file, 'eng');
                 const text = result.data.text;
                 
-                // Rasmdan golni aniqlash (Masalan: "Full Time 2 - 1" yoki shunchaki "2 - 1")
+                // Rasmdan hisobni qidiramiz (Masalan: 2 - 1)
                 const scoreMatch = text.match(/(\d)\s*-\s*(\d)/);
                 
-                if (scoreMatch) {
-                    detectedScore = { home: scoreMatch[1], away: scoreMatch[2] };
-                    status.innerHTML = `AI aniqladi: <b style="color:white">${detectedScore.home} - ${detectedScore.away}</b>`;
-                    document.getElementById('submit-result-btn').style.display = 'block';
+                if(scoreMatch) {
+                    const home = scoreMatch[1];
+                    const away = scoreMatch[2];
+                    
+                    tg.showConfirm(`AI natijani aniqladi: ${home} - ${away}. To'g'rimi?`, async (ok) => {
+                        if(ok) {
+                            // Bazaga yuklagan odamning ma'lumotlari bilan saqlaymiz
+                            const matchRef = `results/${userTournamentId}/${userId}`;
+                            await set(ref(db, matchRef), {
+                                name: userData.firstName,
+                                surname: userData.lastName,
+                                team: userTeam.name,
+                                score: `${home}-${away}`,
+                                time: new Date().toISOString()
+                            });
+                            tg.showAlert("Natija qabul qilindi va AI tomonidan tasdiqlandi!");
+                            status.innerText = "Natija tasdiqlandi ✓";
+                        }
+                    });
                 } else {
-                    status.innerHTML = `<span style="color:var(--konami-red)">AI natijani aniqlay olmadi. Iltimos, aniqroq rasm yuklang.</span>`;
+                    status.innerHTML = "<span style='color:red'>Natija aniqlanmadi. Qayta urinib ko'ring.</span>";
                 }
             } catch (e) {
-                tg.showAlert("Xatolik: Rasmni o'qib bo'lmadi.");
-            } finally {
-                box.classList.remove('processing');
+                tg.showAlert("AI xatoligi yuz berdi.");
             }
-        }
-
-        window.submitAIResult = async function() {
-            if (!detectedScore) return;
-            
-            tg.showConfirm(`Natija: ${detectedScore.home} - ${detectedScore.away}. Ushbu natija bazaga yozilsinmi?`, async (ok) => {
-                if (ok) {
-                    const resultPath = `results/${userTournamentId}/${userId}`;
-                    await set(ref(db, resultPath), {
-                        userName: userData.firstName + " " + userData.lastName,
-                        team: userTeam.name,
-                        score: detectedScore.home + "-" + detectedScore.away,
-                        time: new Date().toISOString()
-                    });
-                    tg.showAlert("Natija qabul qilindi!");
-                    renderMyMatches();
-                }
-            });
         }
 
         function renderTournamentTables(tourId) {
@@ -354,7 +348,7 @@
             let groupSize = 4;
             let groupCount = Math.ceil(teams.length / groupSize);
 
-            content.innerHTML += `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Turnir Jadvali</h3>`;
+            content.innerHTML += `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Sizning Guruh Jadvalingiz</h3>`;
             for (let i = 0; i < groupCount; i++) {
                 const groupName = String.fromCharCode(65 + i);
                 const groupTeams = teams.slice(i * groupSize, (i + 1) * groupSize);
@@ -378,15 +372,20 @@
             const players = (tour.teams || []).filter(t => t.player_id);
             const percent = (players.length / tour.teams.length) * 100;
 
-            content.innerHTML += `
+            const waitingHtml = `
                 <div class="waiting-card">
-                    <div style="font-weight:bold; color:var(--accent); text-align:center;">Turniringiz: ${userTournamentId}</div>
+                    <div style="font-weight:bold; color:var(--accent); text-align:center;">Sizning Turniringiz: ${userTournamentId}</div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
                     <div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div>
-                    <div style="max-height: 100px; overflow-y: auto;">
-                        ${players.map(p => `<div class="player-list-item"><img src="${p.flag}"> <span><b>${p.player_name}</b> - ${p.name}</span></div>`).join('')}
+                    <div id="waiting-list" style="max-height: 100px; overflow-y: auto;">
+                        ${players.map(p => `
+                            <div class="player-list-item">
+                                <img src="${p.flag}"> <span><b>${p.player_name}</b> - ${p.name}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>`;
+            content.innerHTML += waitingHtml;
         }
 
         function renderTournaments() {
@@ -400,6 +399,7 @@
                 const item = document.createElement('div');
                 const isLocked = userTournamentId && userTournamentId !== id;
                 item.className = 'tour-item' + (isLocked ? ' tour-locked' : '');
+                
                 item.onclick = () => { if (!isLocked) showTournamentRules(id); };
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
@@ -409,7 +409,7 @@
 
         window.showTournamentRules = function(tourId) {
             const tournament = allTournaments[tourId];
-            document.getElementById('modal-text').innerText = tournament.rules || "Qoidalar yo'q.";
+            document.getElementById('modal-text').innerText = tournament.rules || "Ushbu turnir uchun qoidalar belgilanmagan.";
             const confirmBtn = document.getElementById('modal-confirm-btn');
             confirmBtn.onclick = () => { closeRules(); showTeams(tourId); };
             document.getElementById('rules-modal').style.display = 'flex';
@@ -420,10 +420,23 @@
             const teams = tournament.teams || [];
             const players = teams.filter(t => t.player_id);
             const isFull = players.length >= teams.length;
+            
             document.getElementById('page-title').innerText = tourId;
             document.getElementById('back-btn').style.display = 'block';
+            
             const content = document.getElementById('content-area');
-            content.innerHTML = isFull ? `<div class="full-notice">TURNIR TO'LGAN! 🔴</div>` : "";
+            content.innerHTML = isFull ? `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>` : "";
+            
+            const rulesBtn = document.createElement('button');
+            rulesBtn.className = 'btn-rules';
+            rulesBtn.innerText = "Qoidalar bilan tanishish";
+            rulesBtn.onclick = () => {
+                document.getElementById('modal-text').innerText = tournament.rules;
+                document.getElementById('modal-confirm-btn').onclick = closeRules;
+                document.getElementById('rules-modal').style.display = 'flex';
+            };
+            content.appendChild(rulesBtn);
+
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
             teams.forEach((team, index) => {
@@ -433,7 +446,10 @@
                 item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}
                     <div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div>
                     <div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
-                if (!isTaken && !isFull && !userTournamentId) item.onclick = () => selectTeam(tourId, index, team.name);
+                
+                if (!isTaken && !isFull && !userTournamentId) {
+                    item.onclick = () => selectTeam(tourId, index, team.name);
+                }
                 grid.appendChild(item);
             });
             content.appendChild(grid);

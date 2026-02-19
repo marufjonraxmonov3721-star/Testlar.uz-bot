@@ -37,7 +37,7 @@
         .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- REGISTRATION SCREEN --- */
+        /* --- REGISTRATION --- */
         #registration-screen { display: none; height: 100vh; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .reg-card { background-color: var(--card-bg); padding: 40px 30px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); width: 100%; max-width: 380px; }
         .reg-card h2 { margin: 0 0 30px 0; font-size: 20px; color: var(--accent); text-align: center; text-transform: uppercase; }
@@ -54,41 +54,37 @@
         
         #content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; }
 
-        /* --- NAVIGATION --- */
         nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-gray); text-decoration: none; font-size: 9px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-gray); text-decoration: none; font-size: 9px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .nav-item.active { color: var(--accent); }
         .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
 
-        /* --- GRID STYLES --- */
         .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; }
         .tour-item:active, .team-item:active { transform: scale(0.96); }
-        
         .tour-img-container, .team-img-container { width: 100%; height: 110px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; }
         .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
         .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .btn-rules { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
+        .btn-rules { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; }
 
         .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
 
-        /* --- WAITING ROOM STYLES --- */
+        .full-notice { background: var(--konami-red); color: white; padding: 15px; border-radius: 12px; text-align: center; font-weight: 900; font-size: 14px; margin-bottom: 20px; border: 2px solid white; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
         .waiting-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--accent); padding: 20px; margin-bottom: 20px; }
         .progress-bar { height: 8px; background: #161b2e; border-radius: 10px; margin: 15px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.5s; }
         .player-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
         .player-list-item img { width: 24px; height: 24px; object-fit: contain; }
 
-        /* --- MODAL --- */
         #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
         .modal-header { color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 15px; text-align: center; }
         .modal-body { font-size: 14px; line-height: 1.6; white-space: pre-line; color: #ccc; }
-        .btn-close-modal { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; margin-top: 20px; cursor: pointer; }
+        .btn-close-modal { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; margin-top: 20px; }
 
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
@@ -141,7 +137,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
@@ -163,24 +159,15 @@
 
         async function startAppInit() {
             try {
-                const [playerSnap, serverTimeSnap, tournamentsSnap] = await Promise.all([
+                const [playerSnap, tournamentsSnap] = await Promise.all([
                     get(ref(db, 'players/' + userId)),
-                    get(ref(db, 'last_update')),
                     get(ref(db, 'tournaments'))
                 ]);
 
                 if (playerSnap.exists()) { userData = playerSnap.val(); }
                 allTournaments = tournamentsSnap.val() || {};
 
-                updateUserState(); // Foydalanuvchi qatnashayotganini tekshirish
-
-                const serverUpdateTime = (serverTimeSnap.val() || 0).toString();
-                const localUpdateTime = localStorage.getItem('last_update_time') || "-1";
-                if (localUpdateTime !== serverUpdateTime) {
-                    localStorage.setItem('tournaments_cache', JSON.stringify(allTournaments));
-                    localStorage.setItem('last_update_time', serverUpdateTime);
-                }
-
+                updateUserState();
                 checkUserAndHideSplash();
             } catch (e) {
                 console.error(e);
@@ -212,7 +199,7 @@
             const bDate = document.getElementById('birth-date').value;
             if (!fName || !lName || !bDate) { tg.showAlert("Iltimos, barcha maydonlarni to'ldiring!"); return; }
             userData = { firstName: fName, lastName: lName, birthDate: bDate, registeredAt: new Date().toISOString() };
-            await set(ref(db, 'players/' + userId), userData);
+            set(ref(db, 'players/' + userId), userData);
             document.getElementById('registration-screen').style.display = 'none';
             showMainApp();
         }
@@ -296,11 +283,23 @@
 
         window.showTeams = function(tourId) {
             const tournament = allTournaments[tourId];
+            const teams = tournament.teams || [];
+            const players = teams.filter(t => t.player_id);
+            const isFull = players.length >= teams.length; // Turnir to'lganini tekshirish
+
             document.getElementById('page-title').innerText = tourId;
             document.getElementById('back-btn').style.display = 'block';
             const content = document.getElementById('content-area');
             content.innerHTML = "";
             
+            // Agar turnir to'lgan bo'lsa ogohlantirish chiqaramiz
+            if (isFull) {
+                const fullNotice = document.createElement('div');
+                fullNotice.className = 'full-notice';
+                fullNotice.innerText = "USHBU TURNIR TO'LGAN! 🔴";
+                content.appendChild(fullNotice);
+            }
+
             if (tournament.rules) {
                 const btn = document.createElement('button');
                 btn.className = 'btn-rules';
@@ -311,20 +310,25 @@
 
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
-            (tournament.teams || []).forEach((team, index) => {
+            teams.forEach((team, index) => {
                 const isTaken = team.player_id && team.player_id !== "";
                 const item = document.createElement('div');
-                item.className = 'team-item' + (isTaken ? ' taken' : '');
+                // Agar turnir to'lgan bo'lsa yoki jamoa band bo'lsa klikni o'chiramiz
+                item.className = 'team-item' + (isTaken || isFull ? ' taken' : '');
                 item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}
                     <div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div>
                     <div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px; color:var(--text-gray)">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
-                if (!isTaken) item.onclick = () => selectTeam(tourId, index, team.name);
+                
+                if (!isTaken && !isFull && !userTournamentId) {
+                    item.onclick = () => window.selectTeam(tourId, index, team.name);
+                }
                 grid.appendChild(item);
             });
             content.appendChild(grid);
         }
 
         window.selectTeam = async function(tourId, index, teamName) {
+            if (userTournamentId) return;
             tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
                 if (ok) {
                     try {
@@ -332,7 +336,6 @@
                         const updateData = { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName };
                         await update(ref(db, path), updateData);
                         
-                        // Sahifani yangilamasdan holatni o'zgartiramiz
                         allTournaments[tourId].teams[index].player_id = userId;
                         allTournaments[tourId].teams[index].player_name = updateData.player_name;
                         userTournamentId = tourId;

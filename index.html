@@ -31,7 +31,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--konami-red);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
-            transition: opacity 0.3s ease-out; /* Tezroq o'chish */
+            transition: opacity 0.3s ease-out;
         }
         .konami-text { font-size: 28px; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 30px; text-align: center; }
         .spinner { width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.2); border-top: 4px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -140,76 +140,55 @@
 
     <div id="rules-modal"><div class="modal-content"><div class="modal-header">Turnir Qoidalari</div><div class="modal-body" id="modal-text"></div><button class="btn-close-modal" onclick="closeRules()">Tushunarli</button></div></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
-            authDomain: "efootball-d72ae.firebaseapp.com",
-            databaseURL: "https://efootball-d72ae-default-rtdb.firebaseio.com",
-            projectId: "efootball-d72ae",
-            appId: "1:945307600187:web:995dd8f014077d0b0b231e"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let userData = JSON.parse(localStorage.getItem('user_cache')); // Cache'dan olish
-        let allTournaments = {};
-        let userTournamentId = null; 
+        // --- OFLAYN MA'LUMOTLAR OMBORI (LOCALSTORAGE) ---
+        const DEFAULT_TOURNAMENTS = {
+            "O'zbekiston Viloyatlar Kubogi": {
+                official_logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Uzbekistan.svg/1200px-Flag_of_Uzbekistan.svg.png",
+                rules: "1. O'yin vaqti: 10 minut.\n2. Guruhdan 2 ta jamoa chiqadi.\n3. Internet aloqasi barqaror bo'lishi shart.",
+                teams: [
+                    { name: "Toshkent", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" },
+                    { name: "Andijon", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" },
+                    { name: "Samarqand", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" },
+                    { name: "Buxoro", flag: "https://flagcdn.com/w320/uz.png", player_id: "", player_name: "" }
+                ]
+            },
+            "Yevropa Chempionlar Ligasi": {
+                official_logo: "https://upload.wikimedia.org/wikipedia/en/thumb/b/bf/UEFA_Champions_League_logo_2.svg/1200px-UEFA_Champions_League_logo_2.svg.png",
+                rules: "1. Professional daraja.\n2. Jamoalar: Faqat 5 yulduzli.",
+                teams: [
+                    { name: "Real Madrid", flag: "https://flagcdn.com/w320/es.png", player_id: "", player_name: "" },
+                    { name: "Manchester City", flag: "https://flagcdn.com/w320/gb.png", player_id: "", player_name: "" },
+                    { name: "Bayern Munich", flag: "https://flagcdn.com/w320/de.png", player_id: "", player_name: "" },
+                    { name: "Liverpool", flag: "https://flagcdn.com/w320/gb.png", player_id: "", player_name: "" }
+                ]
+            }
+        };
+
+        let userData = JSON.parse(localStorage.getItem('user_cache'));
+        let allTournaments = JSON.parse(localStorage.getItem('tournaments_cache')) || DEFAULT_TOURNAMENTS;
+        let userTournamentId = null;
         const userId = tg.initDataUnsafe?.user?.id || "user_test";
 
-        async function startAppInit() {
-            // 1. Splashni darhol o'chirishga tayyorlash (agar user keshda bo'lsa)
+        function startAppInit() {
+            updateUserState();
+            
             if (userData) {
                 hideSplash();
                 showMainApp();
-            }
-
-            try {
-                // 2. Bazadan ma'lumotlarni fonda olish
-                const playerRef = ref(db, 'players/' + userId);
-                const tournamentRef = ref(db, 'tournaments');
-
-                // Real-time yangilanishni boshlash (Loading ko'rsatmasdan)
-                onValue(tournamentRef, (snapshot) => {
-                    allTournaments = snapshot.val() || {};
-                    updateUserState();
-                    // Faqat joriy sahifa turnirlar bo'lsa yangilaymiz
-                    if (document.getElementById('main-app').style.display === 'flex' && document.getElementById('page-title').innerText === "Turnirlar") {
-                        renderTournaments();
-                    }
-                });
-
-                const playerSnap = await get(playerRef);
-                if (playerSnap.exists()) {
-                    userData = playerSnap.val();
-                    localStorage.setItem('user_cache', JSON.stringify(userData)); // Keshni yangilash
-                }
-
-                if (!userData) {
-                    hideSplash();
-                    document.getElementById('registration-screen').style.display = 'flex';
-                } else {
-                    hideSplash();
-                    showMainApp();
-                }
-
-            } catch (e) {
-                console.error("Yuklashda xatolik:", e);
+            } else {
                 hideSplash();
+                document.getElementById('registration-screen').style.display = 'flex';
             }
         }
 
         function hideSplash() {
             const splash = document.getElementById('splash-screen');
-            if (splash.style.display !== 'none') {
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 300);
-            }
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 300);
         }
 
         function updateUserState() {
@@ -220,7 +199,7 @@
             });
         }
 
-        window.saveData = async function() {
+        window.saveData = function() {
             const fName = document.getElementById('first-name').value.trim();
             const lName = document.getElementById('last-name').value.trim();
             const bDate = document.getElementById('birth-date').value;
@@ -229,7 +208,6 @@
             userData = { firstName: fName, lastName: lName, birthDate: bDate, registeredAt: new Date().toISOString() };
             localStorage.setItem('user_cache', JSON.stringify(userData));
             
-            await set(ref(db, 'players/' + userId), userData);
             document.getElementById('registration-screen').style.display = 'none';
             showMainApp();
         }
@@ -252,7 +230,6 @@
             if (page === 'tournaments') {
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
-                    if (!tour) { renderTournaments(); return; }
                     const teams = tour.teams || [];
                     const players = teams.filter(t => t.player_id);
                     if (players.length >= teams.length && teams.length > 0) {
@@ -268,13 +245,13 @@
                 }
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
-                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Oflayn rejimda reyting mavjud emas.</div>';
             } else if (page === 'profile') {
                 title.innerText = "Profil";
                 content.innerHTML = `<div class="profile-card"><div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div><h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2><p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p></div>`;
             } else if (page === 'settings') {
                 title.innerText = "Sozlamalar";
-                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Tez kunda...</div>';
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Oflayn sozlamalar.</div>';
             }
         }
 
@@ -282,11 +259,9 @@
             const content = document.getElementById('content-area');
             content.innerHTML = "";
             const tour = allTournaments[tourId];
-            if(!tour) return;
             const teams = tour.teams || [];
             let teamsPerGroup = 4;
             let groupCount = Math.ceil(teams.length / teamsPerGroup);
-            if (tourId.includes("O'zbekiston Viloyatlar Kubogi")) groupCount = 3;
 
             for (let i = 0; i < groupCount; i++) {
                 const groupName = String.fromCharCode(65 + i);
@@ -330,7 +305,6 @@
         function renderWaitingRoom() {
             const content = document.getElementById('content-area');
             const tour = allTournaments[userTournamentId];
-            if(!tour) return;
             const teams = tour.teams || [];
             const players = teams.filter(t => t.player_id);
             const percent = (players.length / teams.length) * 100;
@@ -396,21 +370,18 @@
             content.appendChild(grid);
         }
 
-        window.selectTeam = async function(tourId, index, teamName) {
+        window.selectTeam = function(tourId, index, teamName) {
             if (userTournamentId) return;
-            tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
+            tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, (ok) => {
                 if (ok) {
-                    try {
-                        const path = `tournaments/${tourId}/teams/${index}`;
-                        const updateData = { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName };
-                        await update(ref(db, path), updateData);
-                        tg.showAlert("Tabriklaymiz! Turnirga qo'shildingiz.");
-                        // Local update
-                        allTournaments[tourId].teams[index].player_id = userId;
-                        allTournaments[tourId].teams[index].player_name = updateData.player_name;
-                        userTournamentId = tourId;
-                        switchPage('tournaments', document.getElementById('nav-tournaments'));
-                    } catch (e) { tg.showAlert("Xatolik!"); }
+                    // LocalStorage yangilash
+                    allTournaments[tourId].teams[index].player_id = userId;
+                    allTournaments[tourId].teams[index].player_name = userData.firstName + ' ' + userData.lastName;
+                    localStorage.setItem('tournaments_cache', JSON.stringify(allTournaments));
+                    
+                    userTournamentId = tourId;
+                    tg.showAlert("Tabriklaymiz! Oflayn turnirga qo'shildingiz.");
+                    switchPage('tournaments', document.getElementById('nav-tournaments'));
                 }
             });
         }
@@ -418,6 +389,7 @@
         window.closeRules = () => { document.getElementById('rules-modal').style.display = 'none'; };
         window.goBack = () => switchPage('tournaments', document.getElementById('nav-tournaments'));
 
+        // Ilovani boshlash
         startAppInit();
     </script>
 </body>

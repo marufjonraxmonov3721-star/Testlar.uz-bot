@@ -206,14 +206,6 @@
         </nav>
     </div>
 
-    <div id="rules-modal">
-        <div class="modal-content">
-            <div class="modal-header">Turnir Qoidalari</div>
-            <div class="modal-body" id="modal-text"></div>
-            <button class="btn-close-modal" id="modal-confirm-btn" onclick="closeRules()">Tushunarli</button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -290,9 +282,6 @@
             
             const tour = allTournaments[tourId];
             const players = (tour.teams || []).filter(t => t.player_id);
-            
-            // Qura tartibini bazadan olish (Admin panelda shakllantirilgan bo'ladi)
-            // Agar bazada tartib bo'lmasa, qat'iy tartibda ko'rsatiladi
             const drawOrder = tour.draw_order || players; 
             
             const potContainer = document.getElementById('draw-pot');
@@ -317,7 +306,6 @@
                 const selected = drawOrder[currentIdx];
                 const gName = String.fromCharCode(65 + (currentIdx % groupCount));
 
-                // Shuffle effekti (Vaqt o'tkazish uchun)
                 const shuffleTime = 1200;
                 const startTime = Date.now();
                 while(Date.now() - startTime < shuffleTime) {
@@ -411,15 +399,13 @@
                 
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
-                    const players = (tour.teams || []).filter(t => t.player_id);
-                    if (players.length >= (tour.teams ? tour.teams.length : 0) && tour.status === "finished_draw") {
+                    if (tour.status === "finished_draw") {
                         renderTournamentTables(userTournamentId);
                     } else {
                         renderWaitingRoom();
                     }
                 }
                 renderTournaments();
-
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
                 content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
@@ -435,14 +421,22 @@
         function renderTournamentTables(tourId) {
             const content = document.getElementById('content-area');
             const tour = allTournaments[tourId];
-            const teams = tour.teams || [];
-            let groupSize = 4;
-            let groupCount = Math.ceil(teams.length / groupSize);
+            
+            // ASOSIY TAVOFAVUT: Bu yerda endi draw_order ishlatiladi
+            const drawResults = tour.draw_order || []; 
+            
+            if (drawResults.length === 0) {
+                content.innerHTML += `<p style="text-align:center;">Jadval hali tayyor emas.</p>`;
+                return;
+            }
 
-            content.innerHTML += `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Sizning Guruh Jadvalingiz</h3>`;
+            let groupSize = 4;
+            let groupCount = Math.ceil(drawResults.length / groupSize);
+
+            content.innerHTML += `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Turnir Guruh Jadvali</h3>`;
             for (let i = 0; i < groupCount; i++) {
                 const groupName = String.fromCharCode(65 + i);
-                const groupTeams = teams.slice(i * groupSize, (i + 1) * groupSize);
+                const groupTeams = drawResults.slice(i * groupSize, (i + 1) * groupSize);
                 content.innerHTML += `
                     <div class="group-card">
                         <div class="group-header">${groupName} GURUHI</div>
@@ -518,16 +512,6 @@
             const content = document.getElementById('content-area');
             content.innerHTML = isFull ? `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>` : "";
             
-            const rulesBtn = document.createElement('button');
-            rulesBtn.className = 'btn-rules';
-            rulesBtn.innerText = "Qoidalar bilan tanishish";
-            rulesBtn.onclick = () => {
-                document.getElementById('modal-text').innerText = tournament.rules;
-                document.getElementById('modal-confirm-btn').onclick = closeRules;
-                document.getElementById('rules-modal').style.display = 'flex';
-            };
-            content.appendChild(rulesBtn);
-
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
             teams.forEach((team, index) => {

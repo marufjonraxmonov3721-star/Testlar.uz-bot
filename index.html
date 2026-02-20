@@ -283,13 +283,17 @@
             }
         }
 
-        // --- DINAMIK QURA ANIMATSIYASI ---
+        // --- SINXRONLASHTIRILGAN QURA ANIMATSIYASI ---
         async function startDrawShow(tourId) {
             if (drawInProgress) return;
             drawInProgress = true;
             
             const tour = allTournaments[tourId];
             const players = (tour.teams || []).filter(t => t.player_id);
+            
+            // Qura tartibini bazadan olish (Admin panelda shakllantirilgan bo'ladi)
+            // Agar bazada tartib bo'lmasa, qat'iy tartibda ko'rsatiladi
+            const drawOrder = tour.draw_order || players; 
             
             const potContainer = document.getElementById('draw-pot');
             const card = document.getElementById('current-card');
@@ -299,7 +303,6 @@
             const gBadgeEl = document.getElementById('card-g-badge');
             const footerList = document.getElementById('draw-footer-list');
 
-            // Ishtirokchilarni savatga joylash
             potContainer.innerHTML = players.map(p => `<div class="pot-item" id="pot-${p.player_id}">${p.player_name}</div>`).join('');
 
             const groupSize = 4;
@@ -310,35 +313,24 @@
                 footerList.innerHTML += `<div class="mini-group-box" id="footer-g-${gName}"><h4>${gName} GURUHI</h4></div>`;
             }
 
-            let availablePlayers = [...players];
-            let currentGroupIndex = 0;
+            for (let currentIdx = 0; currentIdx < drawOrder.length; currentIdx++) {
+                const selected = drawOrder[currentIdx];
+                const gName = String.fromCharCode(65 + (currentIdx % groupCount));
 
-            while (availablePlayers.length > 0) {
-                // Shuffle effekti
+                // Shuffle effekti (Vaqt o'tkazish uchun)
                 const shuffleTime = 1200;
                 const startTime = Date.now();
-                let lastHighlightedId = null;
-                
                 while(Date.now() - startTime < shuffleTime) {
-                    const tempIdx = Math.floor(Math.random() * availablePlayers.length);
-                    const currentId = availablePlayers[tempIdx].player_id;
-                    if(lastHighlightedId) document.getElementById(`pot-${lastHighlightedId}`).classList.remove('highlight');
+                    const tempIdx = Math.floor(Math.random() * players.length);
+                    const currentId = players[tempIdx].player_id;
+                    document.querySelectorAll('.pot-item').forEach(el => el.classList.remove('highlight'));
                     document.getElementById(`pot-${currentId}`).classList.add('highlight');
-                    lastHighlightedId = currentId;
                     await new Promise(r => setTimeout(r, 80));
                 }
 
-                // Aniq tanlov (splice faqat bir marta o'chirilishini ta'minlaydi)
-                const randomIndex = Math.floor(Math.random() * availablePlayers.length);
-                const selected = availablePlayers.splice(randomIndex, 1)[0];
-                const gName = String.fromCharCode(65 + (currentGroupIndex % groupCount));
-                
-                // Savatdan o'chirish vizual
                 document.querySelectorAll('.pot-item').forEach(el => el.classList.remove('highlight'));
-                const potEl = document.getElementById(`pot-${selected.player_id}`);
-                potEl.classList.add('drawn');
+                document.getElementById(`pot-${selected.player_id}`).classList.add('drawn');
 
-                // Markaziy kartani yangilash
                 card.classList.remove('show');
                 [pNameEl, tNameEl, tLogoEl, gBadgeEl].forEach(el => el.classList.remove('visible'));
                 await new Promise(r => setTimeout(r, 400));
@@ -350,13 +342,11 @@
                 
                 card.classList.add('show');
 
-                // Ketma-ket ko'rsatish
                 await new Promise(r => setTimeout(r, 400)); pNameEl.classList.add('visible');
                 await new Promise(r => setTimeout(r, 800)); tNameEl.classList.add('visible');
                 await new Promise(r => setTimeout(r, 800)); tLogoEl.classList.add('visible');
                 await new Promise(r => setTimeout(r, 800)); gBadgeEl.classList.add('visible');
                 
-                // Guruhga siljitish va joylash
                 const activeGroupBox = document.getElementById(`footer-g-${gName}`);
                 activeGroupBox.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 activeGroupBox.classList.add('active-group');
@@ -371,7 +361,6 @@
                 
                 await new Promise(r => setTimeout(r, 500));
                 activeGroupBox.classList.remove('active-group');
-                currentGroupIndex++;
             }
 
             pNameEl.innerText = "QURA YAKUNLANDI!";

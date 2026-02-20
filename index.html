@@ -117,7 +117,8 @@
         .table-row { display: grid; grid-template-columns: 30px 1fr 30px 30px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; }
         .table-row:last-child { border: none; }
         .table-header { font-size: 10px; color: var(--text-gray); font-weight: bold; }
-        .team-flag-mini { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
+        /* Logo ko'rinishini to'g'irlash (Cho'zilib ketmasligi uchun) */
+        .team-flag-mini { width: 18px; height: 18px; object-fit: contain; border-radius: 2px; }
 
         .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; cursor: pointer; }
@@ -195,7 +196,7 @@
                 <span>Profil</span>
             </div>
             <div class="nav-item" id="nav-settings" onclick="switchPage('settings', this)">
-                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.35 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.97 21.68,8.76L19.68,5.3C19.58,5.09 19.33,5 19.11,5.1L16.63,6.1C16.12,5.7 15.56,5.37 14.94,5.13L14.57,2.47C14.53,2.24 14.33,2.07 14.09,2.07H10.09C9.85,2.07 9.65,2.24 9.61,2.47L9.24,5.13C8.62,5.37 8.06,5.7 7.55,6.1L5.07,5.1C4.85,5 4.6,5.09 4.5,5.3L2.5,8.76C2.4,8.97 2.45,9.22 2.64,9.37L4.75,11.03C4.71,11.35 4.68,11.67 4.68,12C4.68,12.33 4.71,12.65 4.75,12.97L2.64,14.63C2.45,14.78 2.4,15.03 2.5,15.24L4.5,18.7C4.6,18.91 4.85,19 5.07,18.9L7.55,17.9C8.06,18.3 8.62,18.63 9.24,18.87L9.61,21.53C9.65,21.76 9.85,21.93 10.09,21.93H14.09C14.33,21.93 14.53,21.76 14.57,21.53L14.94,18.87C15.56,18.63 16.12,18.3 16.63,17.9L19.11,18.9C19.33,19 19.58,18.91 19.68,18.7L21.68,15.24C21.78,15.03 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.35 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.97 21.68,8.76L19.68,5.3C19.58,5.09 19.33,5 19.11,5.1L16.63,6.1C16.12,5.7 15.56,5.37 14.94,5.13L14.57,2.47C14.53,2.24 14.33,2.07 14.09,2.07H10.09C9.85,2.07 9.65,2.24 9.61,2.47L9.24,5.13C8.62,5.37 8.06,5.7 7.55,6.1L5.07,5.1C4.85,5 4.6,5.09 4.5,5.3L2.5,8.76C2.4,8.97 2.45,9.22 2.64,9.37L4.75,11.03C4.71,11.35 4.68,11.67 4.68,12C4.68,12.33 4.71,12.65 4.75,12.97L2.64,14.63C2.45,14.78 2.4,15.03 2.5,15.24L4.5,18.7C4.6,18.91 4.85,19 5.07,18.9L7.55,17.9C8.06,18.3 8.62,18.63 9.24,18.87L9.61,21.53C9.65,21.76 9.85,21.93 10.09,21.93H14.09C14.33,21.93 14.53,21.76 14.57,21.53L14.94,18.87C15.56,18.63 16.12,18.63 16.63,17.9L19.11,18.9C19.33,19 19.58,18.91 19.68,18.7L21.68,15.24C21.78,15.03 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
                 <span>Sozlamalar</span>
             </div>
         </nav>
@@ -328,7 +329,7 @@
                 activeGroupBox.classList.add('active-group');
                 await new Promise(r => setTimeout(r, 1500));
 
-                activeGroupBox.innerHTML += `<div class="mini-team-row"><img src="${selected.flag}" style="width:14px; height:10px;"><span><b>${selected.player_name.split(' ')[0]}</b>: ${selected.name}</span></div>`;
+                activeGroupBox.innerHTML += `<div class="mini-team-row"><img src="${selected.flag}" style="width:14px; height:14px; object-fit:contain;"><span><b>${selected.player_name.split(' ')[0]}</b>: ${selected.name}</span></div>`;
                 await new Promise(r => setTimeout(r, 500));
                 activeGroupBox.classList.remove('active-group');
             }
@@ -422,7 +423,7 @@
                         ${groupTeams.map((t, idx) => `
                             <div class="table-row">
                                 <span>${idx + 1}</span>
-                                <div style="display:flex; align-items:center; gap:5px;"><img src="${t.flag}" class="team-flag-mini"><span>${t.name}</span></div>
+                                <div style="display:flex; align-items:center; gap:5px;"><img src="${t.flag}" class="team-flag-mini" style="object-fit:contain;"><span>${t.name}</span></div>
                                 <span>0</span><span>0</span>
                             </div>`).join('')}
                     </div>`;
@@ -440,7 +441,7 @@
                     <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
                     <div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div>
                     <div id="waiting-list" style="max-height: 150px; overflow-y: auto;">
-                        ${players.map(p => `<div class="player-list-item"><img src="${p.flag}"> <span><b>${p.player_name}</b> - ${p.name}</span></div>`).join('')}
+                        ${players.map(p => `<div class="player-list-item"><img src="${p.flag}" style="object-fit:contain;"> <span><b>${p.player_name}</b> - ${p.name}</span></div>`).join('')}
                     </div>
                 </div>`;
         }
@@ -460,22 +461,18 @@
                 let classStr = 'tour-item';
                 let htmlOverlay = '';
 
-                // Qat'iy mantiqiy yangilanish
                 if (userTournamentId) {
                     if (userTournamentId !== id) {
                         classStr += ' locked';
-                        // Ishtirok etayotgan turniri bo'lsa ogohlantirish beramiz
                         item.onclick = () => tg.showAlert(`Siz hozirda "${userTournamentId}" turnirida ishtirok etyapsiz!`);
                     } else {
-                        // O'zining turniri bo'lsa - TURNIR TOLGAN yozuvi chiqmaydi
                         item.onclick = () => showTeams(id);
                     }
                 } else {
-                    // Yangi foydalanuvchi
                     if (isFull) {
                         classStr += ' full';
                         htmlOverlay = `<div class="full-badge"><div class="main-txt">TURNIR TO'LGAN</div><div class="sub-txt">Keyingi mavsum boshlanishini kuting</div></div>`;
-                        item.onclick = null; // Kirish butunlay blok
+                        item.onclick = null;
                     } else {
                         item.onclick = () => showTeams(id);
                     }

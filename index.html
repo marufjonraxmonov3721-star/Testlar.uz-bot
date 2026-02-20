@@ -117,23 +117,22 @@
         .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
 
         /* --- TABLE STYLES --- */
-        .group-card { background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; overflow: hidden; }
-        .group-header { background: #161b2e; padding: 10px; color: var(--accent); font-weight: bold; text-align: center; font-size: 12px; }
-        .table-row { display: grid; grid-template-columns: 25px 1fr 25px 25px 25px 25px 25px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; font-size: 10px; text-align: center; }
-        .table-row span:nth-child(2) { text-align: left; padding-left: 5px; }
+        .group-card { background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; overflow: hidden; }
+        .group-header { background: #161b2e; padding: 12px; color: var(--accent); font-weight: bold; text-align: center; font-size: 14px; border-bottom: 1px solid var(--border); }
+        .table-row { display: grid; grid-template-columns: 30px 1fr 30px 30px 30px; padding: 12px 10px; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; }
         .table-row:last-child { border: none; }
-        .table-header { font-size: 9px; color: var(--text-gray); font-weight: bold; }
-        .team-flag-mini { width: 16px; height: 16px; object-fit: contain; border-radius: 2px; }
+        .table-header { font-size: 10px; color: var(--text-gray); font-weight: bold; background: rgba(255,255,255,0.02); }
+        .team-flag-mini { width: 18px; height: 18px; object-fit: contain; border-radius: 2px; }
 
         /* MATCHES STYLES */
-        .match-group-title { color: var(--accent); font-size: 12px; font-weight: 900; margin: 15px 0 10px 5px; text-transform: uppercase; border-left: 3px solid var(--accent); padding-left: 8px; }
-        .match-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-        .match-team { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px; }
-        .match-team img { width: 30px; height: 30px; object-fit: contain; }
-        .match-team span { font-size: 10px; font-weight: bold; }
-        .match-score { flex: 0.5; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .score-box { background: var(--input-bg); padding: 5px 12px; border-radius: 5px; font-size: 18px; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
-        .match-status { font-size: 8px; color: var(--text-gray); margin-top: 5px; text-transform: uppercase; }
+        .match-group-title { background: var(--input-bg); color: var(--accent); padding: 8px 15px; font-size: 12px; font-weight: 800; margin: 15px 0 10px; border-radius: 5px; border-left: 4px solid var(--accent); }
+        .match-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .match-team { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px; width: 35%; }
+        .match-team img { width: 32px; height: 32px; object-fit: contain; }
+        .match-team span { font-size: 11px; font-weight: bold; }
+        .match-score { flex: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .score-box { background: var(--input-bg); padding: 6px 15px; border-radius: 8px; font-size: 20px; font-weight: 900; color: var(--accent); letter-spacing: 2px; border: 1px solid var(--border); }
+        .match-status { font-size: 9px; color: var(--text-gray); margin-top: 6px; text-transform: uppercase; font-weight: 600; }
 
         .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; cursor: pointer; }
@@ -141,6 +140,18 @@
         .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
         .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .tour-item.locked { opacity: 0.3; filter: grayscale(1); }
+        .tour-item.full { opacity: 0.5; border-color: var(--konami-red); }
+        .full-badge { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5; text-align: center; padding: 5px; box-sizing: border-box; }
+        .full-badge .main-txt { color: var(--konami-red); font-weight: 900; font-size: 14px; text-transform: uppercase; transform: rotate(-10deg); border: 2px solid var(--konami-red); padding: 2px 5px; margin-bottom: 5px; }
+        .full-badge .sub-txt { color: white; font-size: 8px; font-weight: 600; text-transform: uppercase; }
+
+        .team-item.taken { opacity: 0.4; filter: grayscale(1); }
+        .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; pointer-events: none; }
+
+        .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
+        .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -235,12 +246,12 @@
                     updateUserState();
                     checkDrawStatus(); 
                     if (document.getElementById('main-app').style.display === 'flex') {
-                        if (document.getElementById('page-title').innerText === "Turnirlar") {
-                            switchPage('tournaments', document.getElementById('nav-tournaments'));
-                        } else if (currentTourId) {
+                        if (currentTourId) {
                             const activeTab = document.querySelector('.tab-btn.active').id;
                             if (activeTab === 'btn-tab-jadval') showTeams(currentTourId);
                             else showMatches(currentTourId);
+                        } else if (document.getElementById('page-title').innerText === "Turnirlar") {
+                            renderTournaments();
                         }
                     }
                 });
@@ -311,12 +322,15 @@
                     const tempIdx = Math.floor(Math.random() * players.length);
                     const currentId = players[tempIdx].player_id;
                     document.querySelectorAll('.pot-item').forEach(el => el.classList.remove('highlight'));
-                    document.getElementById(`pot-${currentId}`).classList.add('highlight');
+                    const potEl = document.getElementById(`pot-${currentId}`);
+                    if (potEl) potEl.classList.add('highlight');
                     await new Promise(r => setTimeout(r, 80));
                 }
 
                 document.querySelectorAll('.pot-item').forEach(el => el.classList.remove('highlight'));
-                document.getElementById(`pot-${selected.player_id}`).classList.add('drawn');
+                const drawnPotEl = document.getElementById(`pot-${selected.player_id}`);
+                if (drawnPotEl) drawnPotEl.classList.add('drawn');
+                
                 card.classList.remove('show');
                 [pNameEl, tNameEl, tLogoEl, gBadgeEl].forEach(el => el.classList.remove('visible'));
                 await new Promise(r => setTimeout(r, 400));
@@ -412,58 +426,58 @@
             }
         }
 
+        // --- DINAMIK JADVAL HISOBLASH VA RENDER ---
         function renderTournamentTables(tourId) {
             const content = document.getElementById('content-area');
             const tour = allTournaments[tourId];
-            const drawOrder = tour.draw_order || []; 
+            const players = tour.draw_order || [];
             const matches = tour.matches || [];
-            if (drawOrder.length === 0) return;
+
+            if (players.length === 0) return;
 
             const groupSize = 4;
-            const groupCount = Math.ceil(drawOrder.length / groupSize);
-            const groups = {};
+            const groupCount = Math.ceil(players.length / groupSize);
+            const standings = {};
 
-            // Jadval mantiqi: Har bir jamoa uchun statistika yig'amiz
-            const stats = {};
-            drawOrder.forEach(t => {
-                stats[t.player_name] = { name: t.name, flag: t.flag, p: 0, w: 0, d: 0, l: 0, pts: 0 };
+            // Har bir o'yinchi uchun boshlang'ich statistika
+            players.forEach(p => {
+                standings[p.player_id] = { ...p, mp: 0, pts: 0 };
             });
 
-            // O'yinlar natijasini hisoblash (Faqat 'TUGADI' statusidagilar)
+            // O'yinlar natijasiga qarab ochkolarni hisoblash
             matches.forEach(m => {
-                if (m.status === "TUGADI") {
-                    const h = m.home_player;
-                    const a = m.away_player;
-                    const hs = parseInt(m.home_score);
-                    const as = parseInt(m.away_score);
-
-                    if (stats[h] && stats[a]) {
-                        stats[h].p++; stats[a].p++;
-                        if (hs > as) { stats[h].w++; stats[h].pts += 3; stats[a].l++; }
-                        else if (hs < as) { stats[a].w++; stats[a].pts += 3; stats[h].l++; }
-                        else { stats[h].d++; stats[a].d++; stats[h].pts += 1; stats[a].pts += 1; }
+                if (m.home_score !== null && m.away_score !== null && m.home_score !== undefined && m.away_score !== undefined) {
+                    const h = standings[m.home_player_id];
+                    const a = standings[m.away_player_id];
+                    if (h && a) {
+                        h.mp += 1; a.mp += 1;
+                        if (m.home_score > m.away_score) h.pts += 3;
+                        else if (m.home_score < m.away_score) a.pts += 3;
+                        else { h.pts += 1; a.pts += 1; }
                     }
                 }
             });
 
-            for (let i = 0; i < groupCount; i++) { groups[String.fromCharCode(65 + i)] = []; }
-            drawOrder.forEach((player, index) => {
-                const groupName = String.fromCharCode(65 + (index % groupCount));
-                groups[groupName].push({ ...player, ...stats[player.player_name] });
+            const groups = {};
+            players.forEach((p, index) => {
+                const gName = String.fromCharCode(65 + (index % groupCount));
+                if (!groups[gName]) groups[gName] = [];
+                groups[gName].push(standings[p.player_id]);
             });
 
-            content.innerHTML = `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Turnir Guruh Jadvali</h3>`;
+            content.innerHTML = "";
             Object.keys(groups).sort().forEach(gName => {
-                const groupTeams = groups[gName].sort((a, b) => b.pts - a.pts);
+                // Ochko bo'yicha saralash
+                const sorted = groups[gName].sort((a, b) => b.pts - a.pts);
                 content.innerHTML += `
                     <div class="group-card">
                         <div class="group-header">${gName} GURUHI</div>
-                        <div class="table-row table-header"><span>#</span><span>JAMOA</span><span>O'</span><span>G'</span><span>D</span><span>M</span><span>O</span></div>
-                        ${groupTeams.map((t, idx) => `
+                        <div class="table-row table-header"><span>#</span><span>JAMOA</span><span>O'</span><span>O</span><span>P</span></div>
+                        ${sorted.map((t, idx) => `
                             <div class="table-row">
                                 <span>${idx + 1}</span>
-                                <span><img src="${t.flag}" class="team-flag-mini"> ${t.name}</span>
-                                <span>${t.p}</span><span>${t.w}</span><span>${t.d}</span><span>${t.l}</span><span style="color:var(--accent); font-weight:bold;">${t.pts}</span>
+                                <div style="display:flex; align-items:center; gap:5px;"><img src="${t.flag}" class="team-flag-mini"><span>${t.name}</span></div>
+                                <span>${t.mp}</span><span>0</span><span>${t.pts}</span>
                             </div>`).join('')}
                     </div>`;
             });
@@ -481,9 +495,21 @@
                 const isFull = playersCount >= teams.length;
                 
                 const item = document.createElement('div');
-                item.className = 'tour-item' + (userTournamentId && userTournamentId !== id ? ' locked' : '');
-                item.onclick = () => { currentTourId = id; showTeams(id); };
-                item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
+                let classStr = 'tour-item';
+                let htmlOverlay = '';
+
+                if (userTournamentId && userTournamentId !== id) {
+                    classStr += ' locked';
+                    item.onclick = () => tg.showAlert(`Siz hozirda "${userTournamentId}" turnirida ishtirok etyapsiz!`);
+                } else if (!userTournamentId && isFull) {
+                    classStr += ' full';
+                    htmlOverlay = `<div class="full-badge"><div class="main-txt">TURNIR TO'LGAN</div></div>`;
+                } else {
+                    item.onclick = () => { currentTourId = id; showTeams(id); };
+                }
+
+                item.className = classStr;
+                item.innerHTML = `${htmlOverlay}<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
@@ -491,30 +517,38 @@
 
         window.showTeams = function(tourId) {
             const tournament = allTournaments[tourId];
-            currentTourId = tourId;
-            document.getElementById('page-title').innerText = tourId;
-            document.getElementById('back-btn').style.display = 'block';
-            document.getElementById('tour-tabs').style.display = 'flex';
-            
-            if (tournament.status === "finished_draw") {
+            if (tournament.status === "finished_draw" || tournament.status === "active") {
+                document.getElementById('page-title').innerText = tourId;
+                document.getElementById('back-btn').style.display = 'block';
+                document.getElementById('tour-tabs').style.display = 'flex';
                 renderTournamentTables(tourId);
                 return;
             }
 
+            const teams = tournament.teams || [];
+            const players = teams.filter(t => t.player_id);
+            const isFull = players.length >= teams.length;
+            
+            document.getElementById('page-title').innerText = tourId;
+            document.getElementById('back-btn').style.display = 'block';
+            document.getElementById('tour-tabs').style.display = 'none';
+            
             const content = document.getElementById('content-area');
-            content.innerHTML = "";
+            content.innerHTML = `<h3 style="color:var(--accent); font-size: 12px; text-align:center;">Jamoani tanlang</h3>`;
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
-            (tournament.teams || []).forEach((team, index) => {
+            teams.forEach((team, index) => {
                 const isTaken = !!team.player_id;
                 const item = document.createElement('div');
                 item.className = 'team-item' + (isTaken ? ' taken' : '');
                 item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}<div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div><div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
+                if (!isTaken && !isFull && !userTournamentId) item.onclick = () => selectTeam(tourId, index, team.name); 
                 grid.appendChild(item);
             });
             content.appendChild(grid);
         }
 
+        // --- O'YINLARNI GURUH BO'YICHA KO'RSATISH ---
         window.showMatches = function(tourId) {
             const tournament = allTournaments[tourId];
             const matches = tournament.matches || [];
@@ -526,17 +560,18 @@
                 return;
             }
 
-            // O'yinlarni guruhlar bo'yicha ajratish
+            // O'yinlarni guruhlar bo'yicha guruhlash
             const groupedMatches = {};
             matches.forEach(m => {
-                const g = m.group || "Boshqa";
-                if (!groupedMatches[g]) groupedMatches[g] = [];
-                groupedMatches[g].push(m);
+                const group = m.group || "Guruhsiz";
+                if (!groupedMatches[group]) groupedMatches[group] = [];
+                groupedMatches[group].push(m);
             });
 
-            Object.keys(groupedMatches).sort().forEach(gName => {
-                content.innerHTML += `<div class="match-group-title">${gName} GURUHI O'YINLARI</div>`;
-                groupedMatches[gName].forEach(match => {
+            Object.keys(groupedMatches).sort().forEach(groupName => {
+                content.innerHTML += `<div class="match-group-title">${groupName} GURUHI O'YINLARI</div>`;
+                groupedMatches[groupName].forEach(match => {
+                    const statusText = (match.home_score !== null && match.home_score !== undefined) ? "TUGADI" : (match.status || "KUTILMOQDA");
                     content.innerHTML += `
                         <div class="match-card">
                             <div class="match-team">
@@ -546,7 +581,7 @@
                             </div>
                             <div class="match-score">
                                 <div class="score-box">${match.home_score ?? '-'}:${match.away_score ?? '-'}</div>
-                                <div class="match-status" style="color:${match.status === 'TUGADI' ? 'var(--text-gray)' : 'var(--success)'}">${match.status || 'Kutilmoqda'}</div>
+                                <div class="match-status">${statusText}</div>
                             </div>
                             <div class="match-team">
                                 <img src="${match.away_flag}">
@@ -558,12 +593,20 @@
             });
         }
 
+        window.selectTeam = async function(tourId, index, teamName) {
+            tg.showConfirm(`${teamName} jamoasini tanlaysizmi?`, async (ok) => {
+                if (ok) {
+                    try {
+                        const path = `tournaments/${tourId}/teams/${index}`;
+                        await update(ref(db, path), { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName });
+                        location.reload(); 
+                    } catch (e) { tg.showAlert("Xatolik!"); }
+                }
+            });
+        }
+
         window.goBack = () => {
             currentTourId = null;
-            document.getElementById('page-title').innerText = "Turnirlar";
-            document.getElementById('tour-tabs').style.display = 'none';
-            document.getElementById('btn-tab-jadval').classList.add('active');
-            document.getElementById('btn-tab-oyinlar').classList.remove('active');
             switchPage('tournaments', document.getElementById('nav-tournaments'));
         }
 

@@ -45,23 +45,40 @@
         }
         .draw-header { font-size: 20px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin: 15px 0; text-shadow: 0 0 10px rgba(225,255,0,0.5); text-align: center; }
         
-        /* Yuqoridagi ishtirokchilar */
-        .pot-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; border: 1px solid var(--border); }
-        .pot-player { padding: 8px 12px; background: var(--input-bg); border-radius: 10px; font-size: 11px; border: 1px solid var(--border); transition: 0.5s; }
-        .pot-player.drawn { opacity: 0.2; transform: scale(0.8); border-color: transparent; }
-        .pot-player.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); transform: scale(1.1); background: var(--accent); color: black; }
+        .pot-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 15px; border: 1px solid var(--border); max-height: 100px; overflow-y: auto; }
+        .pot-player { padding: 6px 10px; background: var(--input-bg); border-radius: 8px; font-size: 9px; border: 1px solid var(--border); transition: 0.5s; color: var(--text-gray); }
+        .pot-player.drawn { opacity: 0.2; transform: scale(0.8); }
 
-        /* Markazdagi e'lon */
-        .draw-announcement { height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .current-draw-name { font-size: 18px; font-weight: 900; color: #fff; }
-        .current-draw-group { font-size: 14px; color: var(--accent); margin-top: 5px; }
+        /* MODAL PRESENTATION CARD */
+        .draw-announcement { 
+            position: relative;
+            height: 240px; width: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            margin-bottom: 20px;
+        }
+        .player-card-show {
+            background: linear-gradient(135deg, #161b2e 0%, #0d111d 100%);
+            border: 2px solid var(--accent);
+            border-radius: 24px;
+            padding: 25px;
+            width: 280px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(225,255,0,0.25);
+            transform: scale(0);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .player-card-show.active { transform: scale(1); opacity: 1; }
+        .show-flag { width: 100px; height: 60px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .show-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
+        .show-team { font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 
-        /* Pastdagi guruhlar */
         .draw-groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         .mini-group-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; min-height: 120px; }
         .mini-group-header { background: #161b2e; padding: 6px; color: var(--accent); font-size: 10px; font-weight: bold; text-align: center; border-bottom: 1px solid var(--border); }
-        .mini-group-slot { padding: 6px 10px; font-size: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 5px; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .mini-group-slot { padding: 8px 10px; font-size: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 8px; animation: slideUp 0.5s forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- REGISTRATION --- */
         #registration-screen { display: none; height: 100vh; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
@@ -85,40 +102,27 @@
         .nav-item.active { color: var(--accent); }
         .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
 
-        /* --- TABLE STYLES --- */
-        .group-card { background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; overflow: hidden; }
-        .group-header { background: #161b2e; padding: 10px; color: var(--accent); font-weight: bold; text-align: center; font-size: 12px; }
-        .table-row { display: grid; grid-template-columns: 30px 1fr 30px 30px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; }
-        .table-row:last-child { border: none; }
-        .table-header { font-size: 10px; color: var(--text-gray); font-weight: bold; }
-        .team-flag-mini { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
-
-        .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; }
-        .tour-img-container, .team-img-container { width: 100%; height: 110px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; }
-        .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
-        .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
-        .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
-
         .waiting-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--accent); padding: 20px; margin-bottom: 20px; }
         .progress-bar { height: 8px; background: #161b2e; border-radius: 10px; margin: 15px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.5s; }
         .player-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
         .player-list-item img { width: 24px; height: 24px; object-fit: contain; }
 
-        #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
-        .modal-header { color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 15px; text-align: center; }
-        .modal-body { font-size: 14px; line-height: 1.6; white-space: pre-line; color: #ccc; max-height: 300px; overflow-y: auto; }
-        .btn-close-modal { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; margin-top: 20px; cursor: pointer; }
-
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
 
         .tour-locked { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+        .group-card { background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; overflow: hidden; }
+        .group-header { background: #161b2e; padding: 10px; color: var(--accent); font-weight: bold; text-align: center; font-size: 12px; }
+        .table-row { display: grid; grid-template-columns: 30px 1fr 30px 30px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; }
+        .team-flag-mini { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
+        .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
+        .tour-img-container, .team-img-container { width: 100%; height: 110px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; }
+        .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
+        .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; }
+        .btn-rules { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -134,8 +138,12 @@
         <div class="pot-container" id="pot-list"></div>
 
         <div class="draw-announcement">
-            <div id="draw-name-anim" class="current-draw-name">Tayyorlaning...</div>
-            <div id="draw-group-anim" class="current-draw-group"></div>
+            <div id="player-card" class="player-card-show">
+                <img id="show-team-flag" src="" class="show-flag">
+                <div id="show-player-name" class="show-name"></div>
+                <div id="show-team-name" class="show-team"></div>
+            </div>
+            <div id="draw-loading-text" style="color:var(--text-gray); font-size:12px; position:absolute; bottom:0; font-weight:700;">NAVYATDAGI ISHTIROKCHI ANIQLANMOQDA...</div>
         </div>
 
         <div class="draw-groups-grid" id="draw-grid"></div>
@@ -213,15 +221,12 @@
                     allTournaments = snapshot.val() || {};
                     updateUserState();
                     checkDrawStatus(); 
-                    
                     if (document.getElementById('main-app').style.display === 'flex') {
                         switchPage('tournaments', document.getElementById('nav-tournaments'));
                     }
                 });
-
                 const playerSnap = await get(ref(db, 'players/' + userId));
                 if (playerSnap.exists()) { userData = playerSnap.val(); }
-
                 checkUserAndHideSplash();
             } catch (e) {
                 console.error(e);
@@ -237,7 +242,6 @@
             });
         }
 
-        // Qura marosimi mantiqi
         let drawInProgress = false;
         async function checkDrawStatus() {
             const drawScreen = document.getElementById('draw-ceremony-screen');
@@ -255,7 +259,7 @@
             }
         }
 
-        // --- QURA SHOU ANIMATSIYASI ---
+        // --- QURA SHOU ANIMATSIYASI (ZAMONAVIY) ---
         async function startDrawShow(tourId) {
             drawInProgress = true;
             const tour = allTournaments[tourId];
@@ -263,13 +267,14 @@
             
             const potList = document.getElementById('pot-list');
             const drawGrid = document.getElementById('draw-grid');
-            const nameAnim = document.getElementById('draw-name-anim');
-            const groupAnim = document.getElementById('draw-group-anim');
+            const playerCard = document.getElementById('player-card');
+            const showFlag = document.getElementById('show-team-flag');
+            const showName = document.getElementById('show-player-name');
+            const showTeam = document.getElementById('show-team-name');
+            const loadingText = document.getElementById('draw-loading-text');
 
-            // 1. Ishtirokchilar ro'yxatini yuqoriga chiqarish
             potList.innerHTML = players.map(p => `<div class="pot-player" id="p-${p.player_id}">${p.player_name}</div>`).join('');
 
-            // 2. Bo'sh guruhlarni tayyorlash
             const groupSize = 4;
             const groupCount = Math.ceil(players.length / groupSize);
             drawGrid.innerHTML = "";
@@ -278,43 +283,43 @@
                 drawGrid.innerHTML += `<div class="mini-group-card" id="draw-g-${gName}"><div class="mini-group-header">${gName} GURUHI</div></div>`;
             }
 
-            // 3. Random qura jarayoni
             let availablePlayers = [...players];
             let currentGroupIndex = 0;
 
             while (availablePlayers.length > 0) {
-                // Tasodifiy tanlash
                 const randomIndex = Math.floor(Math.random() * availablePlayers.length);
                 const selected = availablePlayers.splice(randomIndex, 1)[0];
-                
                 const gName = String.fromCharCode(65 + (currentGroupIndex % groupCount));
                 
-                // Vizual: Pot'da qidirish effekti
-                nameAnim.innerText = "Savatdan qidirilmoqda...";
-                await new Promise(r => setTimeout(r, 1000));
+                loadingText.innerText = "Savatchadan qidirilmoqda...";
+                await new Promise(r => setTimeout(r, 2000)); // Qidirish animatsiyasi
 
-                // Ishtirokchini e'tirof etish
+                // Kartochkani ko'rsatish (Tanishtirish bosqichi)
+                showFlag.src = selected.flag;
+                showName.innerText = selected.player_name;
+                showTeam.innerText = selected.name;
+                playerCard.classList.add('active');
+                loadingText.innerText = "Ishtirokchi tanlandi!";
+                
                 const playerEl = document.getElementById(`p-${selected.player_id}`);
                 playerEl.classList.add('active');
-                nameAnim.innerText = selected.player_name;
-                await new Promise(r => setTimeout(r, 1500));
 
-                // Guruhga tushirish
-                groupAnim.innerText = `${gName} GURUHIGA TUSHDI!`;
+                await new Promise(r => setTimeout(r, 5000)); // 5 sekund tanishtirish
+
+                // Guruhga tushirish bosqichi
+                loadingText.innerText = `${selected.player_name} ${gName} GURUHIGA tushdi!`;
                 const groupContainer = document.getElementById(`draw-g-${gName}`);
-                groupContainer.innerHTML += `<div class="mini-group-slot"><img src="${selected.flag}" style="width:14px; height:10px;"> ${selected.name}</div>`;
+                groupContainer.innerHTML += `<div class="mini-group-slot"><img src="${selected.flag}" style="width:18px; height:12px; border-radius:2px;"> ${selected.name}</div>`;
                 
+                playerCard.classList.remove('active');
                 playerEl.classList.remove('active');
                 playerEl.classList.add('drawn');
                 
                 currentGroupIndex++;
-                await new Promise(r => setTimeout(r, 1500));
-                groupAnim.innerText = "";
+                await new Promise(r => setTimeout(r, 3000)); // 3 sekund pauza (Jami 10 sek)
             }
 
-            nameAnim.innerText = "Qura yakunlandi!";
-            await new Promise(r => setTimeout(r, 3000));
-            // Real qura tugaganini bildirish (faqat vizual, bazani admin o'zgartiradi)
+            loadingText.innerText = "Qura yakunlandi! Admin tasdiqlashini kuting...";
         }
 
         function checkUserAndHideSplash() {
@@ -348,14 +353,12 @@
             document.getElementById('back-btn').style.display = 'none';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             if (element) element.classList.add('active');
-            
             const title = document.getElementById('page-title');
             const content = document.getElementById('content-area');
 
             if (page === 'tournaments') {
                 title.innerText = "Turnirlar";
                 content.innerHTML = "";
-                
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
                     const players = (tour.teams || []).filter(t => t.player_id);
@@ -366,7 +369,6 @@
                     }
                 }
                 renderTournaments();
-
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
                 content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
@@ -385,22 +387,11 @@
             const teams = tour.teams || [];
             let groupSize = 4;
             let groupCount = Math.ceil(teams.length / groupSize);
-
             content.innerHTML += `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Sizning Guruh Jadvalingiz</h3>`;
             for (let i = 0; i < groupCount; i++) {
                 const groupName = String.fromCharCode(65 + i);
                 const groupTeams = teams.slice(i * groupSize, (i + 1) * groupSize);
-                content.innerHTML += `
-                    <div class="group-card">
-                        <div class="group-header">${groupName} GURUHI</div>
-                        <div class="table-row table-header"><span>#</span><span>JAMOA</span><span>O'</span><span>O</span></div>
-                        ${groupTeams.map((t, idx) => `
-                            <div class="table-row">
-                                <span>${idx + 1}</span>
-                                <div style="display:flex; align-items:center; gap:5px;"><img src="${t.flag}" class="team-flag-mini"><span>${t.name}</span></div>
-                                <span>0</span><span>0</span>
-                            </div>`).join('')}
-                    </div>`;
+                content.innerHTML += `<div class="group-card"><div class="group-header">${groupName} GURUHI</div><div class="table-row table-header"><span>#</span><span>JAMOA</span><span>O'</span><span>O</span></div>${groupTeams.map((t, idx) => `<div class="table-row"><span>${idx + 1}</span><div style="display:flex; align-items:center; gap:5px;"><img src="${t.flag}" class="team-flag-mini"><span>${t.name}</span></div><span>0</span><span>0</span></div>`).join('')}</div>`;
             }
         }
 
@@ -409,21 +400,7 @@
             const tour = allTournaments[userTournamentId];
             const players = (tour.teams || []).filter(t => t.player_id);
             const percent = (players.length / tour.teams.length) * 100;
-
-            const waitingHtml = `
-                <div class="waiting-card">
-                    <div style="font-weight:bold; color:var(--accent); text-align:center;">Turniringiz: ${userTournamentId}</div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                    <div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div>
-                    <div id="waiting-list" style="max-height: 150px; overflow-y: auto;">
-                        ${players.map(p => `
-                            <div class="player-list-item">
-                                <img src="${p.flag}"> <span><b>${p.player_name}</b> - ${p.name}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>`;
-            content.innerHTML += waitingHtml;
+            content.innerHTML += `<div class="waiting-card"><div style="font-weight:bold; color:var(--accent); text-align:center;">Turniringiz: ${userTournamentId}</div><div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div><div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div><div id="waiting-list" style="max-height: 150px; overflow-y: auto;">${players.map(p => `<div class="player-list-item"><img src="${p.flag}"> <span><b>${p.player_name}</b> - ${p.name}</span></div>`).join('')}</div></div>`;
         }
 
         function renderTournaments() {
@@ -431,13 +408,11 @@
             content.innerHTML += `<h3 style="color:var(--accent); font-size: 14px; margin: 15px 0 10px;">Barcha Turnirlar</h3>`;
             const grid = document.createElement('div');
             grid.className = 'tournament-grid';
-            
             Object.keys(allTournaments).forEach(id => {
                 const tour = allTournaments[id];
                 const item = document.createElement('div');
                 const isLocked = userTournamentId && userTournamentId !== id;
                 item.className = 'tour-item' + (isLocked ? ' tour-locked' : '');
-                
                 item.onclick = () => { if (!isLocked) showTournamentRules(id); };
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
@@ -458,36 +433,23 @@
             const teams = tournament.teams || [];
             const players = teams.filter(t => t.player_id);
             const isFull = players.length >= teams.length;
-            
             document.getElementById('page-title').innerText = tourId;
             document.getElementById('back-btn').style.display = 'block';
-            
             const content = document.getElementById('content-area');
             content.innerHTML = isFull ? `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>` : "";
-            
             const rulesBtn = document.createElement('button');
             rulesBtn.className = 'btn-rules';
             rulesBtn.innerText = "Qoidalar bilan tanishish";
-            rulesBtn.onclick = () => {
-                document.getElementById('modal-text').innerText = tournament.rules;
-                document.getElementById('modal-confirm-btn').onclick = closeRules;
-                document.getElementById('rules-modal').style.display = 'flex';
-            };
+            rulesBtn.onclick = () => { document.getElementById('modal-text').innerText = tournament.rules; document.getElementById('modal-confirm-btn').onclick = closeRules; document.getElementById('rules-modal').style.display = 'flex'; };
             content.appendChild(rulesBtn);
-
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
             teams.forEach((team, index) => {
                 const isTaken = !!team.player_id;
                 const item = document.createElement('div');
                 item.className = 'team-item' + (isTaken || isFull ? ' taken' : '');
-                item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}
-                    <div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div>
-                    <div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
-                
-                if (!isTaken && !isFull && !userTournamentId) {
-                    item.onclick = () => selectTeam(tourId, index, team.name);
-                }
+                item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}<div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div><div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
+                if (!isTaken && !isFull && !userTournamentId) { item.onclick = () => selectTeam(tourId, index, team.name); }
                 grid.appendChild(item);
             });
             content.appendChild(grid);
@@ -499,14 +461,10 @@
                     try {
                         const path = `tournaments/${tourId}/teams/${index}`;
                         await update(ref(db, path), { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName });
-                        
                         const tourSnap = await get(ref(db, `tournaments/${tourId}`));
                         const currentTour = tourSnap.val();
                         const filledCount = (currentTour.teams || []).filter(t => t.player_id).length;
-                        if (filledCount === currentTour.teams.length) {
-                            await update(ref(db, `tournaments/${tourId}`), { status: "waiting_draw" });
-                        }
-
+                        if (filledCount === currentTour.teams.length) { await update(ref(db, `tournaments/${tourId}`), { status: "waiting_draw" }); }
                         location.reload(); 
                     } catch (e) { tg.showAlert("Xatolik!"); }
                 }

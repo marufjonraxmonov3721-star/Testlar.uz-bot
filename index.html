@@ -376,13 +376,6 @@
             if (page === 'tournaments') {
                 title.innerText = "Turnirlar";
                 content.innerHTML = "";
-                
-                // ASOSIY RO'YXATDAGI O'ZINIKINI KO'RSATISH MANTIQI
-                if (userTournamentId) {
-                    const tour = allTournaments[userTournamentId];
-                    if (tour && tour.status === "finished_draw") { renderTournamentTables(userTournamentId); } 
-                    else if (tour) { renderWaitingRoom(); }
-                }
                 renderTournaments();
             } else if (page === 'rating') {
                 title.innerText = "Reyting";
@@ -428,22 +421,6 @@
                             </div>`).join('')}
                     </div>`;
             });
-        }
-
-        function renderWaitingRoom() {
-            const content = document.getElementById('content-area');
-            const tour = allTournaments[userTournamentId];
-            const players = (tour.teams || []).filter(t => t.player_id);
-            const percent = (players.length / tour.teams.length) * 100;
-            content.innerHTML += `
-                <div class="waiting-card">
-                    <div style="font-weight:bold; color:var(--accent); text-align:center;">Turniringiz: ${userTournamentId}</div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                    <div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div>
-                    <div id="waiting-list" style="max-height: 150px; overflow-y: auto;">
-                        ${players.map(p => `<div class="player-list-item"><img src="${p.flag}" style="object-fit:contain;"> <span><b>${p.player_name}</b> - ${p.name}</span></div>`).join('')}
-                    </div>
-                </div>`;
         }
 
         function renderTournaments() {
@@ -543,4 +520,3 @@
     </script>
 </body>
 </html>
-

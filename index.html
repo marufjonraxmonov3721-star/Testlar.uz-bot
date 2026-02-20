@@ -46,40 +46,47 @@
         
         .pot-section {
             background: rgba(255,255,255,0.03); border-radius: 15px; padding: 10px;
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 10px;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 5px;
+            max-height: 80px; overflow-y: auto;
         }
         .pot-item {
             padding: 4px 8px; font-size: 10px; background: var(--input-bg); border: 1px solid var(--border);
             border-radius: 5px; color: var(--text-gray); transition: all 0.3s;
         }
-        .pot-item.highlight { background: var(--accent); color: #000; transform: scale(1.2); z-index: 10; box-shadow: 0 0 15px var(--accent); }
+        .pot-item.highlight { background: var(--accent); color: #000; transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px var(--accent); }
         .pot-item.drawn { opacity: 0.1; transform: scale(0.8); }
 
         #active-draw-card {
             flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            perspective: 1000px;
+            perspective: 1000px; padding: 10px;
         }
         .modern-card {
-            width: 100%; max-width: 300px; background: var(--card-bg);
-            border: 2px solid var(--accent); border-radius: 25px; padding: 25px;
+            width: 100%; max-width: 280px; background: var(--card-bg);
+            border: 2px solid var(--accent); border-radius: 20px; padding: 20px;
             display: flex; flex-direction: column; align-items: center;
             box-shadow: 0 0 40px rgba(225,255,0,0.15);
-            opacity: 0; transform: translateY(30px); transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0; transform: translateY(20px); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2);
         }
         .modern-card.show { opacity: 1; transform: translateY(0); }
         
-        .draw-player-name { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 15px; text-align: center; opacity: 0; transition: 0.5s; }
-        .draw-team-name { font-size: 18px; color: var(--accent); font-weight: 700; opacity: 0; transition: 0.5s; }
-        .draw-team-logo { width: 100px; height: 100px; object-fit: contain; margin: 15px 0; opacity: 0; transform: scale(0.5); transition: 0.5s; }
-        .draw-group-badge { background: var(--konami-red); color: white; padding: 5px 20px; border-radius: 50px; font-weight: 900; margin-top: 10px; opacity: 0; transition: 0.5s; }
+        .draw-player-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 10px; text-align: center; opacity: 0; transition: 0.4s; }
+        .draw-team-name { font-size: 16px; color: var(--accent); font-weight: 700; opacity: 0; transition: 0.4s; }
+        .draw-team-logo { width: 90px; height: 90px; object-fit: contain; margin: 10px 0; opacity: 0; transform: scale(0.5); transition: 0.4s; }
+        .draw-group-badge { background: var(--konami-red); color: white; padding: 6px 18px; border-radius: 50px; font-weight: 900; margin-top: 10px; opacity: 0; transition: 0.4s; font-size: 12px; }
 
         .visible { opacity: 1 !important; transform: scale(1) !important; }
 
-        .draw-footer-scroll { height: 180px; overflow-x: auto; display: flex; gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); }
-        .mini-group-box { min-width: 130px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 8px; transition: 0.3s; }
-        .mini-group-box.active-group { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .draw-footer-scroll { 
+            height: 160px; overflow-x: auto; display: flex; gap: 12px; padding: 15px; 
+            background: rgba(0,0,0,0.4); scroll-behavior: smooth;
+        }
+        .mini-group-box { 
+            min-width: 140px; background: var(--card-bg); border: 1px solid var(--border); 
+            border-radius: 12px; padding: 8px; transition: 0.4s; flex-shrink: 0;
+        }
+        .mini-group-box.active-group { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); transform: scale(1.05); }
         .mini-group-box h4 { margin: 0 0 5px; font-size: 11px; color: var(--accent); text-align: center; border-bottom: 1px solid var(--border); }
-        .mini-team-row { display: flex; align-items: center; gap: 5px; font-size: 10px; margin-bottom: 4px; animation: slideIn 0.3s forwards; }
+        .mini-team-row { display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 5px; animation: slideIn 0.3s forwards; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
         /* --- REGISTRATION --- */
@@ -278,7 +285,9 @@
 
         // --- DINAMIK QURA ANIMATSIYASI ---
         async function startDrawShow(tourId) {
+            if (drawInProgress) return;
             drawInProgress = true;
+            
             const tour = allTournaments[tourId];
             const players = (tour.teams || []).filter(t => t.player_id);
             
@@ -290,7 +299,7 @@
             const gBadgeEl = document.getElementById('card-g-badge');
             const footerList = document.getElementById('draw-footer-list');
 
-            // 1. Ishtirokchilarni yuqoriga savatga joylash
+            // Ishtirokchilarni savatga joylash
             potContainer.innerHTML = players.map(p => `<div class="pot-item" id="pot-${p.player_id}">${p.player_name}</div>`).join('');
 
             const groupSize = 4;
@@ -305,65 +314,62 @@
             let currentGroupIndex = 0;
 
             while (availablePlayers.length > 0) {
-                // Tasodifiy tanlash effekti
-                const shuffleTime = 1500;
+                // Shuffle effekti
+                const shuffleTime = 1200;
                 const startTime = Date.now();
-                let lastIdx = -1;
+                let lastHighlightedId = null;
                 
                 while(Date.now() - startTime < shuffleTime) {
                     const tempIdx = Math.floor(Math.random() * availablePlayers.length);
-                    if(lastIdx !== -1) document.getElementById(`pot-${availablePlayers[lastIdx].player_id}`).classList.remove('highlight');
-                    document.getElementById(`pot-${availablePlayers[tempIdx].player_id}`).classList.add('highlight');
-                    lastIdx = tempIdx;
-                    await new Promise(r => setTimeout(r, 100));
+                    const currentId = availablePlayers[tempIdx].player_id;
+                    if(lastHighlightedId) document.getElementById(`pot-${lastHighlightedId}`).classList.remove('highlight');
+                    document.getElementById(`pot-${currentId}`).classList.add('highlight');
+                    lastHighlightedId = currentId;
+                    await new Promise(r => setTimeout(r, 80));
                 }
 
-                // Yakuniy tanlov
+                // Aniq tanlov (splice faqat bir marta o'chirilishini ta'minlaydi)
                 const randomIndex = Math.floor(Math.random() * availablePlayers.length);
                 const selected = availablePlayers.splice(randomIndex, 1)[0];
                 const gName = String.fromCharCode(65 + (currentGroupIndex % groupCount));
                 
-                // Savatdan o'chirish
+                // Savatdan o'chirish vizual
+                document.querySelectorAll('.pot-item').forEach(el => el.classList.remove('highlight'));
                 const potEl = document.getElementById(`pot-${selected.player_id}`);
-                potEl.classList.remove('highlight');
                 potEl.classList.add('drawn');
 
-                // Markaziy kartani tozalash va ko'rsatish
+                // Markaziy kartani yangilash
                 card.classList.remove('show');
                 [pNameEl, tNameEl, tLogoEl, gBadgeEl].forEach(el => el.classList.remove('visible'));
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 400));
+                
+                pNameEl.innerText = selected.player_name;
+                tNameEl.innerText = selected.name;
+                tLogoEl.src = selected.flag;
+                gBadgeEl.innerText = `${gName} GURUHIGA TUSHDI!`;
+                
                 card.classList.add('show');
 
-                // Ketma-ket tanishtirish (Jami 5-6 soniya)
-                await new Promise(r => setTimeout(r, 500));
-                pNameEl.innerText = selected.player_name;
-                pNameEl.classList.add('visible');
-
-                await new Promise(r => setTimeout(r, 1200));
-                tNameEl.innerText = selected.name;
-                tNameEl.classList.add('visible');
-
-                await new Promise(r => setTimeout(r, 1200));
-                tLogoEl.src = selected.flag;
-                tLogoEl.classList.add('visible');
-
-                await new Promise(r => setTimeout(r, 1200));
-                gBadgeEl.innerText = `${gName} GURUHIGA TUSHDI!`;
-                gBadgeEl.classList.add('visible');
+                // Ketma-ket ko'rsatish
+                await new Promise(r => setTimeout(r, 400)); pNameEl.classList.add('visible');
+                await new Promise(r => setTimeout(r, 800)); tNameEl.classList.add('visible');
+                await new Promise(r => setTimeout(r, 800)); tLogoEl.classList.add('visible');
+                await new Promise(r => setTimeout(r, 800)); gBadgeEl.classList.add('visible');
                 
-                // Pastdagi guruhni yoritish
+                // Guruhga siljitish va joylash
                 const activeGroupBox = document.getElementById(`footer-g-${gName}`);
+                activeGroupBox.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 activeGroupBox.classList.add('active-group');
 
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 1500));
 
-                // Guruhga joylash
                 activeGroupBox.innerHTML += `
                     <div class="mini-team-row">
                         <img src="${selected.flag}" style="width:14px; height:10px;">
                         <span><b>${selected.player_name.split(' ')[0]}</b>: ${selected.name}</span>
                     </div>`;
                 
+                await new Promise(r => setTimeout(r, 500));
                 activeGroupBox.classList.remove('active-group');
                 currentGroupIndex++;
             }
@@ -372,7 +378,7 @@
             tNameEl.innerText = "OMAD TILIYMIZ!";
             gBadgeEl.style.display = "none";
             tLogoEl.style.opacity = "0.2";
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise(r => setTimeout(r, 4000));
         }
 
         function checkUserAndHideSplash() {

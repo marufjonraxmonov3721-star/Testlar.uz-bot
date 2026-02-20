@@ -107,9 +107,9 @@
         #content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; }
 
         nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-gray); text-decoration: none; font-size: 9px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-gray); text-decoration: none; font-size: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; text-align: center; flex: 1; }
         .nav-item.active { color: var(--accent); }
-        .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
+        .nav-icon { width: 20px; height: 20px; margin-bottom: 4px; fill: currentColor; }
 
         /* --- MATCHES STYLES --- */
         .match-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; padding: 10px; display: flex; align-items: center; justify-content: space-between; }
@@ -193,6 +193,10 @@
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/></svg>
                 <span>Turnirlar</span>
             </div>
+            <div class="nav-item" id="nav-rating" onclick="switchPage('rating', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5H9L4.23,22.74L2.5,21.74L8.27,11.78H16Z"/></svg>
+                <span>Reyting</span>
+            </div>
             <div class="nav-item" id="nav-matches" style="display: none;" onclick="switchPage('matches', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,2C6.47,2,2,6.47,2,12s4.47,10,10,10,10-4.47,10-10S17.53,2,12,2Zm0,18c-4.41,0-8-3.59-8-8s3.59-8,8-8,8,3.59,8,8-3.59,8-8,8Zm1-13h-2v4h-4v2h4v4h2v-4h4v-2h-4V7Z"/></svg>
                 <span>O'yinlar</span>
@@ -200,6 +204,10 @@
             <div class="nav-item" id="nav-profile" onclick="switchPage('profile', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>
                 <span>Profil</span>
+            </div>
+            <div class="nav-item" id="nav-settings" onclick="switchPage('settings', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.35 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.97 21.68,8.76L19.68,5.3C19.58,5.09 19.33,5 19.11,5.1L16.63,6.1C16.12,5.7 15.56,5.37 14.94,5.13L14.57,2.47C14.53,2.24 14.33,2.07 14.09,2.07H10.09C9.85,2.07 9.65,2.24 9.61,2.47L9.24,5.13C8.62,5.37 8.06,5.7 7.55,6.1L5.07,5.1C4.85,5 4.6,5.09 4.5,5.3L2.5,8.76C2.4,8.97 2.45,9.22 2.64,9.37L4.75,11.03C4.71,11.35 4.68,11.67 4.68,12C4.68,12.33 4.71,12.65 4.75,12.97L2.64,14.63C2.45,14.78 2.4,15.03 2.5,15.24L4.5,18.7C4.6,18.91 4.85,19 5.07,18.9L7.55,17.9C8.06,18.3 8.62,18.63 9.24,18.87L9.61,21.53C9.65,21.76 9.85,21.93 10.09,21.93H14.09C14.33,21.93 14.53,21.76 14.57,21.53L14.94,18.87C15.56,18.63 16.12,18.3 16.63,17.9L19.11,18.9C19.33,19 19.58,18.91 19.68,18.7L21.68,15.24C21.78,15.03 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+                <span>Sozlamalar</span>
             </div>
         </nav>
     </div>
@@ -387,6 +395,11 @@
                 title.innerText = "Turnirlar";
                 content.innerHTML = "";
                 renderTournaments();
+            } else if (page === 'rating') {
+                document.getElementById('back-btn').style.display = 'none';
+                document.getElementById('nav-matches').style.display = 'none';
+                title.innerText = "Reyting";
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Jadval yaqin orada yangilanadi.</div>';
             } else if (page === 'matches') {
                 title.innerText = "O'yinlar";
                 content.innerHTML = "";
@@ -396,63 +409,80 @@
                 document.getElementById('nav-matches').style.display = 'none';
                 title.innerText = "Profil";
                 content.innerHTML = `<div class="profile-card"><div class="profile-avatar">${userData ? userData.firstName[0] : 'U'}</div><h2 style="color:var(--accent); margin:0;">${userData ? userData.firstName + ' ' + userData.lastName : 'Noma\'lum'}</h2><p style="color:var(--text-gray); font-size:12px;">ID: ${userId}</p></div>`;
+            } else if (page === 'settings') {
+                document.getElementById('back-btn').style.display = 'none';
+                document.getElementById('nav-matches').style.display = 'none';
+                title.innerText = "Sozlamalar";
+                content.innerHTML = '<div style="text-align:center; color:var(--text-gray); margin-top:50px;">Tez kunda...</div>';
             }
         }
 
         function renderTournaments() {
             const content = document.getElementById('content-area');
-            content.innerHTML += `<h3 style="color:var(--accent); font-size: 14px; margin: 15px 0 10px;">Barcha Turnirlar</h3>`;
+            
+            // Foydalanuvchi turnirga qo'shilgan bo'lsa, uning turniri tepada chiqadi
+            if (userTournamentId) {
+                content.innerHTML += `<h3 style="color:var(--accent); font-size: 14px; margin: 5px 0 10px;">Sizning Turniringiz</h3>`;
+                const tour = allTournaments[userTournamentId];
+                const item = createTourItem(userTournamentId, tour, false);
+                content.appendChild(item);
+            }
+
+            content.innerHTML += `<h3 style="color:var(--accent); font-size: 14px; margin: 15px 0 10px;">Boshqa Turnirlar</h3>`;
             const grid = document.createElement('div');
             grid.className = 'tournament-grid';
             Object.keys(allTournaments).forEach(id => {
+                if (id === userTournamentId) return; // O'zining turnirini bu yerda qayta ko'rsatmaymiz
                 const tour = allTournaments[id];
-                const teams = tour.teams || [];
-                const playersCount = teams.filter(t => t.player_id).length;
-                const isFull = playersCount >= teams.length;
-                
-                const item = document.createElement('div');
-                let classStr = 'tour-item';
-                let htmlOverlay = '';
-
-                if (userTournamentId) {
-                    if (userTournamentId !== id) {
-                        classStr += ' locked';
-                        item.onclick = () => tg.showAlert(`Siz hozirda "${userTournamentId}" turnirida ishtirok etyapsiz!`);
-                    } else {
-                        item.onclick = () => showTeams(id);
-                    }
-                } else {
-                    if (isFull) {
-                        classStr += ' full';
-                        htmlOverlay = `<div class="full-badge"><div class="main-txt">TURNIR TO'LGAN</div></div>`;
-                        item.onclick = null;
-                    } else {
-                        item.onclick = () => showTeams(id);
-                    }
-                }
-
-                item.className = classStr;
-                item.innerHTML = `
-                    ${htmlOverlay}
-                    <div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
-                    <div class="tour-info"><div class="tour-title">${id}</div></div>
-                `;
+                const item = createTourItem(id, tour, !!userTournamentId);
                 grid.appendChild(item);
             });
             content.appendChild(grid);
+        }
+
+        function createTourItem(id, tour, isUserInAnyTour) {
+            const teams = tour.teams || [];
+            const playersCount = teams.filter(t => t.player_id).length;
+            const isFull = playersCount >= teams.length;
+            
+            const item = document.createElement('div');
+            let classStr = 'tour-item';
+            let htmlOverlay = '';
+
+            if (userTournamentId) {
+                if (userTournamentId !== id) {
+                    classStr += ' locked';
+                    item.onclick = () => tg.showAlert(`Siz hozirda "${userTournamentId}" turnirida ishtirok etyapsiz!`);
+                } else {
+                    item.onclick = () => showTeams(id);
+                }
+            } else {
+                if (isFull) {
+                    classStr += ' full';
+                    htmlOverlay = `<div class="full-badge"><div class="main-txt">TURNIR TO'LGAN</div><div class="sub-txt" style="color:white; font-size:8px; margin-top:4px;">Keyingi mavsumni kuting</div></div>`;
+                    item.onclick = null;
+                } else {
+                    item.onclick = () => showTeams(id);
+                }
+            }
+
+            item.className = classStr;
+            item.innerHTML = `
+                ${htmlOverlay}
+                <div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
+                <div class="tour-info"><div class="tour-title">${id}</div></div>
+            `;
+            return item;
         }
 
         window.showTeams = function(tourId) {
             currentViewingTourId = tourId;
             const tournament = allTournaments[tourId];
             const teams = tournament.teams || [];
-            const players = teams.filter(t => t.player_id);
-            const isFull = players.length >= teams.length;
             
             document.getElementById('page-title').innerText = tourId;
             document.getElementById('back-btn').style.display = 'block';
             
-            // Turnir ichiga kirganda "O'yinlar" navigatsiyasini ochamiz
             if (userTournamentId === tourId) {
                 document.getElementById('nav-matches').style.display = 'flex';
             }
@@ -473,7 +503,7 @@
                 item.className = 'team-item' + (isTaken ? ' taken' : '');
                 item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}<div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div><div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
                 
-                if (!isTaken && !isFull && !userTournamentId) { 
+                if (!isTaken && !userTournamentId) { 
                     item.onclick = () => selectTeam(tourId, index, team.name); 
                 }
                 grid.appendChild(item);
@@ -498,25 +528,20 @@
                 groups[groupName].push({...player, stats: { p: 0, g: 0, pts: 0 }});
             });
 
-            // Statslarni hisoblash
+            // Statistika hisoblash mantiqi (scores mavjud bo'lsa)
             if (tour.scores) {
                 Object.values(tour.scores).forEach(s => {
-                    const t1 = drawOrder.find(p => p.player_id === s.t1_id);
-                    const t2 = drawOrder.find(p => p.player_id === s.t2_id);
-                    if (t1 && t2) {
-                        const g1 = parseInt(groups[s.gName].find(p => p.player_id === s.t1_id).stats.g);
-                        const groupP1 = groups[s.gName].find(p => p.player_id === s.t1_id);
-                        const groupP2 = groups[s.gName].find(p => p.player_id === s.t2_id);
-                        
-                        groupP1.stats.p++;
-                        groupP2.stats.p++;
-                        groupP1.stats.g += s.t1_score;
-                        groupP2.stats.g += s.t2_score;
-                        
-                        if (s.t1_score > s.t2_score) groupP1.stats.pts += 3;
-                        else if (s.t1_score < s.t2_score) groupP2.stats.pts += 3;
-                        else { groupP1.stats.pts += 1; groupP2.stats.pts += 1; }
-                    }
+                   const gP1 = groups[s.gName]?.find(p => p.player_id === s.t1_id);
+                   const gP2 = groups[s.gName]?.find(p => p.player_id === s.t2_id);
+                   if(gP1 && gP2 && s.t1_score !== "-" && s.t2_score !== "-") {
+                       const sc1 = parseInt(s.t1_score);
+                       const sc2 = parseInt(s.t2_score);
+                       gP1.stats.p++; gP2.stats.p++;
+                       gP1.stats.g += sc1; gP2.stats.g += sc2;
+                       if(sc1 > sc2) gP1.stats.pts += 3;
+                       else if(sc1 < sc2) gP2.stats.pts += 3;
+                       else { gP1.stats.pts += 1; gP2.stats.pts += 1; }
+                   }
                 });
             }
 
@@ -543,9 +568,9 @@
             const drawOrder = tour.draw_order || [];
             if (drawOrder.length === 0) return;
 
+            const groups = {};
             const groupSize = 4;
             const groupCount = Math.ceil(drawOrder.length / groupSize);
-            const groups = {};
             for (let i = 0; i < groupCount; i++) { groups[String.fromCharCode(65 + i)] = []; }
             drawOrder.forEach((p, idx) => { groups[String.fromCharCode(65 + (idx % groupCount))].push(p); });
 
@@ -553,9 +578,8 @@
             
             Object.keys(groups).sort().forEach(gName => {
                 const teams = groups[gName];
-                content.innerHTML += `<div style="color:var(--accent); font-size:12px; margin:15px 0 5px; font-weight:bold;">${gName} GURUHI</div>`;
+                content.innerHTML += `<div style="color:var(--accent); font-size:12px; margin:15px 0 5px; font-weight:bold; text-align:center;">${gName} GURUHI</div>`;
                 
-                // Har bir guruh uchun o'yinlar (1-2, 3-4, 1-3, 2-4, 1-4, 2-3)
                 const pairs = [[0,1], [2,3], [0,2], [1,3], [0,3], [1,2]];
                 pairs.forEach(p => {
                     const t1 = teams[p[0]];
@@ -590,7 +614,6 @@
         window.goBack = () => {
             currentViewingTourId = null;
             document.getElementById('nav-matches').style.display = 'none';
-            document.getElementById('page-title').innerText = "Turnirlar";
             switchPage('tournaments', document.getElementById('nav-tournaments'));
         }
 

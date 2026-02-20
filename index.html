@@ -126,7 +126,11 @@
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
         .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .team-item.taken { opacity: 0.6; filter: grayscale(0.5); }
+        .tour-item.locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; pointer-events: none; }
+        .tour-item.full { opacity: 0.5; filter: contrast(1.2); cursor: not-allowed; pointer-events: none; border-color: var(--konami-red); }
+        .full-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 8px; font-size: 10px; font-weight: 900; border: 2px solid white; z-index: 5; white-space: nowrap; }
+
+        .team-item.taken { opacity: 0.4; filter: grayscale(1); }
         .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; pointer-events: none; }
 
         .waiting-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--accent); padding: 20px; margin-bottom: 20px; }
@@ -446,10 +450,38 @@
             grid.className = 'tournament-grid';
             Object.keys(allTournaments).forEach(id => {
                 const tour = allTournaments[id];
+                const teams = tour.teams || [];
+                const playersCount = teams.filter(t => t.player_id).length;
+                const isFull = playersCount >= teams.length;
+                
                 const item = document.createElement('div');
-                item.className = 'tour-item';
-                item.onclick = () => showTeams(id); 
-                item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
+                
+                // JIDDIY YANGILANISH: Qat'iy bloklash mantiqi
+                let classStr = 'tour-item';
+                let canEnter = true;
+
+                if (userTournamentId) {
+                    // Foydalanuvchi birorta turnirda bo'lsa
+                    if (userTournamentId !== id) {
+                        classStr += ' locked'; // O'zinikidan boshqasini bloklash
+                        canEnter = false;
+                    }
+                } else if (isFull) {
+                    // Yangi foydalanuvchi va turnir to'la bo'lsa
+                    classStr += ' full';
+                    canEnter = false;
+                }
+
+                item.className = classStr;
+                if (canEnter) {
+                    item.onclick = () => showTeams(id);
+                }
+
+                item.innerHTML = `
+                    ${isFull ? '<div class="full-badge">TURNIR TO\'LGAN</div>' : ''}
+                    <div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
+                    <div class="tour-info"><div class="tour-title">${id}</div></div>
+                `;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
@@ -472,10 +504,6 @@
                 return;
             }
 
-            if (isFull) {
-                content.innerHTML = `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>`;
-            }
-
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
             teams.forEach((team, index) => {
@@ -486,8 +514,6 @@
                 
                 if (!isTaken && !isFull && !userTournamentId) { 
                     item.onclick = () => selectTeam(tourId, index, team.name); 
-                } else if (!isTaken && userTournamentId) {
-                    item.onclick = () => tg.showAlert("Siz allaqachon biror turnirda ro'yxatdan o'tgansiz!");
                 }
                 grid.appendChild(item);
             });

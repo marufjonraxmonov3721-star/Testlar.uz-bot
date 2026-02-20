@@ -126,9 +126,11 @@
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
         .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .tour-item.locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; pointer-events: none; }
-        .tour-item.full { opacity: 0.5; filter: contrast(1.2); cursor: not-allowed; pointer-events: none; border-color: var(--konami-red); }
-        .full-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 8px; font-size: 10px; font-weight: 900; border: 2px solid white; z-index: 5; white-space: nowrap; }
+        .tour-item.locked { opacity: 0.3; filter: grayscale(1); }
+        .tour-item.full { opacity: 0.5; border-color: var(--konami-red); }
+        .full-badge { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5; text-align: center; padding: 5px; box-sizing: border-box; }
+        .full-badge .main-txt { color: var(--konami-red); font-weight: 900; font-size: 14px; text-transform: uppercase; transform: rotate(-10deg); border: 2px solid var(--konami-red); padding: 2px 5px; margin-bottom: 5px; }
+        .full-badge .sub-txt { color: white; font-size: 8px; font-weight: 600; text-transform: uppercase; }
 
         .team-item.taken { opacity: 0.4; filter: grayscale(1); }
         .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; pointer-events: none; }
@@ -455,30 +457,33 @@
                 const isFull = playersCount >= teams.length;
                 
                 const item = document.createElement('div');
-                
-                // JIDDIY YANGILANISH: Qat'iy bloklash mantiqi
                 let classStr = 'tour-item';
-                let canEnter = true;
+                let htmlOverlay = '';
 
+                // Qat'iy mantiqiy yangilanish
                 if (userTournamentId) {
-                    // Foydalanuvchi birorta turnirda bo'lsa
                     if (userTournamentId !== id) {
-                        classStr += ' locked'; // O'zinikidan boshqasini bloklash
-                        canEnter = false;
+                        classStr += ' locked';
+                        // Ishtirok etayotgan turniri bo'lsa ogohlantirish beramiz
+                        item.onclick = () => tg.showAlert(`Siz hozirda "${userTournamentId}" turnirida ishtirok etyapsiz!`);
+                    } else {
+                        // O'zining turniri bo'lsa - TURNIR TOLGAN yozuvi chiqmaydi
+                        item.onclick = () => showTeams(id);
                     }
-                } else if (isFull) {
-                    // Yangi foydalanuvchi va turnir to'la bo'lsa
-                    classStr += ' full';
-                    canEnter = false;
+                } else {
+                    // Yangi foydalanuvchi
+                    if (isFull) {
+                        classStr += ' full';
+                        htmlOverlay = `<div class="full-badge"><div class="main-txt">TURNIR TO'LGAN</div><div class="sub-txt">Keyingi mavsum boshlanishini kuting</div></div>`;
+                        item.onclick = null; // Kirish butunlay blok
+                    } else {
+                        item.onclick = () => showTeams(id);
+                    }
                 }
 
                 item.className = classStr;
-                if (canEnter) {
-                    item.onclick = () => showTeams(id);
-                }
-
                 item.innerHTML = `
-                    ${isFull ? '<div class="full-badge">TURNIR TO\'LGAN</div>' : ''}
+                    ${htmlOverlay}
                     <div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div>
                     <div class="tour-info"><div class="tour-title">${id}</div></div>
                 `;

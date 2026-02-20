@@ -120,14 +120,14 @@
         .team-flag-mini { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
 
         .tournament-grid, .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; }
+        .tour-item, .team-item { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; transition: transform 0.2s; cursor: pointer; }
         .tour-img-container, .team-img-container { width: 100%; height: 110px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; }
         .tour-img, .team-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .tour-info, .team-info { padding: 10px 5px; background: #000000; text-align: center; border-top: 1px solid var(--border); }
         .tour-title, .team-title { font-weight: 700; font-size: 10px; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .team-item.taken { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
-        .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; }
+        .team-item.taken { opacity: 0.6; filter: grayscale(0.5); }
+        .taken-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); background: var(--konami-red); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; border: 2px solid white; pointer-events: none; }
 
         .waiting-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--accent); padding: 20px; margin-bottom: 20px; }
         .progress-bar { height: 8px; background: #161b2e; border-radius: 10px; margin: 15px 0; overflow: hidden; }
@@ -137,8 +137,6 @@
 
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
-
-        .tour-locked { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
     </style>
 </head>
 <body>
@@ -226,7 +224,9 @@
                     updateUserState();
                     checkDrawStatus(); 
                     if (document.getElementById('main-app').style.display === 'flex') {
-                        switchPage('tournaments', document.getElementById('nav-tournaments'));
+                        if (document.getElementById('page-title').innerText === "Turnirlar") {
+                            switchPage('tournaments', document.getElementById('nav-tournaments'));
+                        }
                     }
                 });
                 const playerSnap = await get(ref(db, 'players/' + userId));
@@ -370,10 +370,11 @@
             if (page === 'tournaments') {
                 title.innerText = "Turnirlar";
                 content.innerHTML = "";
+                
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
-                    if (tour.status === "finished_draw") { renderTournamentTables(userTournamentId); } 
-                    else { renderWaitingRoom(); }
+                    if (tour && tour.status === "finished_draw") { renderTournamentTables(userTournamentId); } 
+                    else if (tour) { renderWaitingRoom(); }
                 }
                 renderTournaments();
             } else if (page === 'rating') {
@@ -396,21 +397,17 @@
 
             const groupSize = 4;
             const groupCount = Math.ceil(drawOrder.length / groupSize);
-            
-            // ASOSIY TUZATISH: Guruhlarni bo'sh massivlar bilan yaratish
             const groups = {};
             for (let i = 0; i < groupCount; i++) {
                 groups[String.fromCharCode(65 + i)] = [];
             }
-
-            // Qura shousidagi mantiq bilan ishtirokchilarni guruhlarga taqsimlash
             drawOrder.forEach((player, index) => {
                 const groupName = String.fromCharCode(65 + (index % groupCount));
                 groups[groupName].push(player);
             });
 
             content.innerHTML += `<h3 style="color:var(--accent); text-align:center; margin: 10px 0;">Turnir Guruh Jadvali</h3>`;
-            Object.keys(groups).forEach(gName => {
+            Object.keys(groups).sort().forEach(gName => {
                 const groupTeams = groups[gName];
                 content.innerHTML += `
                     <div class="group-card">
@@ -450,19 +447,12 @@
             Object.keys(allTournaments).forEach(id => {
                 const tour = allTournaments[id];
                 const item = document.createElement('div');
-                const isLocked = userTournamentId && userTournamentId !== id;
-                item.className = 'tour-item' + (isLocked ? ' tour-locked' : '');
-                item.onclick = () => { if (!isLocked) showTournamentRules(id); };
+                item.className = 'tour-item';
+                item.onclick = () => showTeams(id); 
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
-        }
-
-        window.showTournamentRules = function(tourId) {
-            const tournament = allTournaments[tourId];
-            document.getElementById('rules-modal').style.display = 'flex'; // Modal funksiyasi o'chirilmagan bo'lsa
-            showTeams(tourId); 
         }
 
         window.showTeams = function(tourId) {
@@ -470,18 +460,35 @@
             const teams = tournament.teams || [];
             const players = teams.filter(t => t.player_id);
             const isFull = players.length >= teams.length;
+            
             document.getElementById('page-title').innerText = tourId;
             document.getElementById('back-btn').style.display = 'block';
+            
             const content = document.getElementById('content-area');
-            content.innerHTML = isFull ? `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>` : "";
+            content.innerHTML = "";
+
+            if (tournament.status === "finished_draw") {
+                renderTournamentTables(tourId);
+                return;
+            }
+
+            if (isFull) {
+                content.innerHTML = `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>`;
+            }
+
             const grid = document.createElement('div');
             grid.className = 'teams-grid';
             teams.forEach((team, index) => {
                 const isTaken = !!team.player_id;
                 const item = document.createElement('div');
-                item.className = 'team-item' + (isTaken || isFull ? ' taken' : '');
+                item.className = 'team-item' + (isTaken ? ' taken' : '');
                 item.innerHTML = `${isTaken ? '<div class="taken-label">BAND</div>' : ''}<div class="team-img-container"><img src="${team.flag || ''}" class="team-img"></div><div class="team-info"><div class="team-title">${team.name}</div><div style="font-size:8px;">${isTaken ? team.player_name : 'BO\'SH'}</div></div>`;
-                if (!isTaken && !isFull && !userTournamentId) { item.onclick = () => selectTeam(tourId, index, team.name); }
+                
+                if (!isTaken && !isFull && !userTournamentId) { 
+                    item.onclick = () => selectTeam(tourId, index, team.name); 
+                } else if (!isTaken && userTournamentId) {
+                    item.onclick = () => tg.showAlert("Siz allaqachon biror turnirda ro'yxatdan o'tgansiz!");
+                }
                 grid.appendChild(item);
             });
             content.appendChild(grid);
@@ -499,9 +506,12 @@
             });
         }
 
-        window.goBack = () => switchPage('tournaments', document.getElementById('nav-tournaments'));
+        window.goBack = () => {
+            document.getElementById('page-title').innerText = "Turnirlar";
+            switchPage('tournaments', document.getElementById('nav-tournaments'));
+        }
+
         startAppInit();
     </script>
 </body>
 </html>
-

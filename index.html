@@ -46,6 +46,17 @@
         .field input { width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box; outline: none; }
         .btn-submit { width: 100%; padding: 18px; background-color: var(--accent); color: #000; border: none; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
+        /* --- DRAW CEREMONY SCREEN --- */
+        #draw-ceremony-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a2035, #02040d);
+            z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
+        }
+        .draw-box { width: 100%; max-width: 350px; background: rgba(255,255,255,0.05); border: 2px solid var(--accent); border-radius: 30px; padding: 30px; box-sizing: border-box; }
+        .draw-title { font-size: 24px; font-weight: 900; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; text-shadow: 0 0 15px rgba(225,255,0,0.5); }
+        .pot-animation { width: 120px; height: 120px; margin: 0 auto 20px; background: url('https://img.icons8.com/color/120/football-ball.png') center/contain no-repeat; animation: shake 0.5s infinite alternate; }
+        @keyframes shake { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+
         /* --- MAIN APP --- */
         #main-app { display: none; flex-direction: column; height: 100vh; }
         header { padding: 15px; text-align: center; background: rgba(13, 17, 29, 0.9); border-bottom: 1px solid var(--border); position: relative; }
@@ -93,7 +104,6 @@
         .profile-card { background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); padding: 20px; text-align: center; }
         .profile-avatar { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: #000; text-transform: uppercase; }
 
-        /* Yopiq turnirlar uchun stil */
         .tour-locked { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
     </style>
 </head>
@@ -102,6 +112,15 @@
     <div id="splash-screen">
         <div class="konami-text">eFootball Tournament</div>
         <div class="spinner"></div>
+    </div>
+
+    <div id="draw-ceremony-screen">
+        <div class="draw-box">
+            <div class="draw-title">Qura Marosimi</div>
+            <div class="pot-animation"></div>
+            <p style="color:#8e92a4; font-size:14px;">Jonli efir: Guruhlar aniqlanmoqda...</p>
+            <div id="draw-info" style="color:white; font-weight:bold; margin-top:10px;"></div>
+        </div>
     </div>
 
     <div id="registration-screen">
@@ -150,7 +169,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBBAgR6Y5pjtxrb5Xj4YaKGMnPz3MpvT9A",
@@ -172,15 +191,20 @@
 
         async function startAppInit() {
             try {
-                const [playerSnap, tournamentsSnap] = await Promise.all([
-                    get(ref(db, 'players/' + userId)),
-                    get(ref(db, 'tournaments'))
-                ]);
+                // Turnirlarni real-time kuzatish
+                onValue(ref(db, 'tournaments'), (snapshot) => {
+                    allTournaments = snapshot.val() || {};
+                    updateUserState();
+                    checkDrawStatus(); // Qura holatini tekshirish
+                    
+                    if (document.getElementById('main-app').style.display === 'flex') {
+                        switchPage('tournaments', document.getElementById('nav-tournaments'));
+                    }
+                });
 
+                const playerSnap = await get(ref(db, 'players/' + userId));
                 if (playerSnap.exists()) { userData = playerSnap.val(); }
-                allTournaments = tournamentsSnap.val() || {};
 
-                updateUserState();
                 checkUserAndHideSplash();
             } catch (e) {
                 console.error(e);
@@ -194,6 +218,22 @@
                 const teams = allTournaments[tId].teams || [];
                 if (teams.some(team => team.player_id == userId)) { userTournamentId = tId; }
             });
+        }
+
+        // Qura marosimi mantiqi
+        function checkDrawStatus() {
+            const drawScreen = document.getElementById('draw-ceremony-screen');
+            if (userTournamentId) {
+                const tour = allTournaments[userTournamentId];
+                // Agar turnir holati "drawing" (qura jarayonida) bo'lsa
+                if (tour.status === "drawing") {
+                    drawScreen.style.display = 'flex';
+                } else {
+                    drawScreen.style.display = 'none';
+                }
+            } else {
+                drawScreen.style.display = 'none';
+            }
         }
 
         function checkUserAndHideSplash() {
@@ -238,7 +278,8 @@
                 if (userTournamentId) {
                     const tour = allTournaments[userTournamentId];
                     const players = (tour.teams || []).filter(t => t.player_id);
-                    if (players.length >= (tour.teams ? tour.teams.length : 0)) {
+                    // Agar turnir to'liq bo'lsa va qura tugagan bo'lsa jadval chiqadi
+                    if (players.length >= (tour.teams ? tour.teams.length : 0) && tour.status === "finished_draw") {
                         renderTournamentTables(userTournamentId);
                     } else {
                         renderWaitingRoom();
@@ -291,7 +332,7 @@
 
             const waitingHtml = `
                 <div class="waiting-card">
-                    <div style="font-weight:bold; color:var(--accent); text-align:center;">Sizning Turniringiz: ${userTournamentId}</div>
+                    <div style="font-weight:bold; color:var(--accent); text-align:center;">Turniringiz: ${userTournamentId}</div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
                     <div style="text-align:center; font-size:11px; margin-bottom:10px;">ISHTIROKCHILAR: ${players.length}/${tour.teams.length}</div>
                     <div id="waiting-list" style="max-height: 150px; overflow-y: auto;">
@@ -317,28 +358,18 @@
                 const isLocked = userTournamentId && userTournamentId !== id;
                 item.className = 'tour-item' + (isLocked ? ' tour-locked' : '');
                 
-                // Turnir bosilganda birinchi qoidalar chiqadi
-                item.onclick = () => { 
-                    if (!isLocked) showTournamentRules(id); 
-                };
+                item.onclick = () => { if (!isLocked) showTournamentRules(id); };
                 item.innerHTML = `<div class="tour-img-container"><img src="${tour.official_logo || ''}" class="tour-img"></div><div class="tour-info"><div class="tour-title">${id}</div></div>`;
                 grid.appendChild(item);
             });
             content.appendChild(grid);
         }
 
-        // --- QOIDALARNI KO'RSATISH VA TUGMANI SOZLASH ---
         window.showTournamentRules = function(tourId) {
             const tournament = allTournaments[tourId];
             document.getElementById('modal-text').innerText = tournament.rules || "Ushbu turnir uchun qoidalar belgilanmagan.";
-            
-            // "Tushunarli" tugmasi bosilganda jamoalarni ochish funksiyasi
             const confirmBtn = document.getElementById('modal-confirm-btn');
-            confirmBtn.onclick = () => {
-                closeRules();
-                showTeams(tourId);
-            };
-            
+            confirmBtn.onclick = () => { closeRules(); showTeams(tourId); };
             document.getElementById('rules-modal').style.display = 'flex';
         }
 
@@ -354,13 +385,12 @@
             const content = document.getElementById('content-area');
             content.innerHTML = isFull ? `<div class="full-notice" style="background:var(--konami-red); color:white; padding:15px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:20px;">TURNIR TO'LGAN! 🔴</div>` : "";
             
-            // Turnir ichida ham qoidalarni ko'rish tugmasi
             const rulesBtn = document.createElement('button');
             rulesBtn.className = 'btn-rules';
             rulesBtn.innerText = "Qoidalar bilan tanishish";
             rulesBtn.onclick = () => {
                 document.getElementById('modal-text').innerText = tournament.rules;
-                document.getElementById('modal-confirm-btn').onclick = closeRules; // Bu erda jamoalar ochilmaydi, shunchaki modal yopiladi
+                document.getElementById('modal-confirm-btn').onclick = closeRules;
                 document.getElementById('rules-modal').style.display = 'flex';
             };
             content.appendChild(rulesBtn);
@@ -389,6 +419,15 @@
                     try {
                         const path = `tournaments/${tourId}/teams/${index}`;
                         await update(ref(db, path), { player_id: userId, player_name: userData.firstName + ' ' + userData.lastName });
+                        
+                        // Turnir to'lganini tekshirish va admin uchun signal qoldirish
+                        const tourSnap = await get(ref(db, `tournaments/${tourId}`));
+                        const currentTour = tourSnap.val();
+                        const filledCount = (currentTour.teams || []).filter(t => t.player_id).length;
+                        if (filledCount === currentTour.teams.length) {
+                            await update(ref(db, `tournaments/${tourId}`), { status: "waiting_draw" });
+                        }
+
                         location.reload(); 
                     } catch (e) { tg.showAlert("Xatolik!"); }
                 }
